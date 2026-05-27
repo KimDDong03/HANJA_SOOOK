@@ -1,0 +1,15 @@
+[
+  {
+    "id": "QZ-DEMO-0001",
+    "hanjaId": "HJ-DEMO-0001",
+    "grade": 4,
+    "unitCode": "G4-U02",
+    "type": "hanja_choice",
+    "prompt": "'집'이라는 뜻을 가진 한자를 고르세요.",
+    "correctAnswer": "家",
+    "options": ["家", "校", "兄", "民"],
+    "explanation": "家는 집 가, 집이라는 뜻입니다.",
+    "difficulty": "normal",
+    "isActive": true
+  }
+]

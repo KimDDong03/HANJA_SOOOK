@@ -1,0 +1,17 @@
+[
+  {
+    "id": "HJ-DEMO-0001",
+    "character": "家",
+    "sound": "가",
+    "meaning": "집",
+    "strokeCount": 10,
+    "grade": 4,
+    "unitCode": "G4-U02",
+    "unitName": "초4 2단원 3. 가족과 친척",
+    "difficulty": "normal",
+    "exampleSentence": "우리 가족은 행복한 집에서 살아요.",
+    "exampleMeaning": "가족과 집에 대한 예문입니다.",
+    "sortOrder": 1,
+    "isActive": true
+  }
+]
