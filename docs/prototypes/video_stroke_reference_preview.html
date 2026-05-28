@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Video Stroke Reference Preview</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --ink: #101828;
+      --muted: #667085;
+      --line: #d7deea;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    }
+    main {
+      width: min(1180px, calc(100% - 28px));
+      margin: 22px auto;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+    p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 13px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 430px) minmax(0, 1fr);
+      gap: 14px;
+    }
+    section {
+      background: var(--surface);
+      border: 1px solid #e4e7ec;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 8px 20px rgba(16, 24, 40, 0.05);
+    }
+    h2 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+    video, img {
+      display: block;
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+    }
+    code {
+      display: block;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 6px;
+      background: #f2f4f7;
+      color: #344054;
+      font-size: 12px;
+    }
+    @media (max-width: 880px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>영상 기반 획 참고 미리보기</h1>
+    <p>영상에서 획이 시간순으로 나타나면 프레임 차이를 이용해 획 방향과 순서를 참고할 수 있습니다. 이 녹화는 전체 페이지라 실제 데이터 추출 전에는 글자 영역 crop이 필요합니다.</p>
+    <div class="layout">
+      <section>
+        <h2>원본 영상</h2>
+        <video controls muted src="file:///C:/Users/User/Videos/%ED%99%94%EB%A9%B4%20%EB%85%B9%ED%99%94/%ED%99%94%EB%A9%B4%20%EB%85%B9%ED%99%94%20%EC%A4%91%202026-05-28%20105251.mp4"></video>
+        <code>C:\Users\User\Videos\화면 녹화\화면 녹화 중 2026-05-28 105251.mp4</code>
+      </section>
+      <section>
+        <h2>프레임 시트</h2>
+        <img src="../../output/video_stroke_preview/contact_sheet.png" alt="extracted video frames" />
+      </section>
+    </div>
+  </main>
+</body>
+</html>

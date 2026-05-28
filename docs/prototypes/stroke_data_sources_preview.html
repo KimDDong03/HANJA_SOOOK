@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:," />
+  <title>획 데이터 구조 비교</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #20201d;
+      --muted: #66645c;
+      --line: #d8d4c8;
+      --paper: #fbfaf6;
+      --panel: #ffffff;
+      --red: #c4493d;
+      --green: #17805c;
+      --blue: #2666b1;
+      --gold: #b27a1f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      line-height: 1.5;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 48px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: end;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 20px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin: 0;
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .stamp {
+      display: grid;
+      place-items: center;
+      width: 86px;
+      height: 86px;
+      border: 2px solid var(--ink);
+      font-family: "Yu Mincho", "SimSun", serif;
+      font-size: 58px;
+      line-height: 1;
+      background: #fff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .tag {
+      flex: 0 0 auto;
+      color: #fff;
+      background: var(--ink);
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .visual {
+      display: grid;
+      grid-template-columns: minmax(210px, 280px) 1fr;
+      gap: 18px;
+      align-items: center;
+      padding: 18px;
+    }
+
+    .board {
+      width: 100%;
+      aspect-ratio: 1;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(45deg, transparent calc(50% - .5px), #e7e2d7 calc(50% - .5px), #e7e2d7 calc(50% + .5px), transparent calc(50% + .5px)),
+        linear-gradient(-45deg, transparent calc(50% - .5px), #e7e2d7 calc(50% - .5px), #e7e2d7 calc(50% + .5px), transparent calc(50% + .5px)),
+        linear-gradient(90deg, transparent calc(50% - .5px), #e7e2d7 calc(50% - .5px), #e7e2d7 calc(50% + .5px), transparent calc(50% + .5px)),
+        linear-gradient(0deg, transparent calc(50% - .5px), #e7e2d7 calc(50% - .5px), #e7e2d7 calc(50% + .5px), transparent calc(50% + .5px)),
+        #fff;
+    }
+
+    .board svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .metric {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .metric div {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px;
+      background: #fcfbf8;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 19px;
+      line-height: 1.1;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .data {
+      display: grid;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .snippet {
+      background: #191b1e;
+      color: #f4f1e8;
+      border-radius: 8px;
+      padding: 14px;
+      overflow: auto;
+      font: 12px/1.55 Consolas, "SFMono-Regular", monospace;
+      white-space: pre;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 4px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
+    .summary {
+      margin-top: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .summary h2 {
+      margin-bottom: 10px;
+    }
+
+    .summary ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .summary li + li {
+      margin-top: 6px;
+    }
+
+    @media (max-width: 900px) {
+      header,
+      .grid,
+      .visual {
+        grid-template-columns: 1fr;
+      }
+
+      .stamp {
+        width: 72px;
+        height: 72px;
+        font-size: 48px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>기존 획 데이터 구조 비교</h1>
+        <p class="lead">
+          같은 글자 <strong>家</strong>를 기준으로 보면, KanjiVG/Kanji-Dojo 계열은 획 중심선 중심이고
+          Hanzi Writer/Make Me a Hanzi 계열은 실제 붓획 윤곽선과 중심선을 함께 가진 구조입니다.
+        </p>
+      </div>
+      <div class="stamp">家</div>
+    </header>
+
+    <section class="grid" aria-label="data source comparison">
+      <article class="panel">
+        <div class="panel-head">
+          <h2>KanjiVG / Kanji-Dojo DB</h2>
+          <span class="tag">centerline</span>
+        </div>
+        <div class="visual">
+          <div class="board">
+            <svg viewBox="0 0 109 109" role="img" aria-label="KanjiVG style centerline paths">
+              <g id="kanjivg-paths" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+            </svg>
+          </div>
+          <div>
+            <p class="note">
+              DB에는 `character`, `stroke_number`, `stroke_path`가 들어갑니다.
+              `stroke_path`는 열린 SVG path라서 그대로 그리면 선 중심만 보입니다.
+            </p>
+            <div class="metric">
+              <div><strong>10</strong><span>strokes</span></div>
+              <div><strong>109</strong><span>viewBox 근사</span></div>
+              <div><strong>3</strong><span>radical ranges</span></div>
+            </div>
+            <div class="legend">
+              <span style="color: var(--blue)"><i class="swatch"></i>획 중심선</span>
+              <span style="color: var(--gold)"><i class="swatch"></i>현재 강조 획</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2>Hanzi Writer / Make Me a Hanzi</h2>
+          <span class="tag">outline + median</span>
+        </div>
+        <div class="visual">
+          <div class="board">
+            <svg viewBox="0 0 1024 1024" role="img" aria-label="Hanzi Writer outline and median paths">
+              <g transform="scale(1, -1) translate(0, -900)">
+                <g id="hanzi-outlines"></g>
+                <g id="hanzi-medians" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+              </g>
+            </svg>
+          </div>
+          <div>
+            <p class="note">
+              JSON에는 `strokes`에 닫힌 윤곽선 path, `medians`에 채점/애니메이션용 중심점 배열,
+              `radStrokes`에 부수 획 인덱스가 들어갑니다.
+            </p>
+            <div class="metric">
+              <div><strong id="hw-strokes">-</strong><span>strokes</span></div>
+              <div><strong id="hw-medians">-</strong><span>medians</span></div>
+              <div><strong id="hw-rad">-</strong><span>radStrokes</span></div>
+            </div>
+            <div class="legend">
+              <span style="color: var(--ink)"><i class="swatch"></i>획 윤곽선</span>
+              <span style="color: var(--red)"><i class="swatch"></i>중심선</span>
+              <span style="color: var(--green)"><i class="swatch"></i>부수 획</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="data" aria-label="data snippets">
+      <pre class="snippet" id="kanjivg-snippet"></pre>
+      <pre class="snippet" id="hanzi-snippet">Hanzi Writer JSON loading...</pre>
+    </section>
+
+    <section class="summary">
+      <h2>판단 포인트</h2>
+      <ul>
+        <li>모양을 정확히 보여주는 목적이면 `strokes` 윤곽선이 있는 Hanzi Writer형 데이터가 훨씬 적합합니다.</li>
+        <li>획순/대략적 채점만 필요하면 KanjiVG형 중심선도 쓸 수 있지만, 글자 모양 자체로 쓰기에는 거칩니다.</li>
+        <li>우리 Flutter 앱에서는 `StrokeEngine` 어댑터 뒤에 JSON 로더를 두고, 데이터가 없으면 기존 방침대로 자유쓰기 모드로 내려가면 됩니다.</li>
+      </ul>
+    </section>
+  </main>
+
+  <script>
+    const kanjiVgRows = [
+      { character: "家", stroke_number: 0, stroke_path: "M52.44,11c0.97,0.97,1.69,2.25,1.69,3.68c0,3.42-0.08,4.99-0.08,8.1" },
+      { character: "家", stroke_number: 1, stroke_path: "M27.09,23.28c0,3.73-2.77,13.98-4.03,16.47" },
+      { character: "家", stroke_number: 2, stroke_path: "M27.99,27.18C41.88,25,72.75,21.5,79.81,21.2c12.19-0.52,1.14,7.87-0.34,8.63" },
+      { character: "家", stroke_number: 3, stroke_path: "M32.76,40.23c1.38,0.4,3.92,0.57,5.29,0.4c8.08-1,19.7-3.38,25.59-3.84c2.29-0.18,3.41-0.04,4.83-0.11" },
+      { character: "家", stroke_number: 4, stroke_path: "M51.26,41.5c0.18,1.1-0.06,2.08-0.72,2.94C47.84,48.63,38.92,55.58,26.5,60.5" },
+      { character: "家", stroke_number: 5, stroke_path: "M48.07,48.96c8.31,7.92,14.18,25.04,6.92,43.51c-2.42,6.16-8.12,0.9-9.3,0.05" },
+      { character: "家", stroke_number: 6, stroke_path: "M49,56c0.17,1.16-0.14,2.17-0.92,3.04c-2.78,3.84-10.78,9.86-22.33,14.21" },
+      { character: "家", stroke_number: 7, stroke_path: "M52.5,65.5c0.21,1.3-0.06,2.45-0.84,3.44c-3.27,5.04-13.97,13.61-29.91,19.56" },
+      { character: "家", stroke_number: 8, stroke_path: "M76.8,45.3c0.14,1.12-0.2,2.09-1.02,2.91c-2.55,3.35-9.29,8.72-18.05,12.19" },
+      { character: "家", stroke_number: 9, stroke_path: "M58.79,62.82c3.72,2.92,18.27,15.42,25.25,20.69c2.49,1.88,4.18,3.12,7.08,3.87" },
+    ];
+
+    const radicalRows = [
+      { kanji: "家", radical: "冖", start_stroke: 1, strokes_count: 2 },
+      { kanji: "家", radical: "宀", start_stroke: 0, strokes_count: 3 },
+      { kanji: "家", radical: "豕", start_stroke: 3, strokes_count: 7 },
+    ];
+
+    const ns = "http://www.w3.org/2000/svg";
+    const kanjiLayer = document.getElementById("kanjivg-paths");
+
+    kanjiVgRows.forEach((row) => {
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("d", row.stroke_path);
+      path.setAttribute("stroke", row.stroke_number === 4 ? "#b27a1f" : "#2666b1");
+      path.setAttribute("stroke-width", row.stroke_number === 4 ? "4.6" : "3.2");
+      path.setAttribute("opacity", row.stroke_number === 4 ? "1" : "0.72");
+      kanjiLayer.appendChild(path);
+    });
+
+    document.getElementById("kanjivg-snippet").textContent =
+`Kanji-Dojo SQLite
+
+character_stroke columns:
+  character TEXT
+  stroke_number INTEGER
+  stroke_path TEXT
+
+sample rows:
+${JSON.stringify(kanjiVgRows.slice(0, 4), null, 2)}
+
+kanji_radical sample:
+${JSON.stringify(radicalRows, null, 2)}`;
+
+    async function loadHanziWriterData() {
+      const response = await fetch("https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/%E5%AE%B6.json");
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    }
+
+    function renderHanziWriterData(data) {
+      const outlines = document.getElementById("hanzi-outlines");
+      const medians = document.getElementById("hanzi-medians");
+      const radicalSet = new Set(data.radStrokes || []);
+
+      data.strokes.forEach((d, index) => {
+        const path = document.createElementNS(ns, "path");
+        path.setAttribute("d", d);
+        path.setAttribute("fill", radicalSet.has(index) ? "#17805c" : "#20201d");
+        path.setAttribute("opacity", radicalSet.has(index) ? "0.92" : "0.86");
+        outlines.appendChild(path);
+      });
+
+      data.medians.forEach((points, index) => {
+        const polyline = document.createElementNS(ns, "polyline");
+        polyline.setAttribute("points", points.map(([x, y]) => `${x},${y}`).join(" "));
+        polyline.setAttribute("stroke", index === 4 ? "#c4493d" : "#d6705d");
+        polyline.setAttribute("stroke-width", index === 4 ? "18" : "10");
+        polyline.setAttribute("opacity", index === 4 ? "0.9" : "0.52");
+        medians.appendChild(polyline);
+      });
+
+      document.getElementById("hw-strokes").textContent = String(data.strokes.length);
+      document.getElementById("hw-medians").textContent = String(data.medians.length);
+      document.getElementById("hw-rad").textContent = (data.radStrokes || []).join(", ");
+      document.getElementById("hanzi-snippet").textContent =
+`Hanzi Writer Data JSON
+
+keys:
+  strokes: closed SVG path outlines
+  medians: centerline point arrays
+  radStrokes: radical stroke indices
+
+sample:
+${JSON.stringify({
+  strokes: data.strokes.slice(0, 2),
+  medians: data.medians.slice(0, 2),
+  radStrokes: data.radStrokes,
+}, null, 2)}`;
+    }
+
+    loadHanziWriterData()
+      .then(renderHanziWriterData)
+      .catch((error) => {
+        document.getElementById("hanzi-snippet").textContent =
+          `Hanzi Writer JSON load failed: ${error.message}`;
+      });
+  </script>
+</body>
+</html>

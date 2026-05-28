@@ -8,10 +8,19 @@
 build/
 coverage/
 
+# Local tool output
+.playwright-cli/
+output/
+ngrok.log
+
 # IDE
 .idea/
 .vscode/
 *.iml
+
+# Python
+__pycache__/
+*.py[cod]
 
 # Local env
 .env

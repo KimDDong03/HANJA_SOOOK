@@ -6,8 +6,8 @@ Run from repository root:
 
 from __future__ import annotations
 
+import csv
 from pathlib import Path
-import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "data" / "source" / "학교기본정보_2026년03월31일기준.csv"
@@ -39,36 +39,68 @@ OUTPUT_COLUMNS = list(COLUMN_MAP.values()) + ["is_active", "is_demo"]
 
 
 def clean_value(value: object) -> str:
-    if pd.isna(value):
+    if value is None:
         return ""
     return str(value).strip()
 
 
+def convert_school_csv(source: Path, output: Path) -> int:
+    if not source.exists():
+        raise FileNotFoundError(f"Source CSV not found: {source}")
+
+    rows: list[dict[str, str]] = []
+    seen_codes: set[str] = set()
+
+    with source.open("r", encoding="cp949", newline="") as source_file:
+        reader = csv.DictReader(source_file)
+        missing = [col for col in COLUMN_MAP if col not in (reader.fieldnames or [])]
+        if missing:
+            raise ValueError(f"Missing source columns: {missing}")
+
+        for raw_row in reader:
+            if clean_value(raw_row.get("학교종류명")) != "초등학교":
+                continue
+
+            row = {
+                target_column: clean_value(raw_row.get(source_column))
+                for source_column, target_column in COLUMN_MAP.items()
+            }
+
+            standard_school_code = row["standard_school_code"]
+            if standard_school_code == "" or row["school_name"] == "":
+                continue
+            if standard_school_code in seen_codes:
+                continue
+
+            seen_codes.add(standard_school_code)
+            row["is_active"] = "True"
+            row["is_demo"] = "False"
+            rows.append(row)
+
+    rows.sort(
+        key=lambda row: (
+            row["region_name"],
+            row["school_name"],
+            row["standard_school_code"],
+        )
+    )
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("w", encoding="utf-8-sig", newline="") as output_file:
+        writer = csv.DictWriter(
+            output_file,
+            fieldnames=OUTPUT_COLUMNS,
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+    return len(rows)
+
+
 def main() -> None:
-    if not SOURCE.exists():
-        raise FileNotFoundError(f"Source CSV not found: {SOURCE}")
-
-    df = pd.read_csv(SOURCE, encoding="cp949", dtype=str)
-    missing = [col for col in COLUMN_MAP if col not in df.columns]
-    if missing:
-        raise ValueError(f"Missing source columns: {missing}")
-
-    df = df[df["학교종류명"].map(clean_value) == "초등학교"].copy()
-    df = df[list(COLUMN_MAP.keys())].rename(columns=COLUMN_MAP)
-
-    for col in df.columns:
-        df[col] = df[col].map(clean_value)
-
-    df = df[(df["standard_school_code"] != "") & (df["school_name"] != "")]
-    df = df.drop_duplicates(subset=["standard_school_code"], keep="first")
-    df["is_active"] = True
-    df["is_demo"] = False
-    df = df[OUTPUT_COLUMNS]
-    df = df.sort_values(["region_name", "school_name", "standard_school_code"])
-
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(OUTPUT, index=False, encoding="utf-8-sig")
-    print(f"Wrote {len(df):,} elementary schools to {OUTPUT}")
+    row_count = convert_school_csv(SOURCE, OUTPUT)
+    print(f"Wrote {row_count:,} elementary schools to {OUTPUT}")
 
 
 if __name__ == "__main__":

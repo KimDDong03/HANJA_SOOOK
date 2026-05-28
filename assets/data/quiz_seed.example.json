@@ -1,14 +1,14 @@
 [
   {
-    "id": "QZ-DEMO-0001",
-    "hanjaId": "HJ-DEMO-0001",
-    "grade": 4,
-    "unitCode": "G4-U02",
+    "id": "QZ-0001",
+    "hanjaId": "HJ-0001",
+    "grade": 3,
+    "unitCode": "G3-U01-L01",
     "type": "hanja_choice",
-    "prompt": "'집'이라는 뜻을 가진 한자를 고르세요.",
-    "correctAnswer": "家",
-    "options": ["家", "校", "兄", "民"],
-    "explanation": "家는 집 가, 집이라는 뜻입니다.",
+    "prompt": "'한 일'이라는 뜻을 가진 한자를 고르세요.",
+    "correctAnswer": "一",
+    "options": ["一", "二", "三", "十"],
+    "explanation": "一은 한 일, 숫자 하나를 뜻합니다.",
     "difficulty": "normal",
     "isActive": true
   }

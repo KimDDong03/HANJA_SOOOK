@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Manual Stroke Capture</title>
+  <style>
+    @font-face {
+      font-family: "Chosun Sinmyeongjo";
+      src: url("../../assets/fonts/chosun_sinmyeongjo/ChosunSm.TTF") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --line: #d7deea;
+      --ink: #101828;
+      --muted: #667085;
+      --accent: #c7432b;
+      --ok: #087443;
+      --paper: #fffdf8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    main {
+      width: min(1160px, calc(100% - 28px));
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 16px;
+    }
+    aside, section {
+      background: var(--surface);
+      border: 1px solid #e4e7ec;
+      border-radius: 8px;
+    }
+    aside {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: calc(100vh - 40px);
+    }
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      font: inherit;
+    }
+    button, label.file {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--ink);
+      height: 38px;
+      border-radius: 6px;
+      padding: 0 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    button.primary { background: var(--ink); color: white; border-color: var(--ink); }
+    button.danger { color: #b42318; }
+    button:disabled { opacity: 0.45; cursor: default; }
+    input[type="file"] { display: none; }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+    }
+    .check input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--ink);
+    }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .list {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: auto;
+      max-height: 250px;
+    }
+    .item {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid #eef1f6;
+      border-radius: 0;
+      height: 44px;
+      font-weight: 500;
+      text-align: left;
+    }
+    .item.active { background: #f2f4f7; }
+    .char {
+      font-family: "Chosun Sinmyeongjo", Batang, serif;
+      font-size: 26px;
+      line-height: 1;
+      text-align: center;
+    }
+    .meta { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .done { color: var(--ok); font-size: 12px; font-weight: 800; }
+    .workspace {
+      padding: 14px;
+      min-height: calc(100vh - 40px);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 12px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .current {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      min-width: 0;
+    }
+    .current strong {
+      font-family: "Chosun Sinmyeongjo", Batang, serif;
+      font-size: 40px;
+      line-height: 1;
+    }
+    .canvasWrap {
+      display: grid;
+      place-items: center;
+      min-height: 0;
+    }
+    svg {
+      display: block;
+      width: min(100%, 660px);
+      aspect-ratio: 1;
+      touch-action: none;
+      user-select: none;
+    }
+    .paper { fill: var(--paper); stroke: #d8c7a2; stroke-width: 0.8; }
+    .guide {
+      fill: none;
+      stroke: #d8c7a2;
+      stroke-width: 0.38;
+      stroke-dasharray: 1.4 1.6;
+    }
+    .ghost {
+      fill: rgba(16, 24, 40, 0.07);
+      font-family: "Chosun Sinmyeongjo", Batang, serif;
+      font-size: 78px;
+      font-weight: 700;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+    .stroke {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 4.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .previewStroke {
+      fill: none;
+      stroke: #344054;
+      stroke-width: 4.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.75;
+    }
+    .num {
+      fill: white;
+      stroke: var(--accent);
+      stroke-width: 0.6;
+      paint-order: stroke fill;
+      font-size: 5px;
+      font-weight: 800;
+      dominant-baseline: central;
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    output {
+      display: block;
+      min-height: 120px;
+      max-height: 220px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #0b1220;
+      color: #e6edf7;
+      border-radius: 6px;
+      padding: 12px;
+      font: 12px/1.5 Consolas, monospace;
+    }
+    @media (max-width: 860px) {
+      main { grid-template-columns: 1fr; }
+      aside, .workspace { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <aside>
+      <h1>획 데이터 입력</h1>
+      <p class="hint">한자를 선택하고 정자체 기준으로 획을 순서대로 그리면 SVG path가 저장됩니다. CSV는 `hanja_id,character,...` 형식도 읽습니다.</p>
+      <textarea id="inputChars">HJ-0001,一
+HJ-0002,百
+HJ-0006,日
+HJ-0008,村
+HJ-0013,東</textarea>
+      <div class="row">
+        <button id="loadText" class="primary">목록 적용</button>
+        <label class="file">CSV 불러오기<input id="fileInput" type="file" accept=".csv,.txt" /></label>
+      </div>
+      <label class="check">
+        <input id="straightMode" type="checkbox" checked />
+        직선 자동 보정
+      </label>
+      <label class="check">
+        <input id="stabilizeMode" type="checkbox" checked />
+        꺾임 흔들림 보정
+      </label>
+      <div id="charList" class="list"></div>
+      <div class="row">
+        <button id="copyJson">JSON 복사</button>
+        <button id="downloadJson">JSON 저장</button>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <div class="topbar">
+        <div class="current">
+          <strong id="currentChar">一</strong>
+          <span id="currentMeta" class="meta">HJ-0001 · 0획</span>
+        </div>
+        <div class="row">
+          <button id="undo">한 획 취소</button>
+          <button id="clear" class="danger">지우기</button>
+          <button id="prev">이전</button>
+          <button id="next" class="primary">다음</button>
+        </div>
+      </div>
+
+      <div class="canvasWrap">
+        <svg id="board" viewBox="0 0 100 100" aria-label="stroke capture board">
+          <rect class="paper" x="4" y="4" width="92" height="92" rx="2"></rect>
+          <path class="guide" d="M50 6 V94 M6 50 H94 M17 17 L83 83 M83 17 L17 83"></path>
+          <text id="ghost" class="ghost" x="50" y="52">一</text>
+          <g id="strokes"></g>
+          <path id="preview" class="previewStroke"></path>
+        </svg>
+      </div>
+
+      <output id="jsonOutput"></output>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      items: [],
+      activeIndex: 0,
+      drawing: false,
+      currentPoints: [],
+      holdTimer: null,
+      straightLocked: false,
+      lastStablePoint: null,
+    };
+
+    const els = {
+      inputChars: document.getElementById("inputChars"),
+      loadText: document.getElementById("loadText"),
+      fileInput: document.getElementById("fileInput"),
+      charList: document.getElementById("charList"),
+      currentChar: document.getElementById("currentChar"),
+      currentMeta: document.getElementById("currentMeta"),
+      ghost: document.getElementById("ghost"),
+      board: document.getElementById("board"),
+      strokes: document.getElementById("strokes"),
+      preview: document.getElementById("preview"),
+      straightMode: document.getElementById("straightMode"),
+      stabilizeMode: document.getElementById("stabilizeMode"),
+      undo: document.getElementById("undo"),
+      clear: document.getElementById("clear"),
+      prev: document.getElementById("prev"),
+      next: document.getElementById("next"),
+      copyJson: document.getElementById("copyJson"),
+      downloadJson: document.getElementById("downloadJson"),
+      jsonOutput: document.getElementById("jsonOutput"),
+    };
+
+    function parseRows(text) {
+      return text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line, index) => {
+          const cells = splitCsvLine(line);
+          const hasId = cells[0] && /^HJ-|^stroke-|^[A-Za-z0-9_-]+$/.test(cells[0]) && cells[1];
+          const id = hasId ? cells[0] : `manual-${String(index + 1).padStart(4, "0")}`;
+          const character = hasId ? cells[1] : cells[0];
+          const sound = cells[2] || "";
+          const meaning = cells[3] || "";
+          return { id, character, sound, meaning, svgPaths: [] };
+        })
+        .filter((row) => row.character && row.character !== "character" && row.character !== "한자");
+    }
+
+    function splitCsvLine(line) {
+      const result = [];
+      let value = "";
+      let quoted = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          quoted = !quoted;
+        } else if (ch === "," && !quoted) {
+          result.push(value.trim());
+          value = "";
+        } else {
+          value += ch;
+        }
+      }
+      result.push(value.trim());
+      return result;
+    }
+
+    function loadTextRows(text) {
+      state.items = parseRows(text);
+      state.activeIndex = 0;
+      render();
+    }
+
+    function activeItem() {
+      return state.items[state.activeIndex];
+    }
+
+    function toBoardPoint(event) {
+      const rect = els.board.getBoundingClientRect();
+      return {
+        x: clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100),
+        y: clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100),
+      };
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function pointsToPath(points, options = {}) {
+      if (points.length === 0) return "";
+      if (points.length === 1) return `M${fmt(points[0].x)} ${fmt(points[0].y)}`;
+      const shouldStabilize = options.stabilize ?? els.stabilizeMode.checked;
+      const simplified = shouldStabilize
+        ? stabilizeStroke(points)
+        : simplifyBySpacing(points, 0.85);
+      if (shouldStabilize) return pointsToRoundedPath(simplified);
+
+      let path = `M${fmt(simplified[0].x)} ${fmt(simplified[0].y)}`;
+      for (let i = 1; i < simplified.length; i++) {
+        path += ` L${fmt(simplified[i].x)} ${fmt(simplified[i].y)}`;
+      }
+      return path;
+    }
+
+    function pointsToRoundedPath(points) {
+      if (points.length <= 2) {
+        return pointsToPolylinePath(points);
+      }
+
+      let path = `M${fmt(points[0].x)} ${fmt(points[0].y)}`;
+      for (let i = 1; i < points.length - 1; i++) {
+        const previous = points[i - 1];
+        const corner = points[i];
+        const next = points[i + 1];
+        const radius = cornerRadius(previous, corner, next);
+        if (radius <= 0.25) {
+          path += ` L${fmt(corner.x)} ${fmt(corner.y)}`;
+          continue;
+        }
+        const before = pointToward(corner, previous, radius);
+        const after = pointToward(corner, next, radius);
+        path += ` L${fmt(before.x)} ${fmt(before.y)}`;
+        path += ` Q${fmt(corner.x)} ${fmt(corner.y)} ${fmt(after.x)} ${fmt(after.y)}`;
+      }
+
+      const end = points[points.length - 1];
+      path += ` L${fmt(end.x)} ${fmt(end.y)}`;
+      return path;
+    }
+
+    function pointsToPolylinePath(points) {
+      if (points.length === 0) return "";
+      let path = `M${fmt(points[0].x)} ${fmt(points[0].y)}`;
+      for (let i = 1; i < points.length; i++) {
+        path += ` L${fmt(points[i].x)} ${fmt(points[i].y)}`;
+      }
+      return path;
+    }
+
+    function cornerRadius(previous, corner, next) {
+      const incoming = segmentLength(previous, corner);
+      const outgoing = segmentLength(corner, next);
+      const angle = turnAngle(previous, corner, next);
+      const maxRadius = angle > 55 ? 0.85 : 1.8;
+      const segmentRatio = angle > 55 ? 0.12 : 0.26;
+      return Math.min(maxRadius, incoming * segmentRatio, outgoing * segmentRatio);
+    }
+
+    function turnAngle(previous, corner, next) {
+      const ax = corner.x - previous.x;
+      const ay = corner.y - previous.y;
+      const bx = next.x - corner.x;
+      const by = next.y - corner.y;
+      const aLength = Math.hypot(ax, ay);
+      const bLength = Math.hypot(bx, by);
+      if (aLength === 0 || bLength === 0) return 0;
+      const cosine = clamp((ax * bx + ay * by) / (aLength * bLength), -1, 1);
+      return Math.acos(cosine) * 180 / Math.PI;
+    }
+
+    function pointToward(from, to, distance) {
+      const total = segmentLength(from, to);
+      if (total === 0 || distance <= 0) return from;
+      const ratio = Math.min(1, distance / total);
+      return {
+        x: from.x + (to.x - from.x) * ratio,
+        y: from.y + (to.y - from.y) * ratio,
+      };
+    }
+
+    function straightPath(points) {
+      if (points.length < 2) return pointsToPath(points);
+      const start = points[0];
+      const end = points[points.length - 1];
+      return `M${fmt(start.x)} ${fmt(start.y)} L${fmt(end.x)} ${fmt(end.y)}`;
+    }
+
+    function shouldStraighten(points) {
+      if (!els.straightMode.checked || points.length < 3) return false;
+      const start = points[0];
+      const end = points[points.length - 1];
+      const lineLength = Math.hypot(end.x - start.x, end.y - start.y);
+      if (lineLength < 5) return false;
+
+      let maxDistance = 0;
+      let totalDistance = 0;
+      let previous = start;
+      for (const point of points.slice(1)) {
+        totalDistance += Math.hypot(point.x - previous.x, point.y - previous.y);
+        previous = point;
+        maxDistance = Math.max(maxDistance, distanceToLine(point, start, end));
+      }
+
+      const extraTravel = totalDistance / lineLength;
+      return maxDistance <= 2.25 && extraTravel <= 1.18;
+    }
+
+    function distanceToLine(point, start, end) {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const denominator = Math.hypot(dx, dy);
+      if (denominator === 0) return Math.hypot(point.x - start.x, point.y - start.y);
+      return Math.abs(dy * point.x - dx * point.y + end.x * start.y - end.y * start.x) / denominator;
+    }
+
+    function distanceToSegment(point, start, end) {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const lengthSquared = dx * dx + dy * dy;
+      if (lengthSquared === 0) return Math.hypot(point.x - start.x, point.y - start.y);
+      const t = clamp(((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared, 0, 1);
+      return Math.hypot(point.x - (start.x + t * dx), point.y - (start.y + t * dy));
+    }
+
+    function stablePoint(rawPoint) {
+      if (!els.stabilizeMode.checked || !state.lastStablePoint) return rawPoint;
+      const distance = Math.hypot(rawPoint.x - state.lastStablePoint.x, rawPoint.y - state.lastStablePoint.y);
+      const weight = distance > 8 ? 0.82 : 0.68;
+      return {
+        x: state.lastStablePoint.x * weight + rawPoint.x * (1 - weight),
+        y: state.lastStablePoint.y * weight + rawPoint.y * (1 - weight),
+      };
+    }
+
+    function stabilizeStroke(points) {
+      const spaced = simplifyBySpacing(points, 0.65);
+      if (spaced.length <= 2) return spaced;
+      const denoised = movingAverage(spaced);
+      const simplified = rdp(denoised, 1.85);
+      return removeTinyHooks(simplified);
+    }
+
+    function movingAverage(points) {
+      if (points.length <= 4) return points;
+      return points.map((point, index) => {
+        if (index === 0 || index === points.length - 1) return point;
+        const prev = points[index - 1];
+        const next = points[index + 1];
+        return {
+          x: point.x * 0.5 + prev.x * 0.25 + next.x * 0.25,
+          y: point.y * 0.5 + prev.y * 0.25 + next.y * 0.25,
+        };
+      });
+    }
+
+    function rdp(points, tolerance) {
+      if (points.length <= 2) return points;
+      let maxDistance = 0;
+      let splitIndex = 0;
+      const start = points[0];
+      const end = points[points.length - 1];
+
+      for (let i = 1; i < points.length - 1; i++) {
+        const distance = distanceToSegment(points[i], start, end);
+        if (distance > maxDistance) {
+          maxDistance = distance;
+          splitIndex = i;
+        }
+      }
+
+      if (maxDistance <= tolerance) return [start, end];
+      const left = rdp(points.slice(0, splitIndex + 1), tolerance);
+      const right = rdp(points.slice(splitIndex), tolerance);
+      return left.slice(0, -1).concat(right);
+    }
+
+    function removeTinyHooks(points) {
+      if (points.length <= 3) return points;
+      const cleaned = [...points];
+      while (cleaned.length > 3 && segmentLength(cleaned[0], cleaned[1]) < 1.4) {
+        cleaned.splice(1, 1);
+      }
+      while (cleaned.length > 3 && segmentLength(cleaned[cleaned.length - 2], cleaned[cleaned.length - 1]) < 1.4) {
+        cleaned.splice(cleaned.length - 2, 1);
+      }
+      return cleaned;
+    }
+
+    function segmentLength(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function clearHoldTimer() {
+      if (state.holdTimer !== null) {
+        clearTimeout(state.holdTimer);
+        state.holdTimer = null;
+      }
+    }
+
+    function scheduleStraightHold() {
+      clearHoldTimer();
+      if (!els.straightMode.checked || state.currentPoints.length < 2) return;
+      state.holdTimer = setTimeout(() => {
+        if (!state.drawing || state.currentPoints.length < 2) return;
+        state.straightLocked = true;
+        els.preview.setAttribute("d", straightPath(state.currentPoints));
+      }, 450);
+    }
+
+    function simplifyBySpacing(points, tolerance) {
+      if (points.length <= 2) return points;
+      const kept = [points[0]];
+      for (let i = 1; i < points.length - 1; i++) {
+        const prev = kept[kept.length - 1];
+        const point = points[i];
+        if (Math.hypot(point.x - prev.x, point.y - prev.y) >= tolerance) {
+          kept.push(point);
+        }
+      }
+      kept.push(points[points.length - 1]);
+      return kept;
+    }
+
+    function fmt(value) {
+      return Number(value.toFixed(2)).toString();
+    }
+
+    function render() {
+      const item = activeItem();
+      els.charList.innerHTML = "";
+      state.items.forEach((row, index) => {
+        const button = document.createElement("button");
+        button.className = `item${index === state.activeIndex ? " active" : ""}`;
+        button.innerHTML = `<span class="char">${escapeHtml(row.character)}</span><span class="meta">${escapeHtml(row.id)} ${escapeHtml(row.meaning || row.sound || "")}</span><span class="done">${row.svgPaths.length ? row.svgPaths.length + "획" : ""}</span>`;
+        button.addEventListener("click", () => {
+          state.activeIndex = index;
+          render();
+        });
+        els.charList.appendChild(button);
+      });
+
+      if (!item) {
+        els.currentChar.textContent = "";
+        els.currentMeta.textContent = "목록 없음";
+        els.ghost.textContent = "";
+        els.strokes.innerHTML = "";
+        els.jsonOutput.textContent = "";
+        return;
+      }
+
+      els.currentChar.textContent = item.character;
+      els.ghost.textContent = item.character;
+      els.currentMeta.textContent = `${item.id} · ${item.svgPaths.length}획`;
+      els.prev.disabled = state.activeIndex === 0;
+      els.next.disabled = state.activeIndex >= state.items.length - 1;
+
+      els.strokes.innerHTML = item.svgPaths.map((path, index) => {
+        const start = firstPoint(path);
+        return `<path class="stroke" d="${path}"></path><text class="num" x="${start.x}" y="${start.y}">${index + 1}</text>`;
+      }).join("");
+      els.preview.setAttribute("d", pointsToPath(state.currentPoints));
+      els.jsonOutput.textContent = JSON.stringify(exportData(), null, 2);
+    }
+
+    function firstPoint(path) {
+      const match = path.match(/M([0-9.]+)\s+([0-9.]+)/);
+      return match ? { x: match[1], y: match[2] } : { x: 50, y: 50 };
+    }
+
+    function exportData() {
+      return state.items.map((row) => ({
+        id: `stroke-${row.id}`,
+        hanjaId: row.id,
+        character: row.character,
+        source: "manual_capture",
+        dataFormat: "svg_paths",
+        strokeCount: row.svgPaths.length,
+        svgPaths: row.svgPaths,
+        reviewStatus: row.svgPaths.length ? "draft" : "todo",
+      }));
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      }[ch]));
+    }
+
+    els.board.addEventListener("pointerdown", (event) => {
+      if (!activeItem()) return;
+      els.board.setPointerCapture(event.pointerId);
+      state.drawing = true;
+      state.lastStablePoint = toBoardPoint(event);
+      state.currentPoints = [state.lastStablePoint];
+      state.straightLocked = false;
+      scheduleStraightHold();
+      render();
+    });
+
+    els.board.addEventListener("pointermove", (event) => {
+      if (!state.drawing) return;
+      clearHoldTimer();
+      const point = stablePoint(toBoardPoint(event));
+      state.lastStablePoint = point;
+      state.currentPoints.push(point);
+      state.straightLocked = false;
+      els.preview.setAttribute("d", pointsToPath(state.currentPoints));
+      scheduleStraightHold();
+    });
+
+    function finishStroke() {
+      if (!state.drawing) return;
+      clearHoldTimer();
+      state.drawing = false;
+      const item = activeItem();
+      const path = state.straightLocked || shouldStraighten(state.currentPoints)
+        ? straightPath(state.currentPoints)
+        : pointsToPath(state.currentPoints);
+      if (item && state.currentPoints.length >= 2 && path) {
+        item.svgPaths.push(path);
+      }
+      state.currentPoints = [];
+      state.straightLocked = false;
+      state.lastStablePoint = null;
+      render();
+    }
+
+    els.board.addEventListener("pointerup", finishStroke);
+    els.board.addEventListener("pointercancel", finishStroke);
+    els.undo.addEventListener("click", () => {
+      const item = activeItem();
+      if (item) item.svgPaths.pop();
+      render();
+    });
+    els.clear.addEventListener("click", () => {
+      const item = activeItem();
+      if (item) item.svgPaths = [];
+      render();
+    });
+    els.prev.addEventListener("click", () => {
+      state.activeIndex = Math.max(0, state.activeIndex - 1);
+      render();
+    });
+    els.next.addEventListener("click", () => {
+      state.activeIndex = Math.min(state.items.length - 1, state.activeIndex + 1);
+      render();
+    });
+    els.loadText.addEventListener("click", () => loadTextRows(els.inputChars.value));
+    els.fileInput.addEventListener("change", async () => {
+      const file = els.fileInput.files[0];
+      if (!file) return;
+      loadTextRows(await file.text());
+    });
+    els.copyJson.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(JSON.stringify(exportData(), null, 2));
+    });
+    els.downloadJson.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(exportData(), null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "manual_stroke_capture.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    loadTextRows(els.inputChars.value);
+  </script>
+</body>
+</html>

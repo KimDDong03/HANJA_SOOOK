@@ -1,0 +1,7 @@
+Hanyang Haeseo font (HYhaeseo.ttf)
+
+Project decision:
+- Use Hanyang Haeseo as the Hanja display font.
+
+Release note:
+- Confirm distribution and app-embedding rights for the exact font file before public release.

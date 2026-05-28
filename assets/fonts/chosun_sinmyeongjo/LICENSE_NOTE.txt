@@ -1,0 +1,13 @@
+Chosun Sinmyeongjo font (ChosunSm.TTF)
+
+Source:
+- https://event.chosun.com/100/100font.html
+- https://fontdown.chosun.com/100/ChosunSm.zip
+
+License summary:
+- Provided free of charge for personal and corporate users by Chosun Ilbo.
+- Redistribution is allowed in the original distributed form.
+- Charging for copying/distribution or selling a modified version is not allowed.
+- Keep this font file unmodified.
+
+Check the source page before release if the distribution terms change.

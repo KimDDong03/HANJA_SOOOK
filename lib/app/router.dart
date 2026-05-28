@@ -10,6 +10,7 @@ import '../features/quiz/quiz_screen.dart';
 import '../features/result/result_screen.dart';
 import '../features/shared/placeholder_shell.dart';
 import '../features/splash/splash_screen.dart';
+import '../features/student_links/student_link_screen.dart';
 import '../features/teacher_preview/teacher_preview_screen.dart';
 import '../features/writing/writing_screen.dart';
 
@@ -48,11 +49,22 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: RoutePaths.result,
-      builder: (context, state) => const ResultScreen(),
+      builder: (context, state) => ResultScreen(
+        hanjaId: state.uri.queryParameters['hanjaId'],
+        earnedXp: int.tryParse(state.uri.queryParameters['earnedXp'] ?? ''),
+        completedCount: int.tryParse(
+          state.uri.queryParameters['completedCount'] ?? '',
+        ),
+        totalCount: int.tryParse(state.uri.queryParameters['totalCount'] ?? ''),
+      ),
     ),
     GoRoute(
       path: RoutePaths.growth,
       builder: (context, state) => const GrowthScreen(),
+    ),
+    GoRoute(
+      path: RoutePaths.studentLinks,
+      builder: (context, state) => const StudentLinkScreen(),
     ),
     GoRoute(
       path: RoutePaths.teacherPreview,
