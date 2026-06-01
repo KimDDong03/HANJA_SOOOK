@@ -60,39 +60,67 @@ void main() {
       expect(completed, {'HJ-0001'});
     });
 
+    test('reads all completed Hanja records for one student', () async {
+      await repository.markHanjaCompleted(
+        studentKey: 'student-1',
+        learningDate: '20260528',
+        hanjaId: 'HJ-0001',
+      );
+      await repository.markHanjaCompleted(
+        studentKey: 'student-1',
+        learningDate: '20260529',
+        hanjaId: 'HJ-0001',
+      );
+      await repository.markHanjaCompleted(
+        studentKey: 'student-2',
+        learningDate: '20260529',
+        hanjaId: 'HJ-0002',
+      );
+
+      final records = await repository.getCompletedHanjaRecordsForStudent(
+        studentKey: 'student-1',
+      );
+
+      expect(records.map((record) => record.hanjaId), ['HJ-0001', 'HJ-0001']);
+      expect(records.map((record) => record.learningDate), [
+        '20260528',
+        '20260529',
+      ]);
+    });
+
     test('stores xp events once and sums total xp', () async {
       final inserted = await repository.addXpEvent(
         id: 'student-1-20260528-writing-HJ-0001',
         studentKey: 'student-1',
         source: 'writing_completion',
-        amount: 10,
+        amount: 15,
         refId: 'HJ-0001',
       );
       final duplicate = await repository.addXpEvent(
         id: 'student-1-20260528-writing-HJ-0001',
         studentKey: 'student-1',
         source: 'writing_completion',
-        amount: 10,
+        amount: 15,
         refId: 'HJ-0001',
       );
       await repository.addXpEvent(
         id: 'student-1-20260528-daily-complete',
         studentKey: 'student-1',
         source: 'daily_completion_bonus',
-        amount: 20,
+        amount: 30,
         refId: '20260528',
       );
 
       expect(inserted, isTrue);
       expect(duplicate, isFalse);
-      expect(await repository.getTotalXp(studentKey: 'student-1'), 30);
+      expect(await repository.getTotalXp(studentKey: 'student-1'), 45);
       expect(
         await repository.getXpForRef(
           studentKey: 'student-1',
           source: 'writing_completion',
           refId: 'HJ-0001',
         ),
-        10,
+        15,
       );
     });
   });

@@ -4,6 +4,7 @@ import '../../data/repositories/content_repository_provider.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/models/hanja_example.dart';
 import '../../domain/models/stroke_asset.dart';
+import '../writing/svg_path_parser.dart';
 
 final hanjaCardProvider = FutureProvider.family<HanjaCardState, String>((
   ref,
@@ -30,4 +31,24 @@ class HanjaCardState {
   final HanjaCharacter? hanja;
   final List<HanjaExample> examples;
   final StrokeAsset? strokeAsset;
+
+  List<String> get svgPaths {
+    final paths = strokeAsset?.svgPaths?.whereType<String>().toList();
+    if (paths == null || paths.isEmpty) {
+      return const [];
+    }
+    final validPaths = <String>[];
+    for (final path in paths) {
+      if (path.trim().isEmpty) {
+        continue;
+      }
+      if (SvgPathParser.tryParse(path) == null) {
+        return const [];
+      }
+      validPaths.add(path);
+    }
+    return validPaths;
+  }
+
+  bool get hasStrokeGuide => svgPaths.isNotEmpty;
 }

@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AppButtonVariant {
-  filled,
-  outlined,
-  text,
-}
+enum AppButtonVariant { filled, outlined, text }
 
 class AppButton extends StatelessWidget {
   const AppButton({
@@ -24,7 +20,14 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveOnPressed = isLoading ? null : onPressed;
+    final effectiveOnPressed = isLoading
+        ? () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('처리 중이에요.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          )
+        : onPressed;
     final child = _AppButtonContent(
       label: label,
       icon: icon,
@@ -75,11 +78,7 @@ class _AppButtonContent extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, size: 20),
-        const SizedBox(width: 8),
-        Text(label),
-      ],
+      children: [Icon(icon, size: 20), const SizedBox(width: 8), Text(label)],
     );
   }
 }

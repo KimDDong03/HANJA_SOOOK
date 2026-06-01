@@ -17,4 +17,6 @@ abstract class SchoolRepository {
     required String displayName,
     required int grade,
   });
+
+  Future<void> signOut();
 }

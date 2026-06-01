@@ -27,13 +27,12 @@ void main() {
     test('loads today Hanja set from textbook local seed', () async {
       final items = await repository.getTodayHanjaSet(grade: 3);
 
-      expect(items, hasLength(5));
+      expect(items, hasLength(4));
       expect(items.map((hanja) => hanja.id), [
         'HJ-0001',
         'HJ-0002',
         'HJ-0003',
         'HJ-0004',
-        'HJ-0005',
       ]);
     });
 
@@ -60,16 +59,15 @@ void main() {
     test('builds today quiz questions from today Hanja set', () async {
       final questions = await repository.getTodayQuizQuestions(grade: 3);
 
-      expect(questions, hasLength(5));
+      expect(questions, hasLength(4));
       expect(questions.map((question) => question.hanjaId), [
         'HJ-0001',
         'HJ-0002',
         'HJ-0003',
         'HJ-0004',
-        'HJ-0005',
       ]);
       expect(questions.first.correctAnswer, '一');
-      expect(questions.last.options, contains('千'));
+      expect(questions.last.options, contains(questions.last.correctAnswer));
     });
 
     test('returns safe empty states for missing content', () async {

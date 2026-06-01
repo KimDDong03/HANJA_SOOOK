@@ -1,0 +1,10 @@
+Derived assets:
+- stroke_texture_pencil_fast.mp3
+
+Sources:
+- Fast Pencil Writing: https://unstuntedsfx.net/audio/Fast_Pencil_Writing_135000.mp3
+
+Downloaded: 2026-06-01
+
+License note:
+UnstuntedSFX describes its free sound effects as royalty-free for commercial and personal use with no attribution required.

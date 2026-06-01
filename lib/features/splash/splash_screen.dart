@@ -13,6 +13,8 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
+  static const _logoAsset = 'assets/images/app_icon_source.png';
+
   @override
   void initState() {
     super.initState();
@@ -30,26 +32,66 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (!mounted) {
       return;
     }
-    context.go(hasProfile ? RoutePaths.home : RoutePaths.login);
+    context.go(hasProfile ? RoutePaths.appHome : RoutePaths.roleSelect);
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '한자쏘옥',
-                style: TextStyle(fontSize: 40, fontWeight: FontWeight.w800),
-              ),
-              SizedBox(height: 16),
-              CircularProgressIndicator(),
-              SizedBox(height: 12),
-              Text('배울 준비를 하고 있어요'),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 56),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  _logoAsset,
+                  width: 236,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const _SplashLogoFallback();
+                  },
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: 26,
+                  height: 26,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.6,
+                    color: Theme.of(context).colorScheme.primary,
+                    strokeCap: StrokeCap.round,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SplashLogoFallback extends StatelessWidget {
+  const _SplashLogoFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 236,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Center(
+          child: Text(
+            '한자쏘옥',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ),

@@ -4,16 +4,19 @@ import 'package:flutter/material.dart';
 
 import '../hanja_canvas_geometry.dart';
 import '../hanja_guide_grid.dart';
+import '../stroke_color_palette.dart';
 import '../svg_path_parser.dart';
 
 class AnimatedHanjaStrokePreview extends StatefulWidget {
   const AnimatedHanjaStrokePreview({
     super.key,
     required this.svgPaths,
+    this.previewExtent,
     this.viewBox = defaultHanjaViewBox,
   });
 
   final List<String> svgPaths;
+  final double? previewExtent;
   final Rect viewBox;
 
   @override
@@ -69,47 +72,55 @@ class _AnimatedHanjaStrokePreviewState extends State<AnimatedHanjaStrokePreview>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return AspectRatio(
-      aspectRatio: 1,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: colorScheme.outlineVariant),
-        ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  return CustomPaint(
-                    painter: _AnimatedHanjaStrokePainter(
-                      paths: _paths,
-                      progress: _controller.value,
-                      viewBox: widget.viewBox,
-                      strokeColor: colorScheme.onSurface,
-                      activeStrokeColor: colorScheme.primary,
-                      gridColor: colorScheme.outlineVariant,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final previewExtent =
+            widget.previewExtent?.clamp(0, constraints.maxWidth) ??
+            constraints.maxWidth;
+        return Align(
+          alignment: Alignment.center,
+          child: SizedBox.square(
+            dimension: previewExtent.toDouble(),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, _) {
+                        return CustomPaint(
+                          painter: _AnimatedHanjaStrokePainter(
+                            paths: _paths,
+                            progress: _controller.value,
+                            viewBox: widget.viewBox,
+                            gridColor: colorScheme.outlineVariant,
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Tooltip(
+                      message: '획순 다시 보기',
+                      child: IconButton.filledTonal(
+                        onPressed: _replay,
+                        icon: const Icon(Icons.replay),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Tooltip(
-                message: '획순 다시 보기',
-                child: IconButton.filledTonal(
-                  onPressed: _replay,
-                  icon: const Icon(Icons.replay),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -119,16 +130,12 @@ class _AnimatedHanjaStrokePainter extends CustomPainter {
     required this.paths,
     required this.progress,
     required this.viewBox,
-    required this.strokeColor,
-    required this.activeStrokeColor,
     required this.gridColor,
   });
 
   final List<Path> paths;
   final double progress;
   final Rect viewBox;
-  final Color strokeColor;
-  final Color activeStrokeColor;
   final Color gridColor;
 
   @override
@@ -147,33 +154,37 @@ class _AnimatedHanjaStrokePainter extends CustomPainter {
     final completedStrokeCount = activeProgress.floor();
     final currentStrokeProgress = activeProgress - completedStrokeCount;
 
-    final completedPaint = Paint()
-      ..color = strokeColor.withValues(alpha: 0.88)
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..strokeWidth = 4.8;
-
-    final activePaint = Paint()
-      ..color = activeStrokeColor
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..strokeWidth = 5.2;
-
     for (var index = 0; index < paths.length; index += 1) {
       if (index < completedStrokeCount) {
-        canvas.drawPath(paths[index], completedPaint);
+        canvas.drawPath(
+          paths[index],
+          _strokePaint(
+            HanjaStrokeColorPalette.colorFor(index).withValues(alpha: 0.88),
+            width: 4.8,
+          ),
+        );
         continue;
       }
 
       if (index == completedStrokeCount && currentStrokeProgress > 0) {
         final partialPath = _extractPath(paths[index], currentStrokeProgress);
-        canvas.drawPath(partialPath, activePaint);
+        canvas.drawPath(
+          partialPath,
+          _strokePaint(HanjaStrokeColorPalette.colorFor(index), width: 5.2),
+        );
       }
     }
 
     canvas.restore();
+  }
+
+  Paint _strokePaint(Color color, {required double width}) {
+    return Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = width;
   }
 
   Path _extractPath(Path path, double progress) {
@@ -201,8 +212,6 @@ class _AnimatedHanjaStrokePainter extends CustomPainter {
     return oldDelegate.paths != paths ||
         oldDelegate.progress != progress ||
         oldDelegate.viewBox != viewBox ||
-        oldDelegate.strokeColor != strokeColor ||
-        oldDelegate.activeStrokeColor != activeStrokeColor ||
         oldDelegate.gridColor != gridColor;
   }
 }

@@ -6,7 +6,9 @@ import '../models/stroke_asset.dart';
 abstract class ContentRepository {
   Future<HanjaCharacter?> getTodayHanja({int? grade});
 
-  Future<List<HanjaCharacter>> getTodayHanjaSet({int? grade, int limit = 5});
+  Future<List<HanjaCharacter>> getTodayHanjaSet({int? grade, int limit = 4});
+
+  Future<List<HanjaCharacter>> getHanjaList({int? grade, int? limit});
 
   Future<HanjaCharacter?> getHanjaById(String hanjaId);
 
@@ -18,7 +20,7 @@ abstract class ContentRepository {
     int limit = 10,
   });
 
-  Future<List<QuizQuestion>> getTodayQuizQuestions({int? grade, int limit = 5});
+  Future<List<QuizQuestion>> getTodayQuizQuestions({int? grade, int limit = 4});
 
   Future<StrokeAsset?> getStrokeAsset(String hanjaId);
 }

@@ -5,6 +5,7 @@ import '../../data/repositories/student_link_repository_provider.dart';
 import '../../domain/models/class_room.dart';
 import '../../domain/models/student_link.dart';
 import '../../domain/services/class_code_service.dart';
+import '../../domain/services/class_participation_service.dart';
 import '../../domain/services/student_link_code_service.dart';
 import '../auth/current_profile_controller.dart';
 
@@ -18,6 +19,8 @@ final studentLinkProvider =
 class StudentLinkController extends AsyncNotifier<StudentLinkState> {
   final StudentLinkCodeService _codeService = const StudentLinkCodeService();
   final ClassCodeService _classCodeService = const ClassCodeService();
+  final ClassParticipationService _classParticipationService =
+      const ClassParticipationService();
 
   @override
   Future<StudentLinkState> build() async {
@@ -25,17 +28,14 @@ class StudentLinkController extends AsyncNotifier<StudentLinkState> {
     final links = await ref
         .watch(studentLinkRepositoryProvider)
         .getStudentLinks(relationType: guardianRelationType);
-    final classes = await ref.watch(classRoomRepositoryProvider).getClasses();
     final joinedClasses = <ClassRoom>[];
     if (profile != null) {
-      for (final classRoom in classes) {
-        final members = await ref
-            .watch(classRoomRepositoryProvider)
-            .getClassMembers(classId: classRoom.id);
-        if (members.any((member) => member.studentKey == profile.id)) {
-          joinedClasses.add(classRoom);
-        }
-      }
+      joinedClasses.addAll(
+        await _classParticipationService.getJoinedClasses(
+          classRepository: ref.watch(classRoomRepositoryProvider),
+          studentKey: profile.id,
+        ),
+      );
     }
     return StudentLinkState(
       currentStudentCode: profile == null
@@ -102,16 +102,10 @@ class StudentLinkController extends AsyncNotifier<StudentLinkState> {
       );
       await ref.read(classRoomRepositoryProvider).saveClassMember(member);
 
-      final classes = await ref.read(classRoomRepositoryProvider).getClasses();
-      final joinedClasses = <ClassRoom>[];
-      for (final classRoom in classes) {
-        final members = await ref
-            .read(classRoomRepositoryProvider)
-            .getClassMembers(classId: classRoom.id);
-        if (members.any((item) => item.studentKey == profile.id)) {
-          joinedClasses.add(classRoom);
-        }
-      }
+      final joinedClasses = await _classParticipationService.getJoinedClasses(
+        classRepository: ref.read(classRoomRepositoryProvider),
+        studentKey: profile.id,
+      );
 
       state = AsyncData(
         current.copyWith(

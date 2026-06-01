@@ -1,7 +1,17 @@
+import '../models/learning_progress_record.dart';
+
 abstract class LearningProgressRepository {
   Future<Set<String>> getCompletedHanjaIds({
     required String studentKey,
     required String learningDate,
+  });
+
+  Future<Set<String>> getCompletedHanjaIdsForStudent({
+    required String studentKey,
+  });
+
+  Future<List<LearningProgressRecord>> getCompletedHanjaRecordsForStudent({
+    required String studentKey,
   });
 
   Future<bool> markHanjaCompleted({

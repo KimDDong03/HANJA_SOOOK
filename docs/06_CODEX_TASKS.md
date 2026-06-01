@@ -253,7 +253,7 @@ Implement home screen.
 - character
 - level/XP
 - today's mission
-- today's Hanja progress N/5
+- today's Hanja progress N/4
 - quiz/game/writing/growth buttons
 - bottom nav placeholder
 

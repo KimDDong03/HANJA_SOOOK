@@ -110,6 +110,10 @@ SUPABASE_ANON_KEY
 APP_ENV
 ```
 
+## App Run Target
+When the user asks to run, restart, or open the app, use the Android emulator by default.
+Do not use Chrome, Edge, web, or Windows desktop unless the user explicitly asks for that target.
+
 ## School Data
 Use `data/source/학교기본정보_2026년03월31일기준.csv` as the source file.
 CSV encoding is `cp949`.

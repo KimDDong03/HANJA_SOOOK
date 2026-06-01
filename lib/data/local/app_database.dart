@@ -53,6 +53,23 @@ class LocalQuizResults extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class LocalChallengeResults extends Table {
+  TextColumn get id => text()();
+  TextColumn get studentKey => text()();
+  TextColumn get learningDate => text()();
+  TextColumn get mode => text()();
+  IntColumn get score => integer()();
+  IntColumn get correctCount => integer()();
+  IntColumn get totalCount => integer()();
+  IntColumn get timeSec => integer()();
+  IntColumn get flippedTileCount => integer()();
+  IntColumn get earnedXp => integer()();
+  DateTimeColumn get completedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class LocalStudentLinks extends Table {
   TextColumn get studentKey => text()();
   TextColumn get displayName => text()();
@@ -89,15 +106,59 @@ class LocalClassMembers extends Table {
   Set<Column> get primaryKey => {classId, studentKey};
 }
 
+class LocalLearningEnvironmentSettings extends Table {
+  TextColumn get id => text()();
+  BoolColumn get backgroundMusicEnabled =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get soundEffectsEnabled =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get strokeSoundEnabled =>
+      boolean().withDefault(const Constant(true))();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class LocalNotificationSettings extends Table {
+  TextColumn get id => text()();
+  BoolColumn get dailyReminderEnabled =>
+      boolean().withDefault(const Constant(false))();
+  IntColumn get reminderHour => integer().withDefault(const Constant(18))();
+  IntColumn get reminderMinute => integer().withDefault(const Constant(0))();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class LocalPendingSyncOperations extends Table {
+  TextColumn get id => text()();
+  TextColumn get operationType => text()();
+  TextColumn get targetTable => text()();
+  TextColumn get payloadJson => text()();
+  IntColumn get attemptCount => integer().withDefault(const Constant(0))();
+  TextColumn get lastError => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     DailyLearningProgress,
     LocalXpEvents,
     LocalGameResults,
     LocalQuizResults,
+    LocalChallengeResults,
     LocalStudentLinks,
     LocalClasses,
     LocalClassMembers,
+    LocalLearningEnvironmentSettings,
+    LocalNotificationSettings,
+    LocalPendingSyncOperations,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -105,7 +166,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'hanja_soook'));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -127,6 +188,18 @@ class AppDatabase extends _$AppDatabase {
         await migrator.createTable(localClasses);
         await migrator.createTable(localClassMembers);
       }
+      if (from < 7) {
+        await migrator.createTable(localChallengeResults);
+      }
+      if (from < 8) {
+        await migrator.createTable(localLearningEnvironmentSettings);
+      }
+      if (from < 9) {
+        await migrator.createTable(localNotificationSettings);
+      }
+      if (from < 10) {
+        await migrator.createTable(localPendingSyncOperations);
+      }
     },
   );
 
@@ -138,6 +211,14 @@ class AppDatabase extends _$AppDatabase {
           ..where((row) => row.studentKey.equals(studentKey))
           ..where((row) => row.learningDate.equals(learningDate)))
         .get();
+  }
+
+  Future<List<DailyLearningProgressData>> getCompletedHanjaForStudent({
+    required String studentKey,
+  }) {
+    return (select(
+      dailyLearningProgress,
+    )..where((row) => row.studentKey.equals(studentKey))).get();
   }
 
   Future<bool> markHanjaCompleted({
@@ -297,6 +378,83 @@ class AppDatabase extends _$AppDatabase {
         .getSingleOrNull();
   }
 
+  Future<void> saveChallengeResult({
+    required String id,
+    required String studentKey,
+    required String learningDate,
+    required String mode,
+    required int score,
+    required int correctCount,
+    required int totalCount,
+    required int timeSec,
+    required int flippedTileCount,
+    required int earnedXp,
+    required DateTime completedAt,
+  }) async {
+    await into(localChallengeResults).insert(
+      LocalChallengeResultsCompanion.insert(
+        id: id,
+        studentKey: studentKey,
+        learningDate: learningDate,
+        mode: mode,
+        score: score,
+        correctCount: correctCount,
+        totalCount: totalCount,
+        timeSec: timeSec,
+        flippedTileCount: flippedTileCount,
+        earnedXp: earnedXp,
+        completedAt: completedAt,
+      ),
+      mode: InsertMode.insertOrReplace,
+    );
+  }
+
+  Future<LocalChallengeResult?> getLatestChallengeResult({
+    required String studentKey,
+    String? mode,
+  }) {
+    final query = select(localChallengeResults)
+      ..where((row) => row.studentKey.equals(studentKey));
+    if (mode != null) {
+      query.where((row) => row.mode.equals(mode));
+    }
+    query
+      ..orderBy([
+        (row) =>
+            OrderingTerm(expression: row.completedAt, mode: OrderingMode.desc),
+      ])
+      ..limit(1);
+    return query.getSingleOrNull();
+  }
+
+  Future<LocalChallengeResult?> getChallengeResultById(String id) {
+    return (select(
+      localChallengeResults,
+    )..where((row) => row.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<List<LocalChallengeResult>> getChallengeResults({
+    Set<String>? studentKeys,
+    String? learningDate,
+  }) {
+    if (studentKeys != null && studentKeys.isEmpty) {
+      return Future.value(const []);
+    }
+
+    final query = select(localChallengeResults);
+    if (studentKeys != null) {
+      query.where((row) => row.studentKey.isIn(studentKeys));
+    }
+    if (learningDate != null) {
+      query.where((row) => row.learningDate.equals(learningDate));
+    }
+    query.orderBy([
+      (row) =>
+          OrderingTerm(expression: row.completedAt, mode: OrderingMode.desc),
+    ]);
+    return query.get();
+  }
+
   Future<void> saveStudentLink({
     required String studentKey,
     required String displayName,
@@ -390,5 +548,113 @@ class AppDatabase extends _$AppDatabase {
                 OrderingTerm(expression: row.joinedAt, mode: OrderingMode.desc),
           ]))
         .get();
+  }
+
+  Future<LocalLearningEnvironmentSetting?> getLearningEnvironmentSettings() {
+    return (select(
+      localLearningEnvironmentSettings,
+    )..where((row) => row.id.equals('default'))).getSingleOrNull();
+  }
+
+  Future<void> saveLearningEnvironmentSettings({
+    required bool backgroundMusicEnabled,
+    required bool soundEffectsEnabled,
+    required bool strokeSoundEnabled,
+    required DateTime updatedAt,
+  }) {
+    return into(localLearningEnvironmentSettings).insert(
+      LocalLearningEnvironmentSettingsCompanion.insert(
+        id: 'default',
+        backgroundMusicEnabled: Value(backgroundMusicEnabled),
+        soundEffectsEnabled: Value(soundEffectsEnabled),
+        strokeSoundEnabled: Value(strokeSoundEnabled),
+        updatedAt: updatedAt,
+      ),
+      mode: InsertMode.insertOrReplace,
+    );
+  }
+
+  Future<LocalNotificationSetting?> getNotificationSettings() {
+    return (select(
+      localNotificationSettings,
+    )..where((row) => row.id.equals('default'))).getSingleOrNull();
+  }
+
+  Future<void> saveNotificationSettings({
+    required bool dailyReminderEnabled,
+    required int reminderHour,
+    required int reminderMinute,
+    required DateTime updatedAt,
+  }) {
+    return into(localNotificationSettings).insert(
+      LocalNotificationSettingsCompanion.insert(
+        id: 'default',
+        dailyReminderEnabled: Value(dailyReminderEnabled),
+        reminderHour: Value(reminderHour),
+        reminderMinute: Value(reminderMinute),
+        updatedAt: updatedAt,
+      ),
+      mode: InsertMode.insertOrReplace,
+    );
+  }
+
+  Future<void> enqueuePendingSyncOperation({
+    required String id,
+    required String operationType,
+    required String targetTable,
+    required String payloadJson,
+    required DateTime createdAt,
+  }) {
+    return into(localPendingSyncOperations).insert(
+      LocalPendingSyncOperationsCompanion.insert(
+        id: id,
+        operationType: operationType,
+        targetTable: targetTable,
+        payloadJson: payloadJson,
+        createdAt: createdAt,
+        updatedAt: createdAt,
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
+  }
+
+  Future<List<LocalPendingSyncOperation>> getPendingSyncOperations({
+    int limit = 50,
+    String? targetTable,
+  }) {
+    final query = select(localPendingSyncOperations);
+    if (targetTable != null) {
+      query.where((row) => row.targetTable.equals(targetTable));
+    }
+    query
+      ..orderBy([
+        (row) =>
+            OrderingTerm(expression: row.createdAt, mode: OrderingMode.asc),
+      ])
+      ..limit(limit);
+    return query.get();
+  }
+
+  Future<void> markPendingSyncAttempt({
+    required String id,
+    required int attemptCount,
+    required String lastError,
+    required DateTime updatedAt,
+  }) {
+    return (update(
+      localPendingSyncOperations,
+    )..where((row) => row.id.equals(id))).write(
+      LocalPendingSyncOperationsCompanion(
+        attemptCount: Value(attemptCount),
+        lastError: Value(lastError),
+        updatedAt: Value(updatedAt),
+      ),
+    );
+  }
+
+  Future<void> deletePendingSyncOperation(String id) {
+    return (delete(
+      localPendingSyncOperations,
+    )..where((row) => row.id.equals(id))).go();
   }
 }

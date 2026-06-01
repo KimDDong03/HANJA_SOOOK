@@ -6,12 +6,18 @@ void main() {
   testWidgets('free writing canvas records and removes strokes', (
     tester,
   ) async {
+    var changedStrokeCount = 0;
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Scaffold(
           body: SizedBox(
             width: 260,
-            child: HanjaFreeWritingCanvas(expectedStrokeCount: 10),
+            child: HanjaFreeWritingCanvas(
+              expectedStrokeCount: 10,
+              onStrokesChanged: (strokes) {
+                changedStrokeCount = strokes.length;
+              },
+            ),
           ),
         ),
       ),
@@ -26,10 +32,12 @@ void main() {
     await tester.pump();
 
     expect(find.text('1 / 10'), findsOneWidget);
+    expect(changedStrokeCount, 1);
 
     await tester.tap(find.byIcon(Icons.undo));
     await tester.pump();
 
     expect(find.text('0 / 10'), findsOneWidget);
+    expect(changedStrokeCount, 0);
   });
 }

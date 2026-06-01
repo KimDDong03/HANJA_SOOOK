@@ -3,22 +3,36 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/env.dart';
 import '../../core/errors/app_exception.dart';
+import 'supabase_session_storage.dart';
 
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
-  return Supabase.instance.client;
+  final client = _supabaseClient;
+  if (client == null) {
+    throw const AppException(
+      code: AppExceptionCode.unknown,
+      message: 'Supabase client has not been initialized.',
+    );
+  }
+  return client;
 });
+
+SupabaseClient? _supabaseClient;
 
 Future<void> initializeSupabase() async {
   if (!AppEnv.hasSupabaseConfig) {
-    throw const AppException(
+    throw AppException(
       code: AppExceptionCode.validation,
-      message:
-          'Supabase 설정이 없습니다. SUPABASE_URL과 SUPABASE_ANON_KEY를 --dart-define으로 전달해주세요.',
+      message: AppEnv.missingSupabaseConfigMessage,
     );
   }
 
-  await Supabase.initialize(
+  final supabase = await Supabase.initialize(
     url: AppEnv.supabaseUrl,
     anonKey: AppEnv.supabaseAnonKey,
+    authOptions: FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.implicit,
+      localStorage: SecureSupabaseSessionStorage(),
+    ),
   );
+  _supabaseClient = supabase.client;
 }

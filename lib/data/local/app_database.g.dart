@@ -1808,6 +1808,684 @@ class LocalQuizResultsCompanion extends UpdateCompanion<LocalQuizResult> {
   }
 }
 
+class $LocalChallengeResultsTable extends LocalChallengeResults
+    with TableInfo<$LocalChallengeResultsTable, LocalChallengeResult> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalChallengeResultsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _studentKeyMeta = const VerificationMeta(
+    'studentKey',
+  );
+  @override
+  late final GeneratedColumn<String> studentKey = GeneratedColumn<String>(
+    'student_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _learningDateMeta = const VerificationMeta(
+    'learningDate',
+  );
+  @override
+  late final GeneratedColumn<String> learningDate = GeneratedColumn<String>(
+    'learning_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modeMeta = const VerificationMeta('mode');
+  @override
+  late final GeneratedColumn<String> mode = GeneratedColumn<String>(
+    'mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scoreMeta = const VerificationMeta('score');
+  @override
+  late final GeneratedColumn<int> score = GeneratedColumn<int>(
+    'score',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _correctCountMeta = const VerificationMeta(
+    'correctCount',
+  );
+  @override
+  late final GeneratedColumn<int> correctCount = GeneratedColumn<int>(
+    'correct_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _totalCountMeta = const VerificationMeta(
+    'totalCount',
+  );
+  @override
+  late final GeneratedColumn<int> totalCount = GeneratedColumn<int>(
+    'total_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timeSecMeta = const VerificationMeta(
+    'timeSec',
+  );
+  @override
+  late final GeneratedColumn<int> timeSec = GeneratedColumn<int>(
+    'time_sec',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _flippedTileCountMeta = const VerificationMeta(
+    'flippedTileCount',
+  );
+  @override
+  late final GeneratedColumn<int> flippedTileCount = GeneratedColumn<int>(
+    'flipped_tile_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _earnedXpMeta = const VerificationMeta(
+    'earnedXp',
+  );
+  @override
+  late final GeneratedColumn<int> earnedXp = GeneratedColumn<int>(
+    'earned_xp',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completedAtMeta = const VerificationMeta(
+    'completedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+    'completed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    studentKey,
+    learningDate,
+    mode,
+    score,
+    correctCount,
+    totalCount,
+    timeSec,
+    flippedTileCount,
+    earnedXp,
+    completedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_challenge_results';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalChallengeResult> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('student_key')) {
+      context.handle(
+        _studentKeyMeta,
+        studentKey.isAcceptableOrUnknown(data['student_key']!, _studentKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_studentKeyMeta);
+    }
+    if (data.containsKey('learning_date')) {
+      context.handle(
+        _learningDateMeta,
+        learningDate.isAcceptableOrUnknown(
+          data['learning_date']!,
+          _learningDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_learningDateMeta);
+    }
+    if (data.containsKey('mode')) {
+      context.handle(
+        _modeMeta,
+        mode.isAcceptableOrUnknown(data['mode']!, _modeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modeMeta);
+    }
+    if (data.containsKey('score')) {
+      context.handle(
+        _scoreMeta,
+        score.isAcceptableOrUnknown(data['score']!, _scoreMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_scoreMeta);
+    }
+    if (data.containsKey('correct_count')) {
+      context.handle(
+        _correctCountMeta,
+        correctCount.isAcceptableOrUnknown(
+          data['correct_count']!,
+          _correctCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_correctCountMeta);
+    }
+    if (data.containsKey('total_count')) {
+      context.handle(
+        _totalCountMeta,
+        totalCount.isAcceptableOrUnknown(data['total_count']!, _totalCountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_totalCountMeta);
+    }
+    if (data.containsKey('time_sec')) {
+      context.handle(
+        _timeSecMeta,
+        timeSec.isAcceptableOrUnknown(data['time_sec']!, _timeSecMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timeSecMeta);
+    }
+    if (data.containsKey('flipped_tile_count')) {
+      context.handle(
+        _flippedTileCountMeta,
+        flippedTileCount.isAcceptableOrUnknown(
+          data['flipped_tile_count']!,
+          _flippedTileCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_flippedTileCountMeta);
+    }
+    if (data.containsKey('earned_xp')) {
+      context.handle(
+        _earnedXpMeta,
+        earnedXp.isAcceptableOrUnknown(data['earned_xp']!, _earnedXpMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_earnedXpMeta);
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+        _completedAtMeta,
+        completedAt.isAcceptableOrUnknown(
+          data['completed_at']!,
+          _completedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_completedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalChallengeResult map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalChallengeResult(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      studentKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}student_key'],
+      )!,
+      learningDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}learning_date'],
+      )!,
+      mode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mode'],
+      )!,
+      score: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}score'],
+      )!,
+      correctCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}correct_count'],
+      )!,
+      totalCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_count'],
+      )!,
+      timeSec: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}time_sec'],
+      )!,
+      flippedTileCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}flipped_tile_count'],
+      )!,
+      earnedXp: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}earned_xp'],
+      )!,
+      completedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}completed_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalChallengeResultsTable createAlias(String alias) {
+    return $LocalChallengeResultsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalChallengeResult extends DataClass
+    implements Insertable<LocalChallengeResult> {
+  final String id;
+  final String studentKey;
+  final String learningDate;
+  final String mode;
+  final int score;
+  final int correctCount;
+  final int totalCount;
+  final int timeSec;
+  final int flippedTileCount;
+  final int earnedXp;
+  final DateTime completedAt;
+  const LocalChallengeResult({
+    required this.id,
+    required this.studentKey,
+    required this.learningDate,
+    required this.mode,
+    required this.score,
+    required this.correctCount,
+    required this.totalCount,
+    required this.timeSec,
+    required this.flippedTileCount,
+    required this.earnedXp,
+    required this.completedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['student_key'] = Variable<String>(studentKey);
+    map['learning_date'] = Variable<String>(learningDate);
+    map['mode'] = Variable<String>(mode);
+    map['score'] = Variable<int>(score);
+    map['correct_count'] = Variable<int>(correctCount);
+    map['total_count'] = Variable<int>(totalCount);
+    map['time_sec'] = Variable<int>(timeSec);
+    map['flipped_tile_count'] = Variable<int>(flippedTileCount);
+    map['earned_xp'] = Variable<int>(earnedXp);
+    map['completed_at'] = Variable<DateTime>(completedAt);
+    return map;
+  }
+
+  LocalChallengeResultsCompanion toCompanion(bool nullToAbsent) {
+    return LocalChallengeResultsCompanion(
+      id: Value(id),
+      studentKey: Value(studentKey),
+      learningDate: Value(learningDate),
+      mode: Value(mode),
+      score: Value(score),
+      correctCount: Value(correctCount),
+      totalCount: Value(totalCount),
+      timeSec: Value(timeSec),
+      flippedTileCount: Value(flippedTileCount),
+      earnedXp: Value(earnedXp),
+      completedAt: Value(completedAt),
+    );
+  }
+
+  factory LocalChallengeResult.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalChallengeResult(
+      id: serializer.fromJson<String>(json['id']),
+      studentKey: serializer.fromJson<String>(json['studentKey']),
+      learningDate: serializer.fromJson<String>(json['learningDate']),
+      mode: serializer.fromJson<String>(json['mode']),
+      score: serializer.fromJson<int>(json['score']),
+      correctCount: serializer.fromJson<int>(json['correctCount']),
+      totalCount: serializer.fromJson<int>(json['totalCount']),
+      timeSec: serializer.fromJson<int>(json['timeSec']),
+      flippedTileCount: serializer.fromJson<int>(json['flippedTileCount']),
+      earnedXp: serializer.fromJson<int>(json['earnedXp']),
+      completedAt: serializer.fromJson<DateTime>(json['completedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'studentKey': serializer.toJson<String>(studentKey),
+      'learningDate': serializer.toJson<String>(learningDate),
+      'mode': serializer.toJson<String>(mode),
+      'score': serializer.toJson<int>(score),
+      'correctCount': serializer.toJson<int>(correctCount),
+      'totalCount': serializer.toJson<int>(totalCount),
+      'timeSec': serializer.toJson<int>(timeSec),
+      'flippedTileCount': serializer.toJson<int>(flippedTileCount),
+      'earnedXp': serializer.toJson<int>(earnedXp),
+      'completedAt': serializer.toJson<DateTime>(completedAt),
+    };
+  }
+
+  LocalChallengeResult copyWith({
+    String? id,
+    String? studentKey,
+    String? learningDate,
+    String? mode,
+    int? score,
+    int? correctCount,
+    int? totalCount,
+    int? timeSec,
+    int? flippedTileCount,
+    int? earnedXp,
+    DateTime? completedAt,
+  }) => LocalChallengeResult(
+    id: id ?? this.id,
+    studentKey: studentKey ?? this.studentKey,
+    learningDate: learningDate ?? this.learningDate,
+    mode: mode ?? this.mode,
+    score: score ?? this.score,
+    correctCount: correctCount ?? this.correctCount,
+    totalCount: totalCount ?? this.totalCount,
+    timeSec: timeSec ?? this.timeSec,
+    flippedTileCount: flippedTileCount ?? this.flippedTileCount,
+    earnedXp: earnedXp ?? this.earnedXp,
+    completedAt: completedAt ?? this.completedAt,
+  );
+  LocalChallengeResult copyWithCompanion(LocalChallengeResultsCompanion data) {
+    return LocalChallengeResult(
+      id: data.id.present ? data.id.value : this.id,
+      studentKey: data.studentKey.present
+          ? data.studentKey.value
+          : this.studentKey,
+      learningDate: data.learningDate.present
+          ? data.learningDate.value
+          : this.learningDate,
+      mode: data.mode.present ? data.mode.value : this.mode,
+      score: data.score.present ? data.score.value : this.score,
+      correctCount: data.correctCount.present
+          ? data.correctCount.value
+          : this.correctCount,
+      totalCount: data.totalCount.present
+          ? data.totalCount.value
+          : this.totalCount,
+      timeSec: data.timeSec.present ? data.timeSec.value : this.timeSec,
+      flippedTileCount: data.flippedTileCount.present
+          ? data.flippedTileCount.value
+          : this.flippedTileCount,
+      earnedXp: data.earnedXp.present ? data.earnedXp.value : this.earnedXp,
+      completedAt: data.completedAt.present
+          ? data.completedAt.value
+          : this.completedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalChallengeResult(')
+          ..write('id: $id, ')
+          ..write('studentKey: $studentKey, ')
+          ..write('learningDate: $learningDate, ')
+          ..write('mode: $mode, ')
+          ..write('score: $score, ')
+          ..write('correctCount: $correctCount, ')
+          ..write('totalCount: $totalCount, ')
+          ..write('timeSec: $timeSec, ')
+          ..write('flippedTileCount: $flippedTileCount, ')
+          ..write('earnedXp: $earnedXp, ')
+          ..write('completedAt: $completedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    studentKey,
+    learningDate,
+    mode,
+    score,
+    correctCount,
+    totalCount,
+    timeSec,
+    flippedTileCount,
+    earnedXp,
+    completedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalChallengeResult &&
+          other.id == this.id &&
+          other.studentKey == this.studentKey &&
+          other.learningDate == this.learningDate &&
+          other.mode == this.mode &&
+          other.score == this.score &&
+          other.correctCount == this.correctCount &&
+          other.totalCount == this.totalCount &&
+          other.timeSec == this.timeSec &&
+          other.flippedTileCount == this.flippedTileCount &&
+          other.earnedXp == this.earnedXp &&
+          other.completedAt == this.completedAt);
+}
+
+class LocalChallengeResultsCompanion
+    extends UpdateCompanion<LocalChallengeResult> {
+  final Value<String> id;
+  final Value<String> studentKey;
+  final Value<String> learningDate;
+  final Value<String> mode;
+  final Value<int> score;
+  final Value<int> correctCount;
+  final Value<int> totalCount;
+  final Value<int> timeSec;
+  final Value<int> flippedTileCount;
+  final Value<int> earnedXp;
+  final Value<DateTime> completedAt;
+  final Value<int> rowid;
+  const LocalChallengeResultsCompanion({
+    this.id = const Value.absent(),
+    this.studentKey = const Value.absent(),
+    this.learningDate = const Value.absent(),
+    this.mode = const Value.absent(),
+    this.score = const Value.absent(),
+    this.correctCount = const Value.absent(),
+    this.totalCount = const Value.absent(),
+    this.timeSec = const Value.absent(),
+    this.flippedTileCount = const Value.absent(),
+    this.earnedXp = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalChallengeResultsCompanion.insert({
+    required String id,
+    required String studentKey,
+    required String learningDate,
+    required String mode,
+    required int score,
+    required int correctCount,
+    required int totalCount,
+    required int timeSec,
+    required int flippedTileCount,
+    required int earnedXp,
+    required DateTime completedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       studentKey = Value(studentKey),
+       learningDate = Value(learningDate),
+       mode = Value(mode),
+       score = Value(score),
+       correctCount = Value(correctCount),
+       totalCount = Value(totalCount),
+       timeSec = Value(timeSec),
+       flippedTileCount = Value(flippedTileCount),
+       earnedXp = Value(earnedXp),
+       completedAt = Value(completedAt);
+  static Insertable<LocalChallengeResult> custom({
+    Expression<String>? id,
+    Expression<String>? studentKey,
+    Expression<String>? learningDate,
+    Expression<String>? mode,
+    Expression<int>? score,
+    Expression<int>? correctCount,
+    Expression<int>? totalCount,
+    Expression<int>? timeSec,
+    Expression<int>? flippedTileCount,
+    Expression<int>? earnedXp,
+    Expression<DateTime>? completedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (studentKey != null) 'student_key': studentKey,
+      if (learningDate != null) 'learning_date': learningDate,
+      if (mode != null) 'mode': mode,
+      if (score != null) 'score': score,
+      if (correctCount != null) 'correct_count': correctCount,
+      if (totalCount != null) 'total_count': totalCount,
+      if (timeSec != null) 'time_sec': timeSec,
+      if (flippedTileCount != null) 'flipped_tile_count': flippedTileCount,
+      if (earnedXp != null) 'earned_xp': earnedXp,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalChallengeResultsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? studentKey,
+    Value<String>? learningDate,
+    Value<String>? mode,
+    Value<int>? score,
+    Value<int>? correctCount,
+    Value<int>? totalCount,
+    Value<int>? timeSec,
+    Value<int>? flippedTileCount,
+    Value<int>? earnedXp,
+    Value<DateTime>? completedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalChallengeResultsCompanion(
+      id: id ?? this.id,
+      studentKey: studentKey ?? this.studentKey,
+      learningDate: learningDate ?? this.learningDate,
+      mode: mode ?? this.mode,
+      score: score ?? this.score,
+      correctCount: correctCount ?? this.correctCount,
+      totalCount: totalCount ?? this.totalCount,
+      timeSec: timeSec ?? this.timeSec,
+      flippedTileCount: flippedTileCount ?? this.flippedTileCount,
+      earnedXp: earnedXp ?? this.earnedXp,
+      completedAt: completedAt ?? this.completedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (studentKey.present) {
+      map['student_key'] = Variable<String>(studentKey.value);
+    }
+    if (learningDate.present) {
+      map['learning_date'] = Variable<String>(learningDate.value);
+    }
+    if (mode.present) {
+      map['mode'] = Variable<String>(mode.value);
+    }
+    if (score.present) {
+      map['score'] = Variable<int>(score.value);
+    }
+    if (correctCount.present) {
+      map['correct_count'] = Variable<int>(correctCount.value);
+    }
+    if (totalCount.present) {
+      map['total_count'] = Variable<int>(totalCount.value);
+    }
+    if (timeSec.present) {
+      map['time_sec'] = Variable<int>(timeSec.value);
+    }
+    if (flippedTileCount.present) {
+      map['flipped_tile_count'] = Variable<int>(flippedTileCount.value);
+    }
+    if (earnedXp.present) {
+      map['earned_xp'] = Variable<int>(earnedXp.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalChallengeResultsCompanion(')
+          ..write('id: $id, ')
+          ..write('studentKey: $studentKey, ')
+          ..write('learningDate: $learningDate, ')
+          ..write('mode: $mode, ')
+          ..write('score: $score, ')
+          ..write('correctCount: $correctCount, ')
+          ..write('totalCount: $totalCount, ')
+          ..write('timeSec: $timeSec, ')
+          ..write('flippedTileCount: $flippedTileCount, ')
+          ..write('earnedXp: $earnedXp, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $LocalStudentLinksTable extends LocalStudentLinks
     with TableInfo<$LocalStudentLinksTable, LocalStudentLink> {
   @override
@@ -3088,6 +3766,1343 @@ class LocalClassMembersCompanion extends UpdateCompanion<LocalClassMember> {
   }
 }
 
+class $LocalLearningEnvironmentSettingsTable
+    extends LocalLearningEnvironmentSettings
+    with
+        TableInfo<
+          $LocalLearningEnvironmentSettingsTable,
+          LocalLearningEnvironmentSetting
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalLearningEnvironmentSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _backgroundMusicEnabledMeta =
+      const VerificationMeta('backgroundMusicEnabled');
+  @override
+  late final GeneratedColumn<bool> backgroundMusicEnabled =
+      GeneratedColumn<bool>(
+        'background_music_enabled',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("background_music_enabled" IN (0, 1))',
+        ),
+        defaultValue: const Constant(true),
+      );
+  static const VerificationMeta _soundEffectsEnabledMeta =
+      const VerificationMeta('soundEffectsEnabled');
+  @override
+  late final GeneratedColumn<bool> soundEffectsEnabled = GeneratedColumn<bool>(
+    'sound_effects_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("sound_effects_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _strokeSoundEnabledMeta =
+      const VerificationMeta('strokeSoundEnabled');
+  @override
+  late final GeneratedColumn<bool> strokeSoundEnabled = GeneratedColumn<bool>(
+    'stroke_sound_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("stroke_sound_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    backgroundMusicEnabled,
+    soundEffectsEnabled,
+    strokeSoundEnabled,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_learning_environment_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalLearningEnvironmentSetting> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('background_music_enabled')) {
+      context.handle(
+        _backgroundMusicEnabledMeta,
+        backgroundMusicEnabled.isAcceptableOrUnknown(
+          data['background_music_enabled']!,
+          _backgroundMusicEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sound_effects_enabled')) {
+      context.handle(
+        _soundEffectsEnabledMeta,
+        soundEffectsEnabled.isAcceptableOrUnknown(
+          data['sound_effects_enabled']!,
+          _soundEffectsEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('stroke_sound_enabled')) {
+      context.handle(
+        _strokeSoundEnabledMeta,
+        strokeSoundEnabled.isAcceptableOrUnknown(
+          data['stroke_sound_enabled']!,
+          _strokeSoundEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalLearningEnvironmentSetting map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalLearningEnvironmentSetting(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      backgroundMusicEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}background_music_enabled'],
+      )!,
+      soundEffectsEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}sound_effects_enabled'],
+      )!,
+      strokeSoundEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}stroke_sound_enabled'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalLearningEnvironmentSettingsTable createAlias(String alias) {
+    return $LocalLearningEnvironmentSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalLearningEnvironmentSetting extends DataClass
+    implements Insertable<LocalLearningEnvironmentSetting> {
+  final String id;
+  final bool backgroundMusicEnabled;
+  final bool soundEffectsEnabled;
+  final bool strokeSoundEnabled;
+  final DateTime updatedAt;
+  const LocalLearningEnvironmentSetting({
+    required this.id,
+    required this.backgroundMusicEnabled,
+    required this.soundEffectsEnabled,
+    required this.strokeSoundEnabled,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['background_music_enabled'] = Variable<bool>(backgroundMusicEnabled);
+    map['sound_effects_enabled'] = Variable<bool>(soundEffectsEnabled);
+    map['stroke_sound_enabled'] = Variable<bool>(strokeSoundEnabled);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  LocalLearningEnvironmentSettingsCompanion toCompanion(bool nullToAbsent) {
+    return LocalLearningEnvironmentSettingsCompanion(
+      id: Value(id),
+      backgroundMusicEnabled: Value(backgroundMusicEnabled),
+      soundEffectsEnabled: Value(soundEffectsEnabled),
+      strokeSoundEnabled: Value(strokeSoundEnabled),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory LocalLearningEnvironmentSetting.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalLearningEnvironmentSetting(
+      id: serializer.fromJson<String>(json['id']),
+      backgroundMusicEnabled: serializer.fromJson<bool>(
+        json['backgroundMusicEnabled'],
+      ),
+      soundEffectsEnabled: serializer.fromJson<bool>(
+        json['soundEffectsEnabled'],
+      ),
+      strokeSoundEnabled: serializer.fromJson<bool>(json['strokeSoundEnabled']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'backgroundMusicEnabled': serializer.toJson<bool>(backgroundMusicEnabled),
+      'soundEffectsEnabled': serializer.toJson<bool>(soundEffectsEnabled),
+      'strokeSoundEnabled': serializer.toJson<bool>(strokeSoundEnabled),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  LocalLearningEnvironmentSetting copyWith({
+    String? id,
+    bool? backgroundMusicEnabled,
+    bool? soundEffectsEnabled,
+    bool? strokeSoundEnabled,
+    DateTime? updatedAt,
+  }) => LocalLearningEnvironmentSetting(
+    id: id ?? this.id,
+    backgroundMusicEnabled:
+        backgroundMusicEnabled ?? this.backgroundMusicEnabled,
+    soundEffectsEnabled: soundEffectsEnabled ?? this.soundEffectsEnabled,
+    strokeSoundEnabled: strokeSoundEnabled ?? this.strokeSoundEnabled,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  LocalLearningEnvironmentSetting copyWithCompanion(
+    LocalLearningEnvironmentSettingsCompanion data,
+  ) {
+    return LocalLearningEnvironmentSetting(
+      id: data.id.present ? data.id.value : this.id,
+      backgroundMusicEnabled: data.backgroundMusicEnabled.present
+          ? data.backgroundMusicEnabled.value
+          : this.backgroundMusicEnabled,
+      soundEffectsEnabled: data.soundEffectsEnabled.present
+          ? data.soundEffectsEnabled.value
+          : this.soundEffectsEnabled,
+      strokeSoundEnabled: data.strokeSoundEnabled.present
+          ? data.strokeSoundEnabled.value
+          : this.strokeSoundEnabled,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalLearningEnvironmentSetting(')
+          ..write('id: $id, ')
+          ..write('backgroundMusicEnabled: $backgroundMusicEnabled, ')
+          ..write('soundEffectsEnabled: $soundEffectsEnabled, ')
+          ..write('strokeSoundEnabled: $strokeSoundEnabled, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    backgroundMusicEnabled,
+    soundEffectsEnabled,
+    strokeSoundEnabled,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalLearningEnvironmentSetting &&
+          other.id == this.id &&
+          other.backgroundMusicEnabled == this.backgroundMusicEnabled &&
+          other.soundEffectsEnabled == this.soundEffectsEnabled &&
+          other.strokeSoundEnabled == this.strokeSoundEnabled &&
+          other.updatedAt == this.updatedAt);
+}
+
+class LocalLearningEnvironmentSettingsCompanion
+    extends UpdateCompanion<LocalLearningEnvironmentSetting> {
+  final Value<String> id;
+  final Value<bool> backgroundMusicEnabled;
+  final Value<bool> soundEffectsEnabled;
+  final Value<bool> strokeSoundEnabled;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const LocalLearningEnvironmentSettingsCompanion({
+    this.id = const Value.absent(),
+    this.backgroundMusicEnabled = const Value.absent(),
+    this.soundEffectsEnabled = const Value.absent(),
+    this.strokeSoundEnabled = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalLearningEnvironmentSettingsCompanion.insert({
+    required String id,
+    this.backgroundMusicEnabled = const Value.absent(),
+    this.soundEffectsEnabled = const Value.absent(),
+    this.strokeSoundEnabled = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       updatedAt = Value(updatedAt);
+  static Insertable<LocalLearningEnvironmentSetting> custom({
+    Expression<String>? id,
+    Expression<bool>? backgroundMusicEnabled,
+    Expression<bool>? soundEffectsEnabled,
+    Expression<bool>? strokeSoundEnabled,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (backgroundMusicEnabled != null)
+        'background_music_enabled': backgroundMusicEnabled,
+      if (soundEffectsEnabled != null)
+        'sound_effects_enabled': soundEffectsEnabled,
+      if (strokeSoundEnabled != null)
+        'stroke_sound_enabled': strokeSoundEnabled,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalLearningEnvironmentSettingsCompanion copyWith({
+    Value<String>? id,
+    Value<bool>? backgroundMusicEnabled,
+    Value<bool>? soundEffectsEnabled,
+    Value<bool>? strokeSoundEnabled,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalLearningEnvironmentSettingsCompanion(
+      id: id ?? this.id,
+      backgroundMusicEnabled:
+          backgroundMusicEnabled ?? this.backgroundMusicEnabled,
+      soundEffectsEnabled: soundEffectsEnabled ?? this.soundEffectsEnabled,
+      strokeSoundEnabled: strokeSoundEnabled ?? this.strokeSoundEnabled,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (backgroundMusicEnabled.present) {
+      map['background_music_enabled'] = Variable<bool>(
+        backgroundMusicEnabled.value,
+      );
+    }
+    if (soundEffectsEnabled.present) {
+      map['sound_effects_enabled'] = Variable<bool>(soundEffectsEnabled.value);
+    }
+    if (strokeSoundEnabled.present) {
+      map['stroke_sound_enabled'] = Variable<bool>(strokeSoundEnabled.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalLearningEnvironmentSettingsCompanion(')
+          ..write('id: $id, ')
+          ..write('backgroundMusicEnabled: $backgroundMusicEnabled, ')
+          ..write('soundEffectsEnabled: $soundEffectsEnabled, ')
+          ..write('strokeSoundEnabled: $strokeSoundEnabled, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalNotificationSettingsTable extends LocalNotificationSettings
+    with TableInfo<$LocalNotificationSettingsTable, LocalNotificationSetting> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalNotificationSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dailyReminderEnabledMeta =
+      const VerificationMeta('dailyReminderEnabled');
+  @override
+  late final GeneratedColumn<bool> dailyReminderEnabled = GeneratedColumn<bool>(
+    'daily_reminder_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("daily_reminder_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _reminderHourMeta = const VerificationMeta(
+    'reminderHour',
+  );
+  @override
+  late final GeneratedColumn<int> reminderHour = GeneratedColumn<int>(
+    'reminder_hour',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(18),
+  );
+  static const VerificationMeta _reminderMinuteMeta = const VerificationMeta(
+    'reminderMinute',
+  );
+  @override
+  late final GeneratedColumn<int> reminderMinute = GeneratedColumn<int>(
+    'reminder_minute',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    dailyReminderEnabled,
+    reminderHour,
+    reminderMinute,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_notification_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalNotificationSetting> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('daily_reminder_enabled')) {
+      context.handle(
+        _dailyReminderEnabledMeta,
+        dailyReminderEnabled.isAcceptableOrUnknown(
+          data['daily_reminder_enabled']!,
+          _dailyReminderEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_hour')) {
+      context.handle(
+        _reminderHourMeta,
+        reminderHour.isAcceptableOrUnknown(
+          data['reminder_hour']!,
+          _reminderHourMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_minute')) {
+      context.handle(
+        _reminderMinuteMeta,
+        reminderMinute.isAcceptableOrUnknown(
+          data['reminder_minute']!,
+          _reminderMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalNotificationSetting map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalNotificationSetting(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      dailyReminderEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}daily_reminder_enabled'],
+      )!,
+      reminderHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reminder_hour'],
+      )!,
+      reminderMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reminder_minute'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalNotificationSettingsTable createAlias(String alias) {
+    return $LocalNotificationSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalNotificationSetting extends DataClass
+    implements Insertable<LocalNotificationSetting> {
+  final String id;
+  final bool dailyReminderEnabled;
+  final int reminderHour;
+  final int reminderMinute;
+  final DateTime updatedAt;
+  const LocalNotificationSetting({
+    required this.id,
+    required this.dailyReminderEnabled,
+    required this.reminderHour,
+    required this.reminderMinute,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['daily_reminder_enabled'] = Variable<bool>(dailyReminderEnabled);
+    map['reminder_hour'] = Variable<int>(reminderHour);
+    map['reminder_minute'] = Variable<int>(reminderMinute);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  LocalNotificationSettingsCompanion toCompanion(bool nullToAbsent) {
+    return LocalNotificationSettingsCompanion(
+      id: Value(id),
+      dailyReminderEnabled: Value(dailyReminderEnabled),
+      reminderHour: Value(reminderHour),
+      reminderMinute: Value(reminderMinute),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory LocalNotificationSetting.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalNotificationSetting(
+      id: serializer.fromJson<String>(json['id']),
+      dailyReminderEnabled: serializer.fromJson<bool>(
+        json['dailyReminderEnabled'],
+      ),
+      reminderHour: serializer.fromJson<int>(json['reminderHour']),
+      reminderMinute: serializer.fromJson<int>(json['reminderMinute']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'dailyReminderEnabled': serializer.toJson<bool>(dailyReminderEnabled),
+      'reminderHour': serializer.toJson<int>(reminderHour),
+      'reminderMinute': serializer.toJson<int>(reminderMinute),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  LocalNotificationSetting copyWith({
+    String? id,
+    bool? dailyReminderEnabled,
+    int? reminderHour,
+    int? reminderMinute,
+    DateTime? updatedAt,
+  }) => LocalNotificationSetting(
+    id: id ?? this.id,
+    dailyReminderEnabled: dailyReminderEnabled ?? this.dailyReminderEnabled,
+    reminderHour: reminderHour ?? this.reminderHour,
+    reminderMinute: reminderMinute ?? this.reminderMinute,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  LocalNotificationSetting copyWithCompanion(
+    LocalNotificationSettingsCompanion data,
+  ) {
+    return LocalNotificationSetting(
+      id: data.id.present ? data.id.value : this.id,
+      dailyReminderEnabled: data.dailyReminderEnabled.present
+          ? data.dailyReminderEnabled.value
+          : this.dailyReminderEnabled,
+      reminderHour: data.reminderHour.present
+          ? data.reminderHour.value
+          : this.reminderHour,
+      reminderMinute: data.reminderMinute.present
+          ? data.reminderMinute.value
+          : this.reminderMinute,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalNotificationSetting(')
+          ..write('id: $id, ')
+          ..write('dailyReminderEnabled: $dailyReminderEnabled, ')
+          ..write('reminderHour: $reminderHour, ')
+          ..write('reminderMinute: $reminderMinute, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    dailyReminderEnabled,
+    reminderHour,
+    reminderMinute,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalNotificationSetting &&
+          other.id == this.id &&
+          other.dailyReminderEnabled == this.dailyReminderEnabled &&
+          other.reminderHour == this.reminderHour &&
+          other.reminderMinute == this.reminderMinute &&
+          other.updatedAt == this.updatedAt);
+}
+
+class LocalNotificationSettingsCompanion
+    extends UpdateCompanion<LocalNotificationSetting> {
+  final Value<String> id;
+  final Value<bool> dailyReminderEnabled;
+  final Value<int> reminderHour;
+  final Value<int> reminderMinute;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const LocalNotificationSettingsCompanion({
+    this.id = const Value.absent(),
+    this.dailyReminderEnabled = const Value.absent(),
+    this.reminderHour = const Value.absent(),
+    this.reminderMinute = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalNotificationSettingsCompanion.insert({
+    required String id,
+    this.dailyReminderEnabled = const Value.absent(),
+    this.reminderHour = const Value.absent(),
+    this.reminderMinute = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       updatedAt = Value(updatedAt);
+  static Insertable<LocalNotificationSetting> custom({
+    Expression<String>? id,
+    Expression<bool>? dailyReminderEnabled,
+    Expression<int>? reminderHour,
+    Expression<int>? reminderMinute,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (dailyReminderEnabled != null)
+        'daily_reminder_enabled': dailyReminderEnabled,
+      if (reminderHour != null) 'reminder_hour': reminderHour,
+      if (reminderMinute != null) 'reminder_minute': reminderMinute,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalNotificationSettingsCompanion copyWith({
+    Value<String>? id,
+    Value<bool>? dailyReminderEnabled,
+    Value<int>? reminderHour,
+    Value<int>? reminderMinute,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalNotificationSettingsCompanion(
+      id: id ?? this.id,
+      dailyReminderEnabled: dailyReminderEnabled ?? this.dailyReminderEnabled,
+      reminderHour: reminderHour ?? this.reminderHour,
+      reminderMinute: reminderMinute ?? this.reminderMinute,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (dailyReminderEnabled.present) {
+      map['daily_reminder_enabled'] = Variable<bool>(
+        dailyReminderEnabled.value,
+      );
+    }
+    if (reminderHour.present) {
+      map['reminder_hour'] = Variable<int>(reminderHour.value);
+    }
+    if (reminderMinute.present) {
+      map['reminder_minute'] = Variable<int>(reminderMinute.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalNotificationSettingsCompanion(')
+          ..write('id: $id, ')
+          ..write('dailyReminderEnabled: $dailyReminderEnabled, ')
+          ..write('reminderHour: $reminderHour, ')
+          ..write('reminderMinute: $reminderMinute, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalPendingSyncOperationsTable extends LocalPendingSyncOperations
+    with
+        TableInfo<$LocalPendingSyncOperationsTable, LocalPendingSyncOperation> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalPendingSyncOperationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _operationTypeMeta = const VerificationMeta(
+    'operationType',
+  );
+  @override
+  late final GeneratedColumn<String> operationType = GeneratedColumn<String>(
+    'operation_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetTableMeta = const VerificationMeta(
+    'targetTable',
+  );
+  @override
+  late final GeneratedColumn<String> targetTable = GeneratedColumn<String>(
+    'target_table',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _attemptCountMeta = const VerificationMeta(
+    'attemptCount',
+  );
+  @override
+  late final GeneratedColumn<int> attemptCount = GeneratedColumn<int>(
+    'attempt_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    operationType,
+    targetTable,
+    payloadJson,
+    attemptCount,
+    lastError,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_pending_sync_operations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalPendingSyncOperation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('operation_type')) {
+      context.handle(
+        _operationTypeMeta,
+        operationType.isAcceptableOrUnknown(
+          data['operation_type']!,
+          _operationTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationTypeMeta);
+    }
+    if (data.containsKey('target_table')) {
+      context.handle(
+        _targetTableMeta,
+        targetTable.isAcceptableOrUnknown(
+          data['target_table']!,
+          _targetTableMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetTableMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    if (data.containsKey('attempt_count')) {
+      context.handle(
+        _attemptCountMeta,
+        attemptCount.isAcceptableOrUnknown(
+          data['attempt_count']!,
+          _attemptCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalPendingSyncOperation map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalPendingSyncOperation(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      operationType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_type'],
+      )!,
+      targetTable: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_table'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+      attemptCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempt_count'],
+      )!,
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalPendingSyncOperationsTable createAlias(String alias) {
+    return $LocalPendingSyncOperationsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalPendingSyncOperation extends DataClass
+    implements Insertable<LocalPendingSyncOperation> {
+  final String id;
+  final String operationType;
+  final String targetTable;
+  final String payloadJson;
+  final int attemptCount;
+  final String? lastError;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const LocalPendingSyncOperation({
+    required this.id,
+    required this.operationType,
+    required this.targetTable,
+    required this.payloadJson,
+    required this.attemptCount,
+    this.lastError,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['operation_type'] = Variable<String>(operationType);
+    map['target_table'] = Variable<String>(targetTable);
+    map['payload_json'] = Variable<String>(payloadJson);
+    map['attempt_count'] = Variable<int>(attemptCount);
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  LocalPendingSyncOperationsCompanion toCompanion(bool nullToAbsent) {
+    return LocalPendingSyncOperationsCompanion(
+      id: Value(id),
+      operationType: Value(operationType),
+      targetTable: Value(targetTable),
+      payloadJson: Value(payloadJson),
+      attemptCount: Value(attemptCount),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory LocalPendingSyncOperation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalPendingSyncOperation(
+      id: serializer.fromJson<String>(json['id']),
+      operationType: serializer.fromJson<String>(json['operationType']),
+      targetTable: serializer.fromJson<String>(json['targetTable']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+      attemptCount: serializer.fromJson<int>(json['attemptCount']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'operationType': serializer.toJson<String>(operationType),
+      'targetTable': serializer.toJson<String>(targetTable),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+      'attemptCount': serializer.toJson<int>(attemptCount),
+      'lastError': serializer.toJson<String?>(lastError),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  LocalPendingSyncOperation copyWith({
+    String? id,
+    String? operationType,
+    String? targetTable,
+    String? payloadJson,
+    int? attemptCount,
+    Value<String?> lastError = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => LocalPendingSyncOperation(
+    id: id ?? this.id,
+    operationType: operationType ?? this.operationType,
+    targetTable: targetTable ?? this.targetTable,
+    payloadJson: payloadJson ?? this.payloadJson,
+    attemptCount: attemptCount ?? this.attemptCount,
+    lastError: lastError.present ? lastError.value : this.lastError,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  LocalPendingSyncOperation copyWithCompanion(
+    LocalPendingSyncOperationsCompanion data,
+  ) {
+    return LocalPendingSyncOperation(
+      id: data.id.present ? data.id.value : this.id,
+      operationType: data.operationType.present
+          ? data.operationType.value
+          : this.operationType,
+      targetTable: data.targetTable.present
+          ? data.targetTable.value
+          : this.targetTable,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+      attemptCount: data.attemptCount.present
+          ? data.attemptCount.value
+          : this.attemptCount,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalPendingSyncOperation(')
+          ..write('id: $id, ')
+          ..write('operationType: $operationType, ')
+          ..write('targetTable: $targetTable, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('attemptCount: $attemptCount, ')
+          ..write('lastError: $lastError, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    operationType,
+    targetTable,
+    payloadJson,
+    attemptCount,
+    lastError,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalPendingSyncOperation &&
+          other.id == this.id &&
+          other.operationType == this.operationType &&
+          other.targetTable == this.targetTable &&
+          other.payloadJson == this.payloadJson &&
+          other.attemptCount == this.attemptCount &&
+          other.lastError == this.lastError &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class LocalPendingSyncOperationsCompanion
+    extends UpdateCompanion<LocalPendingSyncOperation> {
+  final Value<String> id;
+  final Value<String> operationType;
+  final Value<String> targetTable;
+  final Value<String> payloadJson;
+  final Value<int> attemptCount;
+  final Value<String?> lastError;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const LocalPendingSyncOperationsCompanion({
+    this.id = const Value.absent(),
+    this.operationType = const Value.absent(),
+    this.targetTable = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.attemptCount = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalPendingSyncOperationsCompanion.insert({
+    required String id,
+    required String operationType,
+    required String targetTable,
+    required String payloadJson,
+    this.attemptCount = const Value.absent(),
+    this.lastError = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       operationType = Value(operationType),
+       targetTable = Value(targetTable),
+       payloadJson = Value(payloadJson),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<LocalPendingSyncOperation> custom({
+    Expression<String>? id,
+    Expression<String>? operationType,
+    Expression<String>? targetTable,
+    Expression<String>? payloadJson,
+    Expression<int>? attemptCount,
+    Expression<String>? lastError,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (operationType != null) 'operation_type': operationType,
+      if (targetTable != null) 'target_table': targetTable,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (attemptCount != null) 'attempt_count': attemptCount,
+      if (lastError != null) 'last_error': lastError,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalPendingSyncOperationsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? operationType,
+    Value<String>? targetTable,
+    Value<String>? payloadJson,
+    Value<int>? attemptCount,
+    Value<String?>? lastError,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalPendingSyncOperationsCompanion(
+      id: id ?? this.id,
+      operationType: operationType ?? this.operationType,
+      targetTable: targetTable ?? this.targetTable,
+      payloadJson: payloadJson ?? this.payloadJson,
+      attemptCount: attemptCount ?? this.attemptCount,
+      lastError: lastError ?? this.lastError,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (operationType.present) {
+      map['operation_type'] = Variable<String>(operationType.value);
+    }
+    if (targetTable.present) {
+      map['target_table'] = Variable<String>(targetTable.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (attemptCount.present) {
+      map['attempt_count'] = Variable<int>(attemptCount.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalPendingSyncOperationsCompanion(')
+          ..write('id: $id, ')
+          ..write('operationType: $operationType, ')
+          ..write('targetTable: $targetTable, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('attemptCount: $attemptCount, ')
+          ..write('lastError: $lastError, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3100,11 +5115,21 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LocalQuizResultsTable localQuizResults = $LocalQuizResultsTable(
     this,
   );
+  late final $LocalChallengeResultsTable localChallengeResults =
+      $LocalChallengeResultsTable(this);
   late final $LocalStudentLinksTable localStudentLinks =
       $LocalStudentLinksTable(this);
   late final $LocalClassesTable localClasses = $LocalClassesTable(this);
   late final $LocalClassMembersTable localClassMembers =
       $LocalClassMembersTable(this);
+  late final $LocalLearningEnvironmentSettingsTable
+  localLearningEnvironmentSettings = $LocalLearningEnvironmentSettingsTable(
+    this,
+  );
+  late final $LocalNotificationSettingsTable localNotificationSettings =
+      $LocalNotificationSettingsTable(this);
+  late final $LocalPendingSyncOperationsTable localPendingSyncOperations =
+      $LocalPendingSyncOperationsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3114,9 +5139,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localXpEvents,
     localGameResults,
     localQuizResults,
+    localChallengeResults,
     localStudentLinks,
     localClasses,
     localClassMembers,
+    localLearningEnvironmentSettings,
+    localNotificationSettings,
+    localPendingSyncOperations,
   ];
 }
 
@@ -4093,6 +6122,351 @@ typedef $$LocalQuizResultsTableProcessedTableManager =
       LocalQuizResult,
       PrefetchHooks Function()
     >;
+typedef $$LocalChallengeResultsTableCreateCompanionBuilder =
+    LocalChallengeResultsCompanion Function({
+      required String id,
+      required String studentKey,
+      required String learningDate,
+      required String mode,
+      required int score,
+      required int correctCount,
+      required int totalCount,
+      required int timeSec,
+      required int flippedTileCount,
+      required int earnedXp,
+      required DateTime completedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalChallengeResultsTableUpdateCompanionBuilder =
+    LocalChallengeResultsCompanion Function({
+      Value<String> id,
+      Value<String> studentKey,
+      Value<String> learningDate,
+      Value<String> mode,
+      Value<int> score,
+      Value<int> correctCount,
+      Value<int> totalCount,
+      Value<int> timeSec,
+      Value<int> flippedTileCount,
+      Value<int> earnedXp,
+      Value<DateTime> completedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalChallengeResultsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalChallengeResultsTable> {
+  $$LocalChallengeResultsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get studentKey => $composableBuilder(
+    column: $table.studentKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get learningDate => $composableBuilder(
+    column: $table.learningDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get score => $composableBuilder(
+    column: $table.score,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get correctCount => $composableBuilder(
+    column: $table.correctCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalCount => $composableBuilder(
+    column: $table.totalCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timeSec => $composableBuilder(
+    column: $table.timeSec,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get flippedTileCount => $composableBuilder(
+    column: $table.flippedTileCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get earnedXp => $composableBuilder(
+    column: $table.earnedXp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalChallengeResultsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalChallengeResultsTable> {
+  $$LocalChallengeResultsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get studentKey => $composableBuilder(
+    column: $table.studentKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get learningDate => $composableBuilder(
+    column: $table.learningDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get score => $composableBuilder(
+    column: $table.score,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get correctCount => $composableBuilder(
+    column: $table.correctCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalCount => $composableBuilder(
+    column: $table.totalCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timeSec => $composableBuilder(
+    column: $table.timeSec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get flippedTileCount => $composableBuilder(
+    column: $table.flippedTileCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get earnedXp => $composableBuilder(
+    column: $table.earnedXp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalChallengeResultsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalChallengeResultsTable> {
+  $$LocalChallengeResultsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get studentKey => $composableBuilder(
+    column: $table.studentKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get learningDate => $composableBuilder(
+    column: $table.learningDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mode =>
+      $composableBuilder(column: $table.mode, builder: (column) => column);
+
+  GeneratedColumn<int> get score =>
+      $composableBuilder(column: $table.score, builder: (column) => column);
+
+  GeneratedColumn<int> get correctCount => $composableBuilder(
+    column: $table.correctCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalCount => $composableBuilder(
+    column: $table.totalCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get timeSec =>
+      $composableBuilder(column: $table.timeSec, builder: (column) => column);
+
+  GeneratedColumn<int> get flippedTileCount => $composableBuilder(
+    column: $table.flippedTileCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get earnedXp =>
+      $composableBuilder(column: $table.earnedXp, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$LocalChallengeResultsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalChallengeResultsTable,
+          LocalChallengeResult,
+          $$LocalChallengeResultsTableFilterComposer,
+          $$LocalChallengeResultsTableOrderingComposer,
+          $$LocalChallengeResultsTableAnnotationComposer,
+          $$LocalChallengeResultsTableCreateCompanionBuilder,
+          $$LocalChallengeResultsTableUpdateCompanionBuilder,
+          (
+            LocalChallengeResult,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalChallengeResultsTable,
+              LocalChallengeResult
+            >,
+          ),
+          LocalChallengeResult,
+          PrefetchHooks Function()
+        > {
+  $$LocalChallengeResultsTableTableManager(
+    _$AppDatabase db,
+    $LocalChallengeResultsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalChallengeResultsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$LocalChallengeResultsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalChallengeResultsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> studentKey = const Value.absent(),
+                Value<String> learningDate = const Value.absent(),
+                Value<String> mode = const Value.absent(),
+                Value<int> score = const Value.absent(),
+                Value<int> correctCount = const Value.absent(),
+                Value<int> totalCount = const Value.absent(),
+                Value<int> timeSec = const Value.absent(),
+                Value<int> flippedTileCount = const Value.absent(),
+                Value<int> earnedXp = const Value.absent(),
+                Value<DateTime> completedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalChallengeResultsCompanion(
+                id: id,
+                studentKey: studentKey,
+                learningDate: learningDate,
+                mode: mode,
+                score: score,
+                correctCount: correctCount,
+                totalCount: totalCount,
+                timeSec: timeSec,
+                flippedTileCount: flippedTileCount,
+                earnedXp: earnedXp,
+                completedAt: completedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String studentKey,
+                required String learningDate,
+                required String mode,
+                required int score,
+                required int correctCount,
+                required int totalCount,
+                required int timeSec,
+                required int flippedTileCount,
+                required int earnedXp,
+                required DateTime completedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalChallengeResultsCompanion.insert(
+                id: id,
+                studentKey: studentKey,
+                learningDate: learningDate,
+                mode: mode,
+                score: score,
+                correctCount: correctCount,
+                totalCount: totalCount,
+                timeSec: timeSec,
+                flippedTileCount: flippedTileCount,
+                earnedXp: earnedXp,
+                completedAt: completedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalChallengeResultsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalChallengeResultsTable,
+      LocalChallengeResult,
+      $$LocalChallengeResultsTableFilterComposer,
+      $$LocalChallengeResultsTableOrderingComposer,
+      $$LocalChallengeResultsTableAnnotationComposer,
+      $$LocalChallengeResultsTableCreateCompanionBuilder,
+      $$LocalChallengeResultsTableUpdateCompanionBuilder,
+      (
+        LocalChallengeResult,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalChallengeResultsTable,
+          LocalChallengeResult
+        >,
+      ),
+      LocalChallengeResult,
+      PrefetchHooks Function()
+    >;
 typedef $$LocalStudentLinksTableCreateCompanionBuilder =
     LocalStudentLinksCompanion Function({
       required String studentKey,
@@ -4792,6 +7166,740 @@ typedef $$LocalClassMembersTableProcessedTableManager =
       LocalClassMember,
       PrefetchHooks Function()
     >;
+typedef $$LocalLearningEnvironmentSettingsTableCreateCompanionBuilder =
+    LocalLearningEnvironmentSettingsCompanion Function({
+      required String id,
+      Value<bool> backgroundMusicEnabled,
+      Value<bool> soundEffectsEnabled,
+      Value<bool> strokeSoundEnabled,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalLearningEnvironmentSettingsTableUpdateCompanionBuilder =
+    LocalLearningEnvironmentSettingsCompanion Function({
+      Value<String> id,
+      Value<bool> backgroundMusicEnabled,
+      Value<bool> soundEffectsEnabled,
+      Value<bool> strokeSoundEnabled,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalLearningEnvironmentSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalLearningEnvironmentSettingsTable> {
+  $$LocalLearningEnvironmentSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get backgroundMusicEnabled => $composableBuilder(
+    column: $table.backgroundMusicEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get soundEffectsEnabled => $composableBuilder(
+    column: $table.soundEffectsEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get strokeSoundEnabled => $composableBuilder(
+    column: $table.strokeSoundEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalLearningEnvironmentSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalLearningEnvironmentSettingsTable> {
+  $$LocalLearningEnvironmentSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get backgroundMusicEnabled => $composableBuilder(
+    column: $table.backgroundMusicEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get soundEffectsEnabled => $composableBuilder(
+    column: $table.soundEffectsEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get strokeSoundEnabled => $composableBuilder(
+    column: $table.strokeSoundEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalLearningEnvironmentSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalLearningEnvironmentSettingsTable> {
+  $$LocalLearningEnvironmentSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<bool> get backgroundMusicEnabled => $composableBuilder(
+    column: $table.backgroundMusicEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get soundEffectsEnabled => $composableBuilder(
+    column: $table.soundEffectsEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get strokeSoundEnabled => $composableBuilder(
+    column: $table.strokeSoundEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$LocalLearningEnvironmentSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalLearningEnvironmentSettingsTable,
+          LocalLearningEnvironmentSetting,
+          $$LocalLearningEnvironmentSettingsTableFilterComposer,
+          $$LocalLearningEnvironmentSettingsTableOrderingComposer,
+          $$LocalLearningEnvironmentSettingsTableAnnotationComposer,
+          $$LocalLearningEnvironmentSettingsTableCreateCompanionBuilder,
+          $$LocalLearningEnvironmentSettingsTableUpdateCompanionBuilder,
+          (
+            LocalLearningEnvironmentSetting,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalLearningEnvironmentSettingsTable,
+              LocalLearningEnvironmentSetting
+            >,
+          ),
+          LocalLearningEnvironmentSetting,
+          PrefetchHooks Function()
+        > {
+  $$LocalLearningEnvironmentSettingsTableTableManager(
+    _$AppDatabase db,
+    $LocalLearningEnvironmentSettingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalLearningEnvironmentSettingsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$LocalLearningEnvironmentSettingsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalLearningEnvironmentSettingsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<bool> backgroundMusicEnabled = const Value.absent(),
+                Value<bool> soundEffectsEnabled = const Value.absent(),
+                Value<bool> strokeSoundEnabled = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalLearningEnvironmentSettingsCompanion(
+                id: id,
+                backgroundMusicEnabled: backgroundMusicEnabled,
+                soundEffectsEnabled: soundEffectsEnabled,
+                strokeSoundEnabled: strokeSoundEnabled,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<bool> backgroundMusicEnabled = const Value.absent(),
+                Value<bool> soundEffectsEnabled = const Value.absent(),
+                Value<bool> strokeSoundEnabled = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalLearningEnvironmentSettingsCompanion.insert(
+                id: id,
+                backgroundMusicEnabled: backgroundMusicEnabled,
+                soundEffectsEnabled: soundEffectsEnabled,
+                strokeSoundEnabled: strokeSoundEnabled,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalLearningEnvironmentSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalLearningEnvironmentSettingsTable,
+      LocalLearningEnvironmentSetting,
+      $$LocalLearningEnvironmentSettingsTableFilterComposer,
+      $$LocalLearningEnvironmentSettingsTableOrderingComposer,
+      $$LocalLearningEnvironmentSettingsTableAnnotationComposer,
+      $$LocalLearningEnvironmentSettingsTableCreateCompanionBuilder,
+      $$LocalLearningEnvironmentSettingsTableUpdateCompanionBuilder,
+      (
+        LocalLearningEnvironmentSetting,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalLearningEnvironmentSettingsTable,
+          LocalLearningEnvironmentSetting
+        >,
+      ),
+      LocalLearningEnvironmentSetting,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalNotificationSettingsTableCreateCompanionBuilder =
+    LocalNotificationSettingsCompanion Function({
+      required String id,
+      Value<bool> dailyReminderEnabled,
+      Value<int> reminderHour,
+      Value<int> reminderMinute,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalNotificationSettingsTableUpdateCompanionBuilder =
+    LocalNotificationSettingsCompanion Function({
+      Value<String> id,
+      Value<bool> dailyReminderEnabled,
+      Value<int> reminderHour,
+      Value<int> reminderMinute,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalNotificationSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalNotificationSettingsTable> {
+  $$LocalNotificationSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get dailyReminderEnabled => $composableBuilder(
+    column: $table.dailyReminderEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reminderHour => $composableBuilder(
+    column: $table.reminderHour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reminderMinute => $composableBuilder(
+    column: $table.reminderMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalNotificationSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalNotificationSettingsTable> {
+  $$LocalNotificationSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get dailyReminderEnabled => $composableBuilder(
+    column: $table.dailyReminderEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reminderHour => $composableBuilder(
+    column: $table.reminderHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reminderMinute => $composableBuilder(
+    column: $table.reminderMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalNotificationSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalNotificationSettingsTable> {
+  $$LocalNotificationSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<bool> get dailyReminderEnabled => $composableBuilder(
+    column: $table.dailyReminderEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reminderHour => $composableBuilder(
+    column: $table.reminderHour,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reminderMinute => $composableBuilder(
+    column: $table.reminderMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$LocalNotificationSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalNotificationSettingsTable,
+          LocalNotificationSetting,
+          $$LocalNotificationSettingsTableFilterComposer,
+          $$LocalNotificationSettingsTableOrderingComposer,
+          $$LocalNotificationSettingsTableAnnotationComposer,
+          $$LocalNotificationSettingsTableCreateCompanionBuilder,
+          $$LocalNotificationSettingsTableUpdateCompanionBuilder,
+          (
+            LocalNotificationSetting,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalNotificationSettingsTable,
+              LocalNotificationSetting
+            >,
+          ),
+          LocalNotificationSetting,
+          PrefetchHooks Function()
+        > {
+  $$LocalNotificationSettingsTableTableManager(
+    _$AppDatabase db,
+    $LocalNotificationSettingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalNotificationSettingsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$LocalNotificationSettingsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalNotificationSettingsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<bool> dailyReminderEnabled = const Value.absent(),
+                Value<int> reminderHour = const Value.absent(),
+                Value<int> reminderMinute = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalNotificationSettingsCompanion(
+                id: id,
+                dailyReminderEnabled: dailyReminderEnabled,
+                reminderHour: reminderHour,
+                reminderMinute: reminderMinute,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<bool> dailyReminderEnabled = const Value.absent(),
+                Value<int> reminderHour = const Value.absent(),
+                Value<int> reminderMinute = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalNotificationSettingsCompanion.insert(
+                id: id,
+                dailyReminderEnabled: dailyReminderEnabled,
+                reminderHour: reminderHour,
+                reminderMinute: reminderMinute,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalNotificationSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalNotificationSettingsTable,
+      LocalNotificationSetting,
+      $$LocalNotificationSettingsTableFilterComposer,
+      $$LocalNotificationSettingsTableOrderingComposer,
+      $$LocalNotificationSettingsTableAnnotationComposer,
+      $$LocalNotificationSettingsTableCreateCompanionBuilder,
+      $$LocalNotificationSettingsTableUpdateCompanionBuilder,
+      (
+        LocalNotificationSetting,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalNotificationSettingsTable,
+          LocalNotificationSetting
+        >,
+      ),
+      LocalNotificationSetting,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalPendingSyncOperationsTableCreateCompanionBuilder =
+    LocalPendingSyncOperationsCompanion Function({
+      required String id,
+      required String operationType,
+      required String targetTable,
+      required String payloadJson,
+      Value<int> attemptCount,
+      Value<String?> lastError,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalPendingSyncOperationsTableUpdateCompanionBuilder =
+    LocalPendingSyncOperationsCompanion Function({
+      Value<String> id,
+      Value<String> operationType,
+      Value<String> targetTable,
+      Value<String> payloadJson,
+      Value<int> attemptCount,
+      Value<String?> lastError,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalPendingSyncOperationsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalPendingSyncOperationsTable> {
+  $$LocalPendingSyncOperationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get operationType => $composableBuilder(
+    column: $table.operationType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetTable => $composableBuilder(
+    column: $table.targetTable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attemptCount => $composableBuilder(
+    column: $table.attemptCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalPendingSyncOperationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalPendingSyncOperationsTable> {
+  $$LocalPendingSyncOperationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get operationType => $composableBuilder(
+    column: $table.operationType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetTable => $composableBuilder(
+    column: $table.targetTable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attemptCount => $composableBuilder(
+    column: $table.attemptCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalPendingSyncOperationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalPendingSyncOperationsTable> {
+  $$LocalPendingSyncOperationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get operationType => $composableBuilder(
+    column: $table.operationType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get targetTable => $composableBuilder(
+    column: $table.targetTable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get attemptCount => $composableBuilder(
+    column: $table.attemptCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$LocalPendingSyncOperationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalPendingSyncOperationsTable,
+          LocalPendingSyncOperation,
+          $$LocalPendingSyncOperationsTableFilterComposer,
+          $$LocalPendingSyncOperationsTableOrderingComposer,
+          $$LocalPendingSyncOperationsTableAnnotationComposer,
+          $$LocalPendingSyncOperationsTableCreateCompanionBuilder,
+          $$LocalPendingSyncOperationsTableUpdateCompanionBuilder,
+          (
+            LocalPendingSyncOperation,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalPendingSyncOperationsTable,
+              LocalPendingSyncOperation
+            >,
+          ),
+          LocalPendingSyncOperation,
+          PrefetchHooks Function()
+        > {
+  $$LocalPendingSyncOperationsTableTableManager(
+    _$AppDatabase db,
+    $LocalPendingSyncOperationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalPendingSyncOperationsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$LocalPendingSyncOperationsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalPendingSyncOperationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> operationType = const Value.absent(),
+                Value<String> targetTable = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<int> attemptCount = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalPendingSyncOperationsCompanion(
+                id: id,
+                operationType: operationType,
+                targetTable: targetTable,
+                payloadJson: payloadJson,
+                attemptCount: attemptCount,
+                lastError: lastError,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String operationType,
+                required String targetTable,
+                required String payloadJson,
+                Value<int> attemptCount = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalPendingSyncOperationsCompanion.insert(
+                id: id,
+                operationType: operationType,
+                targetTable: targetTable,
+                payloadJson: payloadJson,
+                attemptCount: attemptCount,
+                lastError: lastError,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalPendingSyncOperationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalPendingSyncOperationsTable,
+      LocalPendingSyncOperation,
+      $$LocalPendingSyncOperationsTableFilterComposer,
+      $$LocalPendingSyncOperationsTableOrderingComposer,
+      $$LocalPendingSyncOperationsTableAnnotationComposer,
+      $$LocalPendingSyncOperationsTableCreateCompanionBuilder,
+      $$LocalPendingSyncOperationsTableUpdateCompanionBuilder,
+      (
+        LocalPendingSyncOperation,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalPendingSyncOperationsTable,
+          LocalPendingSyncOperation
+        >,
+      ),
+      LocalPendingSyncOperation,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4804,10 +7912,29 @@ class $AppDatabaseManager {
       $$LocalGameResultsTableTableManager(_db, _db.localGameResults);
   $$LocalQuizResultsTableTableManager get localQuizResults =>
       $$LocalQuizResultsTableTableManager(_db, _db.localQuizResults);
+  $$LocalChallengeResultsTableTableManager get localChallengeResults =>
+      $$LocalChallengeResultsTableTableManager(_db, _db.localChallengeResults);
   $$LocalStudentLinksTableTableManager get localStudentLinks =>
       $$LocalStudentLinksTableTableManager(_db, _db.localStudentLinks);
   $$LocalClassesTableTableManager get localClasses =>
       $$LocalClassesTableTableManager(_db, _db.localClasses);
   $$LocalClassMembersTableTableManager get localClassMembers =>
       $$LocalClassMembersTableTableManager(_db, _db.localClassMembers);
+  $$LocalLearningEnvironmentSettingsTableTableManager
+  get localLearningEnvironmentSettings =>
+      $$LocalLearningEnvironmentSettingsTableTableManager(
+        _db,
+        _db.localLearningEnvironmentSettings,
+      );
+  $$LocalNotificationSettingsTableTableManager get localNotificationSettings =>
+      $$LocalNotificationSettingsTableTableManager(
+        _db,
+        _db.localNotificationSettings,
+      );
+  $$LocalPendingSyncOperationsTableTableManager
+  get localPendingSyncOperations =>
+      $$LocalPendingSyncOperationsTableTableManager(
+        _db,
+        _db.localPendingSyncOperations,
+      );
 }

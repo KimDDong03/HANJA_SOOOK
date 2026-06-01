@@ -10,6 +10,6 @@ class WritingPracticeController {
   final StrokeEngine strokeEngine;
 
   bool acceptStroke({required Path expectedPath, required Path userPath}) {
-    return strokeEngine.areStrokesSimilar(expectedPath, userPath);
+    return strokeEngine.areGuidedStrokesSimilar(expectedPath, userPath);
   }
 }

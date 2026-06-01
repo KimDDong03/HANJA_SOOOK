@@ -55,7 +55,7 @@ Elements:
 - Greeting
 - Level and XP bar
 - Today's mission card
-- Today's Hanja progress N/5
+- Today's Hanja progress N/4
 - Quiz card
 - Game card
 - Growth button

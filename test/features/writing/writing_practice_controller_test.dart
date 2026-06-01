@@ -16,6 +16,19 @@ void main() {
 
     expect(controller.acceptStroke(expectedPath: path, userPath: path), isTrue);
   });
+
+  test('FallbackStrokeEngine accepts any drawable input', () {
+    const engine = FallbackStrokeEngine();
+    final expected = Path()
+      ..moveTo(0, 0)
+      ..lineTo(1, 1);
+    final actual = Path()
+      ..moveTo(3, 3)
+      ..lineTo(8, 8);
+
+    expect(engine.areGuidedStrokesSimilar(expected, actual), isTrue);
+    expect(engine.scoreError(expected, actual), 35);
+  });
 }
 
 class _AlwaysAcceptStrokeEngine extends StrokeEngine {
@@ -23,6 +36,9 @@ class _AlwaysAcceptStrokeEngine extends StrokeEngine {
 
   @override
   bool areStrokesSimilar(Path expected, Path actual) => true;
+
+  @override
+  bool areGuidedStrokesSimilar(Path expected, Path actual) => true;
 
   @override
   double scoreError(Path expected, Path actual) => 0;

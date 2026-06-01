@@ -189,4 +189,25 @@ class SchoolRepositoryImpl implements SchoolRepository {
       );
     }
   }
+
+  @override
+  Future<void> signOut() async {
+    try {
+      await _client.auth.signOut();
+    } on AuthException catch (error, stackTrace) {
+      throw AppException(
+        code: AppExceptionCode.network,
+        message: '로그아웃에 실패했습니다.',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    } catch (error, stackTrace) {
+      throw AppException(
+        code: AppExceptionCode.network,
+        message: '로그아웃에 실패했습니다.',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
 }

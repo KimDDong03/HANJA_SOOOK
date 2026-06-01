@@ -7,24 +7,61 @@ class HanjaStrokeEvaluator {
   const HanjaStrokeEvaluator({
     this.errorThreshold = 100,
     this.interpolationPoints = 22,
+    this.minLengthRatio = 0.72,
   });
 
   final double errorThreshold;
   final int interpolationPoints;
+  final double minLengthRatio;
 
   bool areStrokesSimilar(Path expected, Path actual) {
     final error = scoreError(expected, actual);
     return error <= errorThreshold;
   }
 
+  bool areGuidedStrokesSimilar(Path expected, Path actual) {
+    final result = evaluate(expected, actual, requirePositionMatch: true);
+    return result.error <= errorThreshold;
+  }
+
   double scoreError(Path expected, Path actual) {
+    return evaluate(expected, actual).error;
+  }
+
+  StrokeEvaluationResult evaluate(
+    Path expected,
+    Path actual, {
+    bool requirePositionMatch = false,
+  }) {
     final expectedApproximation = _approximateEvenly(
       expected,
       interpolationPoints,
     );
     final actualApproximation = _approximateEvenly(actual, interpolationPoints);
     if (expectedApproximation == null || actualApproximation == null) {
-      return errorThreshold + 1;
+      return StrokeEvaluationResult(
+        error: errorThreshold + 1,
+        failureReason: StrokeFailureReason.shape,
+      );
+    }
+    if (!_hasSimilarDirection(expectedApproximation, actualApproximation)) {
+      return StrokeEvaluationResult(
+        error: errorThreshold + 1,
+        failureReason: StrokeFailureReason.direction,
+      );
+    }
+    if (!_hasEnoughLength(expectedApproximation, actualApproximation)) {
+      return StrokeEvaluationResult(
+        error: errorThreshold + 1,
+        failureReason: StrokeFailureReason.shape,
+      );
+    }
+    if (requirePositionMatch &&
+        !_followsExpectedPath(expectedApproximation, actualApproximation)) {
+      return StrokeEvaluationResult(
+        error: errorThreshold + 1,
+        failureReason: StrokeFailureReason.shape,
+      );
     }
 
     final lengthDiff =
@@ -33,7 +70,6 @@ class HanjaStrokeEvaluator {
 
     final expectedCenter = _center(expectedApproximation.points);
     final actualCenter = _center(actualApproximation.points);
-    final centerError = 2 * _distance(expectedCenter, actualCenter);
 
     final expectedCentered = _decreaseAll(
       expectedApproximation.points,
@@ -65,7 +101,10 @@ class HanjaStrokeEvaluator {
     }
     final pointDistanceError = 0.2 * pointDistanceSum;
 
-    return lengthError + centerError + scaleError + pointDistanceError;
+    return StrokeEvaluationResult(
+      error: lengthError + scaleError + pointDistanceError,
+      failureReason: StrokeFailureReason.shape,
+    );
   }
 
   _PathApproximation? _approximateEvenly(Path path, int pointsCount) {
@@ -143,6 +182,57 @@ class HanjaStrokeEvaluator {
   double _distance(Offset first, Offset second) {
     return (first - second).distance;
   }
+
+  bool _hasSimilarDirection(
+    _PathApproximation expected,
+    _PathApproximation actual,
+  ) {
+    final expectedVector = expected.points.last - expected.points.first;
+    final actualVector = actual.points.last - actual.points.first;
+    final expectedDistance = expectedVector.distance;
+    final actualDistance = actualVector.distance;
+    if (expectedDistance <= 1 || actualDistance <= 1) {
+      return false;
+    }
+    final dot =
+        expectedVector.dx * actualVector.dx +
+        expectedVector.dy * actualVector.dy;
+    final cosine = dot / (expectedDistance * actualDistance);
+    return cosine >= 0.35;
+  }
+
+  bool _hasEnoughLength(
+    _PathApproximation expected,
+    _PathApproximation actual,
+  ) {
+    return actual.length >= expected.length * minLengthRatio;
+  }
+
+  bool _followsExpectedPath(
+    _PathApproximation expected,
+    _PathApproximation actual,
+  ) {
+    var missCount = 0;
+    for (var i = 0; i < expected.points.length; i += 1) {
+      final allowedDistance = math.max(18.0, expected.length * 0.18);
+      if (_distance(expected.points[i], actual.points[i]) > allowedDistance) {
+        missCount += 1;
+      }
+    }
+    return missCount <= math.max(2, interpolationPoints ~/ 5);
+  }
+}
+
+enum StrokeFailureReason { direction, shape }
+
+class StrokeEvaluationResult {
+  const StrokeEvaluationResult({
+    required this.error,
+    required this.failureReason,
+  });
+
+  final double error;
+  final StrokeFailureReason failureReason;
 }
 
 class _PathApproximation {

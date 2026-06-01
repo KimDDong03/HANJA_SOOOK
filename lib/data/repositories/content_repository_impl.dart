@@ -19,16 +19,26 @@ class ContentRepositoryImpl implements ContentRepository {
   @override
   Future<List<HanjaCharacter>> getTodayHanjaSet({
     int? grade,
-    int limit = 5,
+    int limit = 4,
   }) async {
+    final filtered = await getHanjaList(grade: grade);
+    if (filtered.isEmpty) {
+      return const [];
+    }
+    return filtered.take(limit).toList();
+  }
+
+  @override
+  Future<List<HanjaCharacter>> getHanjaList({int? grade, int? limit}) async {
     final hanjaList = await _seedDataSource.loadHanjaCharacters();
     final filtered = grade == null
         ? hanjaList
         : hanjaList.where((hanja) => hanja.grade == grade).toList();
-    if (filtered.isEmpty) {
-      return hanjaList.take(limit).toList();
+    final items = filtered.isEmpty ? hanjaList : filtered;
+    if (limit == null) {
+      return items;
     }
-    return filtered.take(limit).toList();
+    return items.take(limit).toList();
   }
 
   @override
@@ -82,7 +92,7 @@ class ContentRepositoryImpl implements ContentRepository {
   @override
   Future<List<QuizQuestion>> getTodayQuizQuestions({
     int? grade,
-    int limit = 5,
+    int limit = 4,
   }) async {
     final todaySet = await getTodayHanjaSet(grade: grade, limit: limit);
     if (todaySet.isEmpty) {

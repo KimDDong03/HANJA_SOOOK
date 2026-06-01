@@ -1,3 +1,4 @@
+import '../../domain/models/learning_progress_record.dart';
 import '../../domain/repositories/learning_progress_repository.dart';
 import '../local/app_database.dart';
 
@@ -18,6 +19,35 @@ class LearningProgressRepositoryImpl implements LearningProgressRepository {
       learningDate: learningDate,
     );
     return rows.map((row) => row.hanjaId).toSet();
+  }
+
+  @override
+  Future<Set<String>> getCompletedHanjaIdsForStudent({
+    required String studentKey,
+  }) async {
+    final rows = await _database.getCompletedHanjaForStudent(
+      studentKey: studentKey,
+    );
+    return rows.map((row) => row.hanjaId).toSet();
+  }
+
+  @override
+  Future<List<LearningProgressRecord>> getCompletedHanjaRecordsForStudent({
+    required String studentKey,
+  }) async {
+    final rows = await _database.getCompletedHanjaForStudent(
+      studentKey: studentKey,
+    );
+    return rows.map(_toProgressRecord).toList();
+  }
+
+  LearningProgressRecord _toProgressRecord(DailyLearningProgressData row) {
+    return LearningProgressRecord(
+      studentKey: row.studentKey,
+      learningDate: row.learningDate,
+      hanjaId: row.hanjaId,
+      completedAt: row.completedAt,
+    );
   }
 
   @override

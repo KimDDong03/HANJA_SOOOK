@@ -1,0 +1,7 @@
+success_chime.mp3
+
+Replaced by user-provided file:
+C:\Users\User\Downloads\meldix-success-340660.mp3
+
+Runtime asset:
+assets/audio/sfx/success_chime.mp3

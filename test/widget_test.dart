@@ -4,18 +4,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hanja_soook/app/app.dart';
 import 'package:hanja_soook/app/router.dart';
 import 'package:hanja_soook/core/constants/route_paths.dart';
+import 'package:hanja_soook/data/repositories/challenge_result_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/class_room_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/game_result_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/quiz_result_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/school_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/student_link_repository_provider.dart';
 import 'package:hanja_soook/domain/models/app_user_profile.dart';
+import 'package:hanja_soook/domain/models/challenge_result.dart';
 import 'package:hanja_soook/domain/models/class_room.dart';
 import 'package:hanja_soook/domain/models/learning_result.dart';
+import 'package:hanja_soook/domain/models/learning_progress_record.dart';
 import 'package:hanja_soook/domain/models/learning_session.dart';
 import 'package:hanja_soook/domain/models/student_link.dart';
 import 'package:hanja_soook/domain/repositories/game_result_repository.dart';
 import 'package:hanja_soook/domain/models/school.dart';
+import 'package:hanja_soook/domain/repositories/challenge_result_repository.dart';
 import 'package:hanja_soook/domain/repositories/class_room_repository.dart';
 import 'package:hanja_soook/domain/repositories/learning_progress_repository.dart';
 import 'package:hanja_soook/domain/repositories/quiz_result_repository.dart';
@@ -46,6 +50,9 @@ class _FakeSchoolRepository implements SchoolRepository {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> signOut() async {}
 }
 
 class _FakeLearningProgressRepository implements LearningProgressRepository {
@@ -55,6 +62,27 @@ class _FakeLearningProgressRepository implements LearningProgressRepository {
     required String learningDate,
   }) async {
     return const <String>{};
+  }
+
+  @override
+  Future<Set<String>> getCompletedHanjaIdsForStudent({
+    required String studentKey,
+  }) async {
+    return const <String>{
+      'HJ-0001',
+      'HJ-0002',
+      'HJ-0003',
+      'HJ-0004',
+      'HJ-0005',
+      'HJ-0006',
+    };
+  }
+
+  @override
+  Future<List<LearningProgressRecord>> getCompletedHanjaRecordsForStudent({
+    required String studentKey,
+  }) async {
+    return const [];
   }
 
   @override
@@ -148,6 +176,51 @@ class _FakeQuizResultRepository implements QuizResultRepository {
   }
 }
 
+class _FakeChallengeResultRepository implements ChallengeResultRepository {
+  @override
+  Future<ChallengeResult?> getChallengeResultById(String id) async {
+    return null;
+  }
+
+  @override
+  Future<List<ChallengeResult>> getChallengeResults({
+    Set<String>? studentKeys,
+    String? learningDate,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<ChallengeResult?> getLatestChallengeResult({
+    required String studentKey,
+    ChallengeMode? mode,
+  }) async {
+    return null;
+  }
+
+  @override
+  Future<ChallengeResult> saveChallengeResult({
+    required String studentKey,
+    required String learningDate,
+    required ChallengeResultInput input,
+    required int earnedXp,
+  }) async {
+    return ChallengeResult(
+      id: 'challenge-result-1',
+      studentKey: studentKey,
+      learningDate: learningDate,
+      mode: input.mode,
+      score: input.score,
+      correctCount: input.correctCount,
+      totalCount: input.totalCount,
+      timeSec: input.timeSec,
+      flippedTileCount: input.flippedTileCount,
+      earnedXp: earnedXp,
+      completedAt: DateTime(2026, 5, 30),
+    );
+  }
+}
+
 class _FakeStudentLinkRepository implements StudentLinkRepository {
   @override
   Future<List<StudentLink>> getStudentLinks({
@@ -189,6 +262,9 @@ Widget _testApp() {
       quizResultRepositoryProvider.overrideWithValue(
         _FakeQuizResultRepository(),
       ),
+      challengeResultRepositoryProvider.overrideWithValue(
+        _FakeChallengeResultRepository(),
+      ),
       studentLinkRepositoryProvider.overrideWithValue(
         _FakeStudentLinkRepository(),
       ),
@@ -218,27 +294,42 @@ void main() {
   testWidgets('ticket 00 routes render placeholders', (tester) async {
     await tester.pumpWidget(_testApp());
 
-    expect(find.text('한자쏘옥'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
 
-    expect(find.text('학교와 학생 정보를 입력해요'), findsOneWidget);
+    expect(find.text('어떤 모드로 시작할까요?'), findsOneWidget);
+
+    appRouter.go(RoutePaths.studentSetup);
+    await pumpUntilFound(tester, find.text('학년 선택'));
+
+    expect(find.text('학년 선택'), findsOneWidget);
 
     appRouter.go(RoutePaths.home);
-    await pumpUntilFound(tester, find.text('오늘의 한자를 시작해요'));
+    await pumpUntilFound(tester, find.text('한자쏘옥 모험'));
 
-    expect(find.text('오늘의 한자를 시작해요'), findsOneWidget);
+    expect(find.text('한자쏘옥 모험'), findsOneWidget);
+    await pumpUntilFound(tester, find.text('오늘의 한자 시작'));
+    expect(find.text('오늘의 한자 시작'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '오늘의 한자 시작'));
+    await pumpUntilFound(tester, find.text('획순 보기'));
+    expect(find.text('획순 보기'), findsOneWidget);
 
     final routeChecks = <String, String>{
-      RoutePaths.hanja('HJ-0001'): '획수 1 · 초3 1단원 1. 나라를 세운 역사 인물',
-      RoutePaths.writing('HJ-0001'): '획순 애니메이션',
-      RoutePaths.quiz: "'한 일'이라는 뜻을 가진 한자를 고르세요.",
-      RoutePaths.game: '뜻에 맞는 한자를 고르세요.',
-      RoutePaths.result: '학습 결과',
-      RoutePaths.growth: '성장',
-      RoutePaths.studentLinks: '학생 연결 관리',
-      RoutePaths.teacherPreview: '샘플 미리보기 화면입니다. 실제 과제 저장이나 알림은 실행되지 않습니다.',
+      RoutePaths.hanja('HJ-0001'): '쓰기 연습 시작',
+      RoutePaths.writing('HJ-0001'): '획순 보기',
+      RoutePaths.appLearn: '복습하고, 한자장을 정리해요',
+      RoutePaths.appChallenge: '오늘 점수와 반 순위를 올려요',
+      RoutePaths.appSettings: '학습 연결',
+      RoutePaths.quiz: '퀴즈 선택',
+      RoutePaths.game: '빠르게 고를수록 콤보 점수가 올라가요.',
+      RoutePaths.result: '연습 완료',
+      RoutePaths.growth: '성장 앨범',
+      RoutePaths.studentLinks: '학습 연결',
+      RoutePaths.teacherPreview: '반 코드 관리',
     };
 
     for (final entry in routeChecks.entries) {
@@ -254,9 +345,40 @@ void main() {
     appRouter.go(RoutePaths.login);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FilledButton).last);
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -260));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, '시작하기'));
     await tester.pumpAndSettle();
 
     expect(find.text('학교를 선택해주세요.'), findsOneWidget);
+  });
+
+  testWidgets('top-level app tabs confirm before app exit', (tester) async {
+    await tester.pumpWidget(_testApp());
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    final tabChecks = <String, String>{
+      RoutePaths.appHome: '한자쏘옥 모험',
+      RoutePaths.appLearn: '복습하고, 한자장을 정리해요',
+      RoutePaths.appChallenge: '오늘 점수와 반 순위를 올려요',
+      RoutePaths.appSettings: '학습 연결',
+    };
+
+    for (final entry in tabChecks.entries) {
+      appRouter.go(entry.key);
+      await pumpUntilFound(tester, find.text(entry.value));
+
+      await tester.binding.handlePopRoute();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('종료하시겠습니까?'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(TextButton, '취소'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('종료하시겠습니까?'), findsNothing);
+      expect(find.text(entry.value), findsOneWidget);
+    }
   });
 }

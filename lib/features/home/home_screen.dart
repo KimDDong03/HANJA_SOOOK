@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_fonts.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/widgets/playful_page.dart';
 import '../../domain/models/hanja_character.dart';
 import '../auth/current_profile_controller.dart';
 import 'home_controller.dart';
@@ -14,140 +17,501 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentProfileProvider);
     final todayLearning = ref.watch(todayLearningProvider);
+    final growth = ref.watch(homeGrowthSummaryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('학생 홈')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            Text(
-              '오늘의 한자를 시작해요',
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            if (profile != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                '${profile.displayName} · ${profile.schoolName ?? '학교 미설정'} · ${profile.grade ?? '-'}학년',
-                style: Theme.of(context).textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-            ],
-            const SizedBox(height: 20),
-            todayLearning.when(
-              data: (learning) {
-                final hanja = learning.firstHanja;
-                if (hanja == null) {
-                  return const Text(
-                    '오늘의 한자 데이터가 아직 없습니다.',
-                    textAlign: TextAlign.center,
-                  );
-                }
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
+      body: PlayfulPage(
+        title: profile == null ? '한자쏘옥 모험' : '안녕하세요, ${profile.displayName}!',
+        subtitle: profile == null
+            ? '오늘의 한자를 모아 별을 채워요'
+            : '${profile.schoolName ?? '학교 미설정'} · ${profile.grade ?? '-'}학년',
+        children: [
+          todayLearning.when(
+            data: (learning) {
+              if (learning.items.isEmpty) {
+                return PlayfulPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        '오늘의 한자 데이터가 아직 없습니다.',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => context.go(RoutePaths.appLearn),
+                        icon: const Icon(Icons.menu_book),
+                        label: const Text('한자장 보기'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              final hanja = learning.currentHanja;
+              if (hanja == null || learning.isComplete) {
+                return _TodayCompletePanel(learning: learning);
+              }
+              final chapterName = learning.chapterName;
+              return PlayfulPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          hanja.character,
-                          style: Theme.of(context).textTheme.displayMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text('${hanja.sound} · ${hanja.meaning}'),
-                        const SizedBox(height: 8),
-                        Text(
-                          '오늘의 한자 ${learning.completedCount}/${learning.totalCount}',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          hanja.unitName ?? '교과서 단원 정보 없음',
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final item in learning.items)
-                              _HanjaChip(
-                                item: item,
-                                isCompleted: learning.isCompleted(item.id),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                learning.isReviewItem(hanja.id)
+                                    ? '오늘의 복습'
+                                    : chapterName ?? '오늘의 새 한자',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w900,
+                                    ),
                               ),
-                          ],
+                              const SizedBox(height: 6),
+                              Text(
+                                hanja.meaning,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              if (chapterName == null) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  hanja.unitName ?? '교과서 단원 정보 없음',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed: () =>
-                              context.push(RoutePaths.hanja(hanja.id)),
-                          child: const Text('오늘의 한자 보기'),
+                        const SizedBox(width: 12),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            child: Text(
+                              hanja.character,
+                              style: Theme.of(context).textTheme.displayMedium
+                                  ?.copyWith(
+                                    fontFamily: AppFonts.hanjaSerif,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => const Text(
-                '오늘의 한자를 불러오지 못했습니다.',
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 24),
-            todayLearning.maybeWhen(
-              data: (learning) {
-                final hanjaId = learning.firstHanja?.id;
-                return Column(
-                  children: [
-                    _RouteButton(
-                      label: '한자 카드',
-                      onPressed: hanjaId == null
-                          ? null
-                          : () => context.push(RoutePaths.hanja(hanjaId)),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        PlayfulStat(
+                          icon: Icons.auto_awesome,
+                          label: '완료',
+                          value:
+                              '${learning.completedCount}/${learning.totalCount}',
+                          color: AppColors.green,
+                        ),
+                        const SizedBox(width: 10),
+                        PlayfulStat(
+                          icon: Icons.local_fire_department,
+                          label: '새 한자',
+                          value: '${learning.newCount}개',
+                          color: AppColors.peach,
+                        ),
+                        const SizedBox(width: 10),
+                        PlayfulStat(
+                          icon: Icons.refresh,
+                          label: '복습',
+                          value: '${learning.reviewCount}개',
+                          color: AppColors.blue,
+                        ),
+                      ],
                     ),
-                    _RouteButton(
-                      label: '따라쓰기',
-                      onPressed: hanjaId == null
-                          ? null
-                          : () => context.push(RoutePaths.writing(hanjaId)),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final item in learning.items)
+                          _HanjaChip(
+                            item: item,
+                            isCompleted: learning.isCompleted(item.id),
+                            isReview: learning.isReviewItem(item.id),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () =>
+                          context.push(RoutePaths.guidedWriting(hanja.id)),
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('오늘의 한자 시작'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () => context.push(RoutePaths.hanja(hanja.id)),
+                      icon: const Icon(Icons.menu_book_outlined),
+                      label: const Text('한자 카드 보기'),
                     ),
                   ],
-                );
-              },
-              orElse: () => const Column(
+                ),
+              );
+            },
+            loading: () => const PlayfulPanel(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (_, _) => PlayfulPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _RouteButton(label: '한자 카드', onPressed: null),
-                  _RouteButton(label: '따라쓰기', onPressed: null),
+                  const Text(
+                    '오늘의 한자를 불러오지 못했습니다.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => ref.invalidate(todayLearningProvider),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('다시 불러오기'),
+                  ),
                 ],
               ),
             ),
-            _RouteButton(
-              label: '퀴즈',
-              onPressed: () => context.push(RoutePaths.quiz),
+          ),
+          const SizedBox(height: 16),
+          growth.when(
+            data: (state) => _GrowthSummaryPanel(state: state),
+            loading: () => const PlayfulPanel(
+              child: Center(child: CircularProgressIndicator()),
             ),
-            _RouteButton(
-              label: '게임',
-              onPressed: () => context.push(RoutePaths.game),
+            error: (_, _) => PlayfulPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('성장 정보를 불러오지 못했습니다.', textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: ref.read(homeGrowthSummaryRetryProvider),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('다시 불러오기'),
+                  ),
+                ],
+              ),
             ),
-            _RouteButton(
-              label: '결과',
-              onPressed: () => context.push(RoutePaths.result),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TodayCompletePanel extends StatelessWidget {
+  const _TodayCompletePanel({required this.learning});
+
+  final TodayLearningState learning;
+
+  @override
+  Widget build(BuildContext context) {
+    return PlayfulPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '오늘 할 일을 모두 끝냈어요',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w900,
             ),
-            _RouteButton(
-              label: '성장',
-              onPressed: () => context.push(RoutePaths.growth),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              PlayfulStat(
+                icon: Icons.auto_awesome,
+                label: '완료',
+                value: '${learning.completedCount}/${learning.totalCount}',
+                color: AppColors.green,
+              ),
+              const SizedBox(width: 10),
+              PlayfulStat(
+                icon: Icons.local_fire_department,
+                label: '새 한자',
+                value: '${learning.newCount}개',
+                color: AppColors.peach,
+              ),
+              const SizedBox(width: 10),
+              PlayfulStat(
+                icon: Icons.refresh,
+                label: '복습',
+                value: '${learning.reviewCount}개',
+                color: AppColors.blue,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () => context.go(RoutePaths.appLearn),
+            icon: const Icon(Icons.menu_book),
+            label: const Text('한자장 보기'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GrowthSummaryPanel extends StatelessWidget {
+  const _GrowthSummaryPanel({required this.state});
+
+  final HomeGrowthSummaryState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.primaryDark),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.18),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -18,
+            top: -26,
+            child: Icon(
+              Icons.auto_awesome,
+              size: 116,
+              color: Colors.white.withValues(alpha: 0.13),
             ),
-            _RouteButton(
-              label: '학생 연결 관리',
-              onPressed: () => context.push(RoutePaths.studentLinks),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Icon(
+                          Icons.military_tech,
+                          color: AppColors.primary,
+                          size: 34,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '레벨 ${state.level}',
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            state.levelTitle,
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${state.totalXp}',
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 7),
+                      child: Text(
+                        'XP',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
+                        child: Text(
+                          '다음까지 ${state.remainingXp} XP',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: state.progress,
+                    minHeight: 14,
+                    color: AppColors.yellow,
+                    backgroundColor: Colors.white.withValues(alpha: 0.24),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    _HomeGrowthBadge(
+                      icon: Icons.flag,
+                      label: '오늘 완료',
+                      value:
+                          '${state.completedTodayCount}/${state.todayTotalCount}',
+                      color: AppColors.green,
+                    ),
+                    const SizedBox(width: 8),
+                    _HomeGrowthBadge(
+                      icon: Icons.pending_actions,
+                      label: '남은 한자',
+                      value: '${state.todayRemainingCount}개',
+                      color: AppColors.blue,
+                    ),
+                    const SizedBox(width: 8),
+                    _HomeGrowthBadge(
+                      icon: Icons.emoji_events,
+                      label: '보상',
+                      value: state.rewardLabel,
+                      color: AppColors.peach,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  state.message,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
             ),
-            _RouteButton(
-              label: '교사 미리보기',
-              onPressed: () => context.push(RoutePaths.teacherPreview),
-            ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeGrowthBadge extends StatelessWidget {
+  const _HomeGrowthBadge({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Column(
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                child: Padding(
+                  padding: const EdgeInsets.all(7),
+                  child: Icon(icon, size: 18, color: AppColors.textPrimary),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -155,34 +519,31 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _HanjaChip extends StatelessWidget {
-  const _HanjaChip({required this.item, required this.isCompleted});
+  const _HanjaChip({
+    required this.item,
+    required this.isCompleted,
+    required this.isReview,
+  });
 
   final HanjaCharacter item;
   final bool isCompleted;
+  final bool isReview;
 
   @override
   Widget build(BuildContext context) {
     return Chip(
-      avatar: isCompleted ? const Icon(Icons.check, size: 18) : null,
+      avatar: isCompleted
+          ? const Icon(Icons.star, size: 18)
+          : isReview
+          ? const Icon(Icons.refresh, size: 18)
+          : null,
       label: Text(
         item.character,
-        style: Theme.of(context).textTheme.titleMedium,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontFamily: AppFonts.hanjaSerif,
+          fontWeight: FontWeight.w900,
+        ),
       ),
-    );
-  }
-}
-
-class _RouteButton extends StatelessWidget {
-  const _RouteButton({required this.label, required this.onPressed});
-
-  final String label;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: FilledButton(onPressed: onPressed, child: Text(label)),
     );
   }
 }

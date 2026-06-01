@@ -8,6 +8,18 @@ class SvgPathParser {
     final parser = _SvgPathParser(pathData);
     return parser.parse();
   }
+
+  static Path? tryParse(String pathData) {
+    try {
+      final path = parse(pathData);
+      if (path.computeMetrics().isEmpty) {
+        return null;
+      }
+      return path;
+    } on FormatException {
+      return null;
+    }
+  }
 }
 
 class _SvgPathParser {

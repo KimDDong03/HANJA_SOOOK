@@ -2,16 +2,29 @@ import 'package:flutter/material.dart';
 
 import '../hanja_canvas_geometry.dart';
 import '../hanja_guide_grid.dart';
+import '../stroke_color_palette.dart';
 
 class HanjaFreeWritingCanvas extends StatefulWidget {
   const HanjaFreeWritingCanvas({
     super.key,
     this.expectedStrokeCount,
+    this.onStrokesChanged,
+    this.canvasExtent,
+    this.showTitle = true,
+    this.onStrokeTexture,
     this.viewBox = defaultHanjaViewBox,
+    this.failedStrokeIndex,
+    this.expectedHintPath,
   });
 
   final int? expectedStrokeCount;
+  final ValueChanged<List<Path>>? onStrokesChanged;
+  final double? canvasExtent;
+  final bool showTitle;
+  final VoidCallback? onStrokeTexture;
   final Rect viewBox;
+  final int? failedStrokeIndex;
+  final Path? expectedHintPath;
 
   @override
   State<HanjaFreeWritingCanvas> createState() => _HanjaFreeWritingCanvasState();
@@ -22,6 +35,9 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
   Path? _currentPath;
   int? _activePointer;
   int _paintRevision = 0;
+  DateTime? _lastStrokeTextureAt;
+
+  static const _strokeTextureInterval = Duration(milliseconds: 120);
 
   void _startStroke(Offset localPosition, Size canvasSize) {
     final source = _sourcePoint(localPosition, canvasSize);
@@ -29,6 +45,7 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
       _currentPath = Path()..moveTo(source.dx, source.dy);
       _paintRevision += 1;
     });
+    _playStrokeTexture();
   }
 
   void _updateStroke(Offset localPosition, Size canvasSize) {
@@ -41,6 +58,7 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
       path.lineTo(source.dx, source.dy);
       _paintRevision += 1;
     });
+    _playStrokeTexture();
   }
 
   void _endStroke() {
@@ -53,6 +71,7 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
       _currentPath = null;
       _paintRevision += 1;
     });
+    _notifyStrokesChanged();
   }
 
   void _undoStroke() {
@@ -63,6 +82,7 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
       _strokes.removeLast();
       _paintRevision += 1;
     });
+    _notifyStrokesChanged();
   }
 
   void _clearStrokes() {
@@ -74,6 +94,11 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
       _currentPath = null;
       _paintRevision += 1;
     });
+    _notifyStrokesChanged();
+  }
+
+  void _notifyStrokesChanged() {
+    widget.onStrokesChanged?.call(List<Path>.unmodifiable(_strokes));
   }
 
   Offset _sourcePoint(Offset localPosition, Size canvasSize) {
@@ -82,6 +107,17 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
       viewBox: widget.viewBox,
     );
     return transform.canvasToSource(localPosition);
+  }
+
+  void _playStrokeTexture() {
+    final now = DateTime.now();
+    final lastPlayedAt = _lastStrokeTextureAt;
+    if (lastPlayedAt != null &&
+        now.difference(lastPlayedAt) < _strokeTextureInterval) {
+      return;
+    }
+    _lastStrokeTextureAt = now;
+    widget.onStrokeTexture?.call();
   }
 
   @override
@@ -97,100 +133,116 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
       children: [
         Row(
           children: [
-            Expanded(
-              child: Text(
-                '자유쓰기',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
+            if (widget.showTitle)
+              Expanded(
+                child: Text(
+                  '자유쓰기',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              )
+            else
+              const Spacer(),
             Text(countLabel),
             const SizedBox(width: 8),
-            Tooltip(
-              message: '한 획 지우기',
-              child: IconButton.filledTonal(
-                onPressed: _undoStroke,
-                icon: const Icon(Icons.undo),
-              ),
+            IconButton.filledTonal(
+              onPressed: _undoStroke,
+              icon: const Icon(Icons.undo),
+              tooltip: '한 획 지우기',
             ),
-            Tooltip(
-              message: '모두 지우기',
-              child: IconButton.filledTonal(
-                onPressed: _clearStrokes,
-                icon: const Icon(Icons.delete_outline),
-              ),
+            IconButton.filledTonal(
+              onPressed: _clearStrokes,
+              icon: const Icon(Icons.delete_outline),
+              tooltip: '모두 지우기',
             ),
           ],
         ),
         const SizedBox(height: 10),
-        AspectRatio(
-          aspectRatio: 1,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final canvasSize = Size(
-                constraints.maxWidth,
-                constraints.maxHeight,
-              );
-              return Listener(
-                onPointerDown: (event) {
-                  if (_activePointer != null) {
-                    return;
-                  }
-                  _activePointer = event.pointer;
-                  _startStroke(event.localPosition, canvasSize);
-                },
-                onPointerMove: (event) {
-                  if (_activePointer != event.pointer) {
-                    return;
-                  }
-                  _updateStroke(event.localPosition, canvasSize);
-                },
-                onPointerUp: (event) {
-                  if (_activePointer != event.pointer) {
-                    return;
-                  }
-                  _activePointer = null;
-                  _endStroke();
-                },
-                onPointerCancel: (event) {
-                  if (_activePointer != event.pointer) {
-                    return;
-                  }
-                  setState(() {
-                    _activePointer = null;
-                    _currentPath = null;
-                    _paintRevision += 1;
-                  });
-                },
-                child: GestureDetector(
-                  key: const ValueKey('hanja-free-writing-canvas-input'),
-                  behavior: HitTestBehavior.opaque,
-                  onVerticalDragStart: (_) {},
-                  onVerticalDragUpdate: (_) {},
-                  onVerticalDragEnd: (_) {},
-                  onHorizontalDragStart: (_) {},
-                  onHorizontalDragUpdate: (_) {},
-                  onHorizontalDragEnd: (_) {},
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: colorScheme.outlineVariant),
-                    ),
-                    child: CustomPaint(
-                      painter: _FreeWritingPainter(
-                        strokes: List<Path>.of(_strokes),
-                        currentPath: _currentPath,
-                        paintRevision: _paintRevision,
-                        viewBox: widget.viewBox,
-                        strokeColor: colorScheme.primary,
-                        gridColor: colorScheme.outlineVariant,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final canvasExtent =
+                widget.canvasExtent?.clamp(0, constraints.maxWidth) ??
+                constraints.maxWidth;
+            return Align(
+              alignment: Alignment.center,
+              child: SizedBox.square(
+                dimension: canvasExtent.toDouble(),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final canvasSize = Size(
+                      constraints.maxWidth,
+                      constraints.maxHeight,
+                    );
+                    return Listener(
+                      onPointerDown: (event) {
+                        if (_activePointer != null) {
+                          return;
+                        }
+                        _activePointer = event.pointer;
+                        _startStroke(event.localPosition, canvasSize);
+                      },
+                      onPointerMove: (event) {
+                        if (_activePointer != event.pointer) {
+                          return;
+                        }
+                        _updateStroke(event.localPosition, canvasSize);
+                      },
+                      onPointerUp: (event) {
+                        if (_activePointer != event.pointer) {
+                          return;
+                        }
+                        _activePointer = null;
+                        _endStroke();
+                      },
+                      onPointerCancel: (event) {
+                        if (_activePointer != event.pointer) {
+                          return;
+                        }
+                        setState(() {
+                          _activePointer = null;
+                          _currentPath = null;
+                          _paintRevision += 1;
+                        });
+                      },
+                      child: GestureDetector(
+                        key: const ValueKey('hanja-free-writing-canvas-input'),
+                        behavior: HitTestBehavior.opaque,
+                        onVerticalDragStart: (_) {},
+                        onVerticalDragUpdate: (_) {},
+                        onVerticalDragEnd: (_) {},
+                        onHorizontalDragStart: (_) {},
+                        onHorizontalDragUpdate: (_) {},
+                        onHorizontalDragEnd: (_) {},
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: colorScheme.outlineVariant,
+                            ),
+                          ),
+                          child: CustomPaint(
+                            painter: _FreeWritingPainter(
+                              strokes: List<Path>.of(_strokes),
+                              currentPath: _currentPath,
+                              paintRevision: _paintRevision,
+                              viewBox: widget.viewBox,
+                              failedStrokeColor: colorScheme.error,
+                              hintStrokeColor: colorScheme.error.withValues(
+                                alpha: 0.28,
+                              ),
+                              gridColor: colorScheme.outlineVariant,
+                              failedStrokeIndex: widget.failedStrokeIndex,
+                              expectedHintPath: widget.expectedHintPath,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -203,16 +255,22 @@ class _FreeWritingPainter extends CustomPainter {
     required this.currentPath,
     required this.paintRevision,
     required this.viewBox,
-    required this.strokeColor,
+    required this.failedStrokeColor,
+    required this.hintStrokeColor,
     required this.gridColor,
+    required this.failedStrokeIndex,
+    required this.expectedHintPath,
   });
 
   final List<Path> strokes;
   final Path? currentPath;
   final int paintRevision;
   final Rect viewBox;
-  final Color strokeColor;
+  final Color failedStrokeColor;
+  final Color hintStrokeColor;
   final Color gridColor;
+  final int? failedStrokeIndex;
+  final Path? expectedHintPath;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -222,23 +280,55 @@ class _FreeWritingPainter extends CustomPainter {
     canvas.save();
     transform.apply(canvas);
 
-    final paint = Paint()
-      ..color = strokeColor
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..strokeWidth = 5;
+    final hintPath = expectedHintPath;
+    if (hintPath != null) {
+      final hintPaint = Paint()
+        ..color = hintStrokeColor
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = 7;
+      canvas.drawPath(hintPath, hintPaint);
+    }
 
-    for (final stroke in strokes) {
-      canvas.drawPath(stroke, paint);
+    for (var index = 0; index < strokes.length; index += 1) {
+      if (index == failedStrokeIndex) {
+        final failedPaint = Paint()
+          ..color = failedStrokeColor
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..strokeWidth = 6;
+        canvas.drawPath(strokes[index], failedPaint);
+      } else {
+        canvas.drawPath(
+          strokes[index],
+          _strokePaint(HanjaStrokeColorPalette.colorFor(index), width: 5),
+        );
+      }
     }
 
     final activePath = currentPath;
     if (activePath != null) {
-      canvas.drawPath(activePath, paint);
+      canvas.drawPath(
+        activePath,
+        _strokePaint(
+          HanjaStrokeColorPalette.colorFor(strokes.length),
+          width: 5,
+        ),
+      );
     }
 
     canvas.restore();
+  }
+
+  Paint _strokePaint(Color color, {required double width}) {
+    return Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = width;
   }
 
   void _drawGrid(Canvas canvas, Size size) {
@@ -256,7 +346,10 @@ class _FreeWritingPainter extends CustomPainter {
         oldDelegate.currentPath != currentPath ||
         oldDelegate.paintRevision != paintRevision ||
         oldDelegate.viewBox != viewBox ||
-        oldDelegate.strokeColor != strokeColor ||
-        oldDelegate.gridColor != gridColor;
+        oldDelegate.failedStrokeColor != failedStrokeColor ||
+        oldDelegate.hintStrokeColor != hintStrokeColor ||
+        oldDelegate.gridColor != gridColor ||
+        oldDelegate.failedStrokeIndex != failedStrokeIndex ||
+        oldDelegate.expectedHintPath != expectedHintPath;
   }
 }

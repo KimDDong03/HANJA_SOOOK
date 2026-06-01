@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../hanja_canvas_geometry.dart';
 import '../hanja_guide_grid.dart';
 import '../path_morph.dart';
+import '../stroke_color_palette.dart';
 import '../svg_path_parser.dart';
 import '../writing_practice_controller.dart';
 
@@ -10,10 +12,18 @@ class HanjaWritingPracticeCanvas extends StatefulWidget {
   const HanjaWritingPracticeCanvas({
     super.key,
     required this.svgPaths,
+    this.canvasExtent,
+    this.autoPlayOnStart = false,
+    this.onCompleted,
+    this.onStrokeTexture,
     this.viewBox = defaultHanjaViewBox,
   });
 
   final List<String> svgPaths;
+  final double? canvasExtent;
+  final bool autoPlayOnStart;
+  final VoidCallback? onCompleted;
+  final VoidCallback? onStrokeTexture;
   final Rect viewBox;
 
   @override
@@ -27,14 +37,12 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
       WritingPracticeController();
 
   late List<Path> _paths;
-  late final AnimationController _hintController;
-  late final AnimationController _studyController;
   late final AnimationController _errorController;
   late final AnimationController _acceptedController;
   late final AnimationController _reviewController;
 
   int _completedStrokeCount = 0;
-  int _currentStrokeMistakes = 0;
+  final List<Path> _completedDisplayPaths = [];
   Path? _acceptedFromPath;
   Path? _acceptedToPath;
   Path? _currentUserPath;
@@ -42,20 +50,15 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
   int? _activePointer;
   int _paintRevision = 0;
   String _statusText = '1획';
+  DateTime? _lastStrokeTextureAt;
+
+  static const _strokeTextureInterval = Duration(milliseconds: 120);
 
   @override
   void initState() {
     super.initState();
     _paths = _parsePaths(widget.svgPaths);
-    _statusText = _nextStatusText;
-    _hintController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _studyController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
+    _statusText = _paths.isEmpty ? '데이터 없음' : _nextStatusText;
     _errorController =
         AnimationController(
           vsync: this,
@@ -72,31 +75,42 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
         )..addStatusListener((status) {
           if (status == AnimationStatus.completed && mounted) {
             setState(() {
+              final acceptedTargetPath = _acceptedToPath;
+              if (acceptedTargetPath != null) {
+                _completedDisplayPaths.add(acceptedTargetPath);
+              }
               _completedStrokeCount += 1;
               _acceptedFromPath = null;
               _acceptedToPath = null;
               _statusText = _isComplete ? '완료' : _nextStatusText;
             });
-            if (!_isComplete) {
-              _showStudyStroke();
+            if (_isComplete) {
+              widget.onCompleted?.call();
             }
           }
         });
-    _reviewController = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: _reviewDurationMillis),
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _showStudyStroke();
-      }
-    });
+    _reviewController =
+        AnimationController(
+          vsync: this,
+          duration: Duration(milliseconds: _reviewDurationMillis),
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed && mounted) {
+            setState(() {});
+          }
+        });
+    if (widget.autoPlayOnStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _playStrokeOrder();
+        }
+      });
+    }
   }
 
   @override
   void didUpdateWidget(covariant HanjaWritingPracticeCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.svgPaths != widget.svgPaths) {
+    if (!listEquals(oldWidget.svgPaths, widget.svgPaths)) {
       setState(() {
         _paths = _parsePaths(widget.svgPaths);
         _resetPracticeState();
@@ -106,8 +120,6 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
 
   @override
   void dispose() {
-    _hintController.dispose();
-    _studyController.dispose();
     _errorController.dispose();
     _acceptedController.dispose();
     _reviewController.dispose();
@@ -125,15 +137,20 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
   }
 
   List<Path> _parsePaths(List<String> svgPaths) {
-    return svgPaths
-        .where((path) => path.trim().isNotEmpty)
-        .map(SvgPathParser.parse)
-        .toList();
+    final paths = <Path>[];
+    for (final pathData in svgPaths.where((path) => path.trim().isNotEmpty)) {
+      final path = SvgPathParser.tryParse(pathData);
+      if (path == null) {
+        return const [];
+      }
+      paths.add(path);
+    }
+    return paths;
   }
 
   void _resetPracticeState() {
     _completedStrokeCount = 0;
-    _currentStrokeMistakes = 0;
+    _completedDisplayPaths.clear();
     _acceptedFromPath = null;
     _acceptedToPath = null;
     _currentUserPath = null;
@@ -141,62 +158,38 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
     _activePointer = null;
     _paintRevision += 1;
     _statusText = _paths.isEmpty ? '데이터 없음' : '1획';
-    _hintController.reset();
-    _studyController.reset();
     _errorController.reset();
     _acceptedController.reset();
     _reviewController.reset();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _showStudyStroke();
-      }
-    });
   }
 
-  void _showHint() {
-    if (_isComplete || _paths.isEmpty) {
-      return;
-    }
-    _hintController.forward(from: 0);
-  }
-
-  void _showStudyStroke() {
-    if (_isComplete || _paths.isEmpty) {
-      return;
-    }
-    _studyController.forward(from: 0);
-  }
-
-  void _skipRemainingStrokes() {
-    if (_isComplete || _paths.isEmpty) {
+  void _playStrokeOrder() {
+    if (_paths.isEmpty) {
       return;
     }
     setState(() {
-      _completedStrokeCount = _paths.length;
-      _currentStrokeMistakes = 0;
+      _activePointer = null;
       _currentUserPath = null;
-      _errorUserPath = null;
-      _acceptedFromPath = null;
-      _acceptedToPath = null;
-      _statusText = '완료';
       _paintRevision += 1;
     });
-  }
-
-  void _toggleReviewAnimation() {
-    if (!_isComplete || _paths.isEmpty) {
-      return;
-    }
-    if (_reviewController.isAnimating) {
-      _reviewController.stop();
-      return;
-    }
     _reviewController.duration = Duration(milliseconds: _reviewDurationMillis);
     _reviewController.forward(from: 0);
   }
 
+  void _toggleStrokeOrder() {
+    if (_reviewController.isAnimating) {
+      _reviewController.stop();
+      setState(() {});
+      return;
+    }
+    _playStrokeOrder();
+  }
+
   void _startStroke(Offset localPosition, Size canvasSize) {
-    if (_isComplete || _isAnimatingAccepted || _paths.isEmpty) {
+    if (_isComplete ||
+        _isAnimatingAccepted ||
+        _reviewController.isAnimating ||
+        _paths.isEmpty) {
       return;
     }
     final source = _sourcePoint(localPosition, canvasSize);
@@ -205,11 +198,15 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
       _paintRevision += 1;
       _statusText = _nextStatusText;
     });
+    _playStrokeTexture();
   }
 
   void _updateStroke(Offset localPosition, Size canvasSize) {
     final path = _currentUserPath;
-    if (path == null || _isComplete || _isAnimatingAccepted) {
+    if (path == null ||
+        _isComplete ||
+        _isAnimatingAccepted ||
+        _reviewController.isAnimating) {
       return;
     }
     final source = _sourcePoint(localPosition, canvasSize);
@@ -217,11 +214,15 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
       path.lineTo(source.dx, source.dy);
       _paintRevision += 1;
     });
+    _playStrokeTexture();
   }
 
   void _endStroke() {
     final userPath = _currentUserPath;
-    if (userPath == null || _isComplete || _isAnimatingAccepted) {
+    if (userPath == null ||
+        _isComplete ||
+        _isAnimatingAccepted ||
+        _reviewController.isAnimating) {
       return;
     }
 
@@ -235,21 +236,18 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
         _currentUserPath = null;
         _acceptedFromPath = userPath;
         _acceptedToPath = expectedPath;
-        _currentStrokeMistakes = 0;
         _statusText = '좋아요';
       });
       _acceptedController.forward(from: 0);
       return;
     }
 
-    _currentStrokeMistakes += 1;
     setState(() {
       _currentUserPath = null;
-      _errorUserPath = _currentStrokeMistakes > 2 ? expectedPath : userPath;
-      _statusText = _currentStrokeMistakes > 2 ? '보고 써요' : '다시';
+      _errorUserPath = expectedPath;
+      _statusText = '위치 확인';
     });
     _errorController.forward(from: 0);
-    _hintController.forward(from: 0);
   }
 
   Offset _sourcePoint(Offset localPosition, Size canvasSize) {
@@ -260,6 +258,17 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
     return transform.canvasToSource(localPosition);
   }
 
+  void _playStrokeTexture() {
+    final now = DateTime.now();
+    final lastPlayedAt = _lastStrokeTextureAt;
+    if (lastPlayedAt != null &&
+        now.difference(lastPlayedAt) < _strokeTextureInterval) {
+      return;
+    }
+    _lastStrokeTextureAt = now;
+    widget.onStrokeTexture?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -268,191 +277,149 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
       children: [
         Row(
           children: [
-            Expanded(
-              child: Text(
-                '직접 써보기',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            Text('$_completedStrokeCount / ${_paths.length}'),
+            Text('$_completedStrokeCount / ${_paths.length} · $_statusText'),
+            const Spacer(),
             const SizedBox(width: 8),
-            Tooltip(
-              message: '힌트',
-              child: IconButton.filledTonal(
-                onPressed: _showHint,
-                icon: const Icon(Icons.lightbulb_outline),
+            SizedBox(
+              width: 112,
+              height: 44,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  textStyle: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900),
+                ),
+                onPressed: _toggleStrokeOrder,
+                icon: Icon(
+                  _reviewController.isAnimating ? Icons.stop : Icons.play_arrow,
+                  size: 18,
+                ),
+                label: Text(_reviewController.isAnimating ? '정지' : '획순 보기'),
               ),
             ),
-            Tooltip(
-              message: '다시 시작',
-              child: IconButton.filledTonal(
-                onPressed: () => setState(_resetPracticeState),
-                icon: const Icon(Icons.refresh),
-              ),
+            const SizedBox(width: 8),
+            IconButton.filledTonal(
+              onPressed: () => setState(_resetPracticeState),
+              icon: const Icon(Icons.refresh),
+              tooltip: '다시 시작',
             ),
           ],
         ),
         const SizedBox(height: 10),
-        AspectRatio(
-          aspectRatio: 1,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final canvasSize = Size(
-                constraints.maxWidth,
-                constraints.maxHeight,
-              );
-              return Listener(
-                onPointerDown: (event) {
-                  if (_activePointer != null) {
-                    return;
-                  }
-                  _activePointer = event.pointer;
-                  _startStroke(event.localPosition, canvasSize);
-                },
-                onPointerMove: (event) {
-                  if (_activePointer != event.pointer) {
-                    return;
-                  }
-                  _updateStroke(event.localPosition, canvasSize);
-                },
-                onPointerUp: (event) {
-                  if (_activePointer != event.pointer) {
-                    return;
-                  }
-                  _activePointer = null;
-                  _endStroke();
-                },
-                onPointerCancel: (event) {
-                  if (_activePointer != event.pointer) {
-                    return;
-                  }
-                  setState(() {
-                    _activePointer = null;
-                    _currentUserPath = null;
-                  });
-                },
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onVerticalDragStart: (_) {},
-                  onVerticalDragUpdate: (_) {},
-                  onVerticalDragEnd: (_) {},
-                  onHorizontalDragStart: (_) {},
-                  onHorizontalDragUpdate: (_) {},
-                  onHorizontalDragEnd: (_) {},
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: colorScheme.outlineVariant),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: AnimatedBuilder(
-                            animation: Listenable.merge([
-                              _hintController,
-                              _studyController,
-                              _errorController,
-                              _acceptedController,
-                              _reviewController,
-                            ]),
-                            builder: (context, _) {
-                              return CustomPaint(
-                                painter: _PracticePainter(
-                                  paths: _paths,
-                                  completedStrokeCount: _completedStrokeCount,
-                                  acceptedFromPath: _acceptedFromPath,
-                                  acceptedToPath: _acceptedToPath,
-                                  acceptedProgress: _acceptedController.value,
-                                  hintProgress: _hintController.value,
-                                  studyProgress: _studyController.value,
-                                  errorProgress: _errorController.value,
-                                  reviewProgress: _reviewController.isAnimating
-                                      ? _reviewController.value
-                                      : null,
-                                  paintRevision: _paintRevision,
-                                  currentUserPath: _currentUserPath,
-                                  errorUserPath: _errorUserPath,
-                                  viewBox: widget.viewBox,
-                                  strokeColor: colorScheme.onSurface,
-                                  activeColor: colorScheme.primary,
-                                  errorColor: colorScheme.error,
-                                  gridColor: colorScheme.outlineVariant,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: IconButton.filledTonal(
-                            onPressed: _showHint,
-                            icon: const Icon(Icons.help_outline),
-                            tooltip: '다음 획 보기',
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 8,
-                          right: 8,
-                          child: IconButton.filledTonal(
-                            onPressed: _skipRemainingStrokes,
-                            icon: const Icon(Icons.check),
-                            tooltip: '남은 획 건너뛰기',
-                          ),
-                        ),
-                        if (_isComplete)
-                          Positioned(
-                            top: 8,
-                            left: 8,
-                            child: IconButton.filledTonal(
-                              onPressed: _toggleReviewAnimation,
-                              icon: Icon(
-                                _reviewController.isAnimating
-                                    ? Icons.stop
-                                    : Icons.play_arrow,
-                              ),
-                              tooltip: '전체 획순 다시 보기',
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final canvasExtent =
+                widget.canvasExtent?.clamp(0, constraints.maxWidth) ??
+                constraints.maxWidth;
+            return Align(
+              alignment: Alignment.center,
+              child: SizedBox.square(
+                dimension: canvasExtent.toDouble(),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final canvasSize = Size(
+                      constraints.maxWidth,
+                      constraints.maxHeight,
+                    );
+                    return Listener(
+                      onPointerDown: (event) {
+                        if (_activePointer != null) {
+                          return;
+                        }
+                        _activePointer = event.pointer;
+                        _startStroke(event.localPosition, canvasSize);
+                      },
+                      onPointerMove: (event) {
+                        if (_activePointer != event.pointer) {
+                          return;
+                        }
+                        _updateStroke(event.localPosition, canvasSize);
+                      },
+                      onPointerUp: (event) {
+                        if (_activePointer != event.pointer) {
+                          return;
+                        }
+                        _activePointer = null;
+                        _endStroke();
+                      },
+                      onPointerCancel: (event) {
+                        if (_activePointer != event.pointer) {
+                          return;
+                        }
+                        setState(() {
+                          _activePointer = null;
+                          _currentUserPath = null;
+                        });
+                      },
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onVerticalDragStart: (_) {},
+                        onVerticalDragUpdate: (_) {},
+                        onVerticalDragEnd: (_) {},
+                        onHorizontalDragStart: (_) {},
+                        onHorizontalDragUpdate: (_) {},
+                        onHorizontalDragEnd: (_) {},
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: colorScheme.outlineVariant,
                             ),
                           ),
-                      ],
-                    ),
-                  ),
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: AnimatedBuilder(
+                                  animation: Listenable.merge([
+                                    _errorController,
+                                    _acceptedController,
+                                    _reviewController,
+                                  ]),
+                                  builder: (context, _) {
+                                    return CustomPaint(
+                                      painter: _PracticePainter(
+                                        paths: _paths,
+                                        completedDisplayPaths: List<Path>.of(
+                                          _completedDisplayPaths,
+                                        ),
+                                        completedStrokeCount:
+                                            _completedStrokeCount,
+                                        acceptedFromPath: _acceptedFromPath,
+                                        acceptedToPath: _acceptedToPath,
+                                        acceptedProgress:
+                                            _acceptedController.value,
+                                        errorProgress: _errorController.value,
+                                        reviewProgress:
+                                            _reviewController.isAnimating
+                                            ? _reviewController.value
+                                            : null,
+                                        paintRevision: _paintRevision,
+                                        currentUserPath: _currentUserPath,
+                                        errorUserPath: _errorUserPath,
+                                        viewBox: widget.viewBox,
+                                        strokeColor: colorScheme.onSurface,
+                                        errorColor: colorScheme.error,
+                                        gridColor: colorScheme.outlineVariant,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
-        const SizedBox(height: 10),
-        _PracticeStatusPill(text: _statusText, isComplete: _isComplete),
       ],
-    );
-  }
-}
-
-class _PracticeStatusPill extends StatelessWidget {
-  const _PracticeStatusPill({required this.text, required this.isComplete});
-
-  final String text;
-  final bool isComplete;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Align(
-      alignment: Alignment.center,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: isComplete
-              ? colorScheme.primaryContainer
-              : colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Text(text, style: Theme.of(context).textTheme.labelLarge),
-        ),
-      ),
     );
   }
 }
@@ -460,12 +427,11 @@ class _PracticeStatusPill extends StatelessWidget {
 class _PracticePainter extends CustomPainter {
   const _PracticePainter({
     required this.paths,
+    required this.completedDisplayPaths,
     required this.completedStrokeCount,
     required this.acceptedFromPath,
     required this.acceptedToPath,
     required this.acceptedProgress,
-    required this.hintProgress,
-    required this.studyProgress,
     required this.errorProgress,
     required this.reviewProgress,
     required this.paintRevision,
@@ -473,18 +439,16 @@ class _PracticePainter extends CustomPainter {
     required this.errorUserPath,
     required this.viewBox,
     required this.strokeColor,
-    required this.activeColor,
     required this.errorColor,
     required this.gridColor,
   });
 
   final List<Path> paths;
+  final List<Path> completedDisplayPaths;
   final int completedStrokeCount;
   final Path? acceptedFromPath;
   final Path? acceptedToPath;
   final double acceptedProgress;
-  final double hintProgress;
-  final double studyProgress;
   final double errorProgress;
   final double? reviewProgress;
   final int paintRevision;
@@ -492,7 +456,6 @@ class _PracticePainter extends CustomPainter {
   final Path? errorUserPath;
   final Rect viewBox;
   final Color strokeColor;
-  final Color activeColor;
   final Color errorColor;
   final Color gridColor;
 
@@ -511,12 +474,25 @@ class _PracticePainter extends CustomPainter {
       return;
     }
 
-    final completedPaint = _strokePaint(
-      strokeColor.withValues(alpha: 0.88),
-      width: 4.8,
+    final guidePaint = _strokePaint(
+      strokeColor.withValues(alpha: 0.13),
+      width: 7.0,
     );
+    for (final path in paths) {
+      canvas.drawPath(path, guidePaint);
+    }
+
     for (var index = 0; index < completedStrokeCount; index += 1) {
-      canvas.drawPath(paths[index], completedPaint);
+      final completedPath = index < completedDisplayPaths.length
+          ? completedDisplayPaths[index]
+          : paths[index];
+      canvas.drawPath(
+        completedPath,
+        _strokePaint(
+          HanjaStrokeColorPalette.colorFor(index).withValues(alpha: 0.88),
+          width: 4.8,
+        ),
+      );
     }
 
     final fromPath = acceptedFromPath;
@@ -524,25 +500,10 @@ class _PracticePainter extends CustomPainter {
     if (fromPath != null && toPath != null) {
       canvas.drawPath(
         HanjaPathMorph.lerp(fromPath, toPath, acceptedProgress),
-        _strokePaint(activeColor, width: 5.2),
-      );
-    }
-
-    if (studyProgress > 0 && completedStrokeCount < paths.length) {
-      canvas.drawPath(
-        _extractPath(paths[completedStrokeCount], studyProgress),
-        _strokePaint(activeColor.withValues(alpha: 0.34), width: 8.0),
-      );
-    }
-
-    if (hintProgress > 0 && completedStrokeCount < paths.length) {
-      final alpha = (1 - (hintProgress - 0.72).clamp(0.0, 0.28) / 0.28).clamp(
-        0.0,
-        1.0,
-      );
-      canvas.drawPath(
-        _extractPath(paths[completedStrokeCount], hintProgress),
-        _strokePaint(errorColor.withValues(alpha: alpha * 0.75), width: 5.2),
+        _strokePaint(
+          HanjaStrokeColorPalette.colorFor(completedStrokeCount),
+          width: 5.2,
+        ),
       );
     }
 
@@ -559,7 +520,13 @@ class _PracticePainter extends CustomPainter {
 
     final userPath = currentUserPath;
     if (userPath != null) {
-      canvas.drawPath(userPath, _strokePaint(activeColor, width: 5.0));
+      canvas.drawPath(
+        userPath,
+        _strokePaint(
+          HanjaStrokeColorPalette.colorFor(completedStrokeCount),
+          width: 5.0,
+        ),
+      );
     }
 
     canvas.restore();
@@ -574,16 +541,22 @@ class _PracticePainter extends CustomPainter {
     final completedCount = activeProgress.floor().clamp(0, paths.length);
     final currentProgress = activeProgress - completedCount;
 
-    final completedPaint = _strokePaint(strokeColor.withValues(alpha: 0.88), width: 4.8);
-    final activePaint = _strokePaint(activeColor, width: 5.2);
-
     for (var index = 0; index < completedCount; index += 1) {
-      canvas.drawPath(paths[index], completedPaint);
+      canvas.drawPath(
+        paths[index],
+        _strokePaint(
+          HanjaStrokeColorPalette.colorFor(index).withValues(alpha: 0.88),
+          width: 4.8,
+        ),
+      );
     }
     if (completedCount < paths.length && currentProgress > 0) {
       canvas.drawPath(
         _extractPath(paths[completedCount], currentProgress),
-        activePaint,
+        _strokePaint(
+          HanjaStrokeColorPalette.colorFor(completedCount),
+          width: 5.2,
+        ),
       );
     }
   }
@@ -620,12 +593,11 @@ class _PracticePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _PracticePainter oldDelegate) {
     return oldDelegate.paths != paths ||
+        oldDelegate.completedDisplayPaths != completedDisplayPaths ||
         oldDelegate.completedStrokeCount != completedStrokeCount ||
         oldDelegate.acceptedFromPath != acceptedFromPath ||
         oldDelegate.acceptedToPath != acceptedToPath ||
         oldDelegate.acceptedProgress != acceptedProgress ||
-        oldDelegate.hintProgress != hintProgress ||
-        oldDelegate.studyProgress != studyProgress ||
         oldDelegate.errorProgress != errorProgress ||
         oldDelegate.reviewProgress != reviewProgress ||
         oldDelegate.paintRevision != paintRevision ||
@@ -633,7 +605,6 @@ class _PracticePainter extends CustomPainter {
         oldDelegate.errorUserPath != errorUserPath ||
         oldDelegate.viewBox != viewBox ||
         oldDelegate.strokeColor != strokeColor ||
-        oldDelegate.activeColor != activeColor ||
         oldDelegate.errorColor != errorColor ||
         oldDelegate.gridColor != gridColor;
   }
