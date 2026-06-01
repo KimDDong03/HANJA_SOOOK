@@ -116,6 +116,18 @@ class GrowthViewState {
         : '오늘 한자를 마치면 XP와 레벨 게이지가 바로 채워져요.';
   }
 
+  String get rewardTrackMessage {
+    if (rewardTrackProgress >= 99) {
+      return '이번 보상 트랙을 모두 채웠어요.';
+    }
+    final nextReward = rewardTrackProgress < 30
+        ? 30
+        : rewardTrackProgress < 60
+        ? 60
+        : 100;
+    return '다음 보상까지 ${nextReward - rewardTrackProgress} XP';
+  }
+
   bool isRewardUnlocked(int requiredXp) {
     return rewardTrackProgress >= requiredXp;
   }

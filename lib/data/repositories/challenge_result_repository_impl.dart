@@ -1,13 +1,22 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../domain/models/challenge_result.dart';
+import '../../domain/repositories/pending_sync_repository.dart';
 import '../../domain/repositories/challenge_result_repository.dart';
 import '../local/app_database.dart';
 
 class ChallengeResultRepositoryImpl implements ChallengeResultRepository {
-  ChallengeResultRepositoryImpl(this._database, {DateTime Function()? now})
-    : _now = now ?? DateTime.now;
+  ChallengeResultRepositoryImpl(
+    this._database, {
+    DateTime Function()? now,
+    this.remoteClient,
+    this.pendingSyncRepository,
+  }) : _now = now ?? DateTime.now;
 
   final AppDatabase _database;
   final DateTime Function() _now;
+  final SupabaseClient? remoteClient;
+  final PendingSyncRepository? pendingSyncRepository;
 
   @override
   Future<ChallengeResult> saveChallengeResult({
@@ -29,6 +38,13 @@ class ChallengeResultRepositoryImpl implements ChallengeResultRepository {
       totalCount: input.totalCount,
       timeSec: input.timeSec,
       flippedTileCount: input.flippedTileCount,
+      earnedXp: earnedXp,
+      completedAt: completedAt,
+    );
+    await _syncLearningSession(
+      id: id,
+      studentKey: studentKey,
+      input: input,
       earnedXp: earnedXp,
       completedAt: completedAt,
     );
@@ -91,5 +107,80 @@ class ChallengeResultRepositoryImpl implements ChallengeResultRepository {
       earnedXp: row.earnedXp,
       completedAt: row.completedAt,
     );
+  }
+
+  Future<void> _syncLearningSession({
+    required String id,
+    required String studentKey,
+    required ChallengeResultInput input,
+    required int earnedXp,
+    required DateTime completedAt,
+  }) async {
+    final payload = {
+      'user_id': studentKey,
+      'mode': _sessionModeFor(input.mode),
+      'score': input.score,
+      'accuracy': input.totalCount <= 0
+          ? 0
+          : ((input.correctCount / input.totalCount) * 100).round(),
+      'time_sec': input.timeSec,
+      'earned_xp': earnedXp,
+      'started_at': completedAt.toUtc().toIso8601String(),
+      'ended_at': completedAt.toUtc().toIso8601String(),
+      'created_at': completedAt.toUtc().toIso8601String(),
+    };
+    final client = remoteClient;
+    if (!_canSyncFor(studentKey) || client == null) {
+      await _enqueuePendingSync(
+        id: 'session-$id',
+        targetTable: PendingSyncTables.learningSessions,
+        payload: payload,
+      );
+      return;
+    }
+
+    try {
+      await client.from(PendingSyncTables.learningSessions).insert(
+        payload,
+      );
+    } catch (error) {
+      await _enqueuePendingSync(
+        id: 'session-$id',
+        targetTable: PendingSyncTables.learningSessions,
+        payload: {...payload, 'last_error': error.toString()},
+      );
+    }
+  }
+
+  bool _canSyncFor(String studentKey) {
+    final client = remoteClient;
+    final user = client?.auth.currentUser;
+    return client != null && user != null && user.id == studentKey;
+  }
+
+  Future<void> _enqueuePendingSync({
+    required String id,
+    required String targetTable,
+    required Map<String, Object?> payload,
+  }) async {
+    final repository = pendingSyncRepository;
+    if (repository == null) {
+      return;
+    }
+    await repository.enqueue(
+      id: id,
+      operationType: PendingSyncOperationType.insert,
+      targetTable: targetTable,
+      payload: payload,
+    );
+  }
+
+  String _sessionModeFor(ChallengeMode mode) {
+    return switch (mode) {
+      ChallengeMode.quizHanjaToHun ||
+      ChallengeMode.quizHunToHanja ||
+      ChallengeMode.quizMixed => 'quiz',
+      ChallengeMode.speedChoice || ChallengeMode.flipBoard => 'game',
+    };
   }
 }

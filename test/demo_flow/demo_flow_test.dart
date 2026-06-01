@@ -53,10 +53,10 @@ void main() {
     await _pumpUntilFound(tester, find.text('안녕하세요, 김하준!'));
     expect(find.text('서울새솔초등학교 · 3학년'), findsOneWidget);
 
-    await _tapVisibleText(tester, '오늘의 한자 시작');
-    await _pumpUntilFound(tester, find.text('직접 써보기'));
+    await _tapVisibleText(tester, '오늘 학습 시작');
+    await _pumpUntilFound(tester, find.text('시작'));
 
-    expect(find.text('채점받기'), findsOneWidget);
+    expect(find.text('시작'), findsOneWidget);
   });
 
   testWidgets('mixed quiz completes and navigates to result', (tester) async {
@@ -251,6 +251,26 @@ class _FakeSchoolRepository implements SchoolRepository {
       standardSchoolCode: school.standardSchoolCode,
       schoolName: school.schoolName,
       grade: grade,
+      isDemo: true,
+    );
+  }
+
+  @override
+  Future<AppUserProfile> updateStudentProfile({
+    required String profileId,
+    required String displayName,
+    required int grade,
+    required School school,
+    required String avatarKey,
+  }) async {
+    return AppUserProfile(
+      id: profileId,
+      displayName: displayName.trim(),
+      schoolId: school.id,
+      standardSchoolCode: school.standardSchoolCode,
+      schoolName: school.schoolName,
+      grade: grade,
+      avatarKey: avatarKey,
       isDemo: true,
     );
   }

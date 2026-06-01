@@ -160,6 +160,7 @@ class SchoolRepositoryImpl implements SchoolRepository {
             'standard_school_code': school.standardSchoolCode,
             'school_name': school.schoolName,
             'grade': grade,
+            'avatar_key': 'explorer',
             'is_demo': true,
           })
           .select()
@@ -191,6 +192,62 @@ class SchoolRepositoryImpl implements SchoolRepository {
   }
 
   @override
+  Future<AppUserProfile> updateStudentProfile({
+    required String profileId,
+    required String displayName,
+    required int grade,
+    required School school,
+    required String avatarKey,
+  }) async {
+    final name = displayName.trim();
+    if (name.isEmpty) {
+      throw const AppException(
+        code: AppExceptionCode.validation,
+        message: '이름을 입력해주세요.',
+      );
+    }
+    if (!AppConstants.supportedGrades.contains(grade)) {
+      throw const AppException(
+        code: AppExceptionCode.validation,
+        message: '학년을 선택해주세요.',
+      );
+    }
+    if (!_supportedAvatarKeys.contains(avatarKey)) {
+      throw const AppException(
+        code: AppExceptionCode.validation,
+        message: '아바타를 선택해주세요.',
+      );
+    }
+
+    try {
+      final profileRow = await _client
+          .from('profiles')
+          .update({
+            'display_name': name,
+            'school_id': school.id,
+            'standard_school_code': school.standardSchoolCode,
+            'school_name': school.schoolName,
+            'grade': grade,
+            'avatar_key': avatarKey,
+          })
+          .eq('id', profileId)
+          .select()
+          .single();
+
+      return AppUserProfile.fromJson(Map<String, dynamic>.from(profileRow));
+    } on AppException {
+      rethrow;
+    } catch (error, stackTrace) {
+      throw AppException(
+        code: AppExceptionCode.network,
+        message: '프로필 저장에 실패했습니다.',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  @override
   Future<void> signOut() async {
     try {
       await _client.auth.signOut();
@@ -211,3 +268,12 @@ class SchoolRepositoryImpl implements SchoolRepository {
     }
   }
 }
+
+const _supportedAvatarKeys = {
+  'explorer',
+  'scholar',
+  'star',
+  'rocket',
+  'leaf',
+  'medal',
+};

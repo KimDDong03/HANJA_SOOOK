@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/audio/app_audio_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/widgets/app_confirm_dialog.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.child});
@@ -121,27 +122,16 @@ class AppShell extends ConsumerWidget {
       return;
     }
 
-    final shouldExit = await showDialog<bool>(
+    final shouldExit = await showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('종료하시겠습니까?'),
-          content: const Text('한자쏘옥을 종료할까요?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('종료'),
-            ),
-          ],
-        );
-      },
+      title: '종료하시겠습니까?',
+      message: '한자쏘옥을 종료할까요?',
+      confirmLabel: '종료',
+      icon: Icons.logout,
+      isDestructive: true,
     );
 
-    if (shouldExit == true && context.mounted) {
+    if (shouldExit && context.mounted) {
       unawaited(SystemNavigator.pop());
     }
   }

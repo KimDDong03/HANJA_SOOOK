@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppUserProfile {
 
- String get id; UserRole get role;@JsonKey(name: 'display_name') String get displayName;@JsonKey(name: 'school_id') String? get schoolId;@JsonKey(name: 'standard_school_code') String? get standardSchoolCode;@JsonKey(name: 'school_name') String? get schoolName; int? get grade;@JsonKey(name: 'class_name') String? get className; int get level;@JsonKey(name: 'total_xp') int get totalXp; int get coins;@JsonKey(name: 'is_demo') bool get isDemo;@JsonKey(name: 'created_at') DateTime? get createdAt;@JsonKey(name: 'updated_at') DateTime? get updatedAt;
+ String get id; UserRole get role;@JsonKey(name: 'display_name') String get displayName;@JsonKey(name: 'school_id') String? get schoolId;@JsonKey(name: 'standard_school_code') String? get standardSchoolCode;@JsonKey(name: 'school_name') String? get schoolName; int? get grade;@JsonKey(name: 'class_name') String? get className;@JsonKey(name: 'avatar_key') String get avatarKey; int get level;@JsonKey(name: 'total_xp') int get totalXp; int get coins;@JsonKey(name: 'is_demo') bool get isDemo;@JsonKey(name: 'created_at') DateTime? get createdAt;@JsonKey(name: 'updated_at') DateTime? get updatedAt;
 /// Create a copy of AppUserProfile
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $AppUserProfileCopyWith<AppUserProfile> get copyWith => _$AppUserProfileCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppUserProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.role, role) || other.role == role)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.schoolId, schoolId) || other.schoolId == schoolId)&&(identical(other.standardSchoolCode, standardSchoolCode) || other.standardSchoolCode == standardSchoolCode)&&(identical(other.schoolName, schoolName) || other.schoolName == schoolName)&&(identical(other.grade, grade) || other.grade == grade)&&(identical(other.className, className) || other.className == className)&&(identical(other.level, level) || other.level == level)&&(identical(other.totalXp, totalXp) || other.totalXp == totalXp)&&(identical(other.coins, coins) || other.coins == coins)&&(identical(other.isDemo, isDemo) || other.isDemo == isDemo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppUserProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.role, role) || other.role == role)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.schoolId, schoolId) || other.schoolId == schoolId)&&(identical(other.standardSchoolCode, standardSchoolCode) || other.standardSchoolCode == standardSchoolCode)&&(identical(other.schoolName, schoolName) || other.schoolName == schoolName)&&(identical(other.grade, grade) || other.grade == grade)&&(identical(other.className, className) || other.className == className)&&(identical(other.avatarKey, avatarKey) || other.avatarKey == avatarKey)&&(identical(other.level, level) || other.level == level)&&(identical(other.totalXp, totalXp) || other.totalXp == totalXp)&&(identical(other.coins, coins) || other.coins == coins)&&(identical(other.isDemo, isDemo) || other.isDemo == isDemo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,role,displayName,schoolId,standardSchoolCode,schoolName,grade,className,level,totalXp,coins,isDemo,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,role,displayName,schoolId,standardSchoolCode,schoolName,grade,className,avatarKey,level,totalXp,coins,isDemo,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'AppUserProfile(id: $id, role: $role, displayName: $displayName, schoolId: $schoolId, standardSchoolCode: $standardSchoolCode, schoolName: $schoolName, grade: $grade, className: $className, level: $level, totalXp: $totalXp, coins: $coins, isDemo: $isDemo, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'AppUserProfile(id: $id, role: $role, displayName: $displayName, schoolId: $schoolId, standardSchoolCode: $standardSchoolCode, schoolName: $schoolName, grade: $grade, className: $className, avatarKey: $avatarKey, level: $level, totalXp: $totalXp, coins: $coins, isDemo: $isDemo, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $AppUserProfileCopyWith<$Res>  {
   factory $AppUserProfileCopyWith(AppUserProfile value, $Res Function(AppUserProfile) _then) = _$AppUserProfileCopyWithImpl;
 @useResult
 $Res call({
- String id, UserRole role,@JsonKey(name: 'display_name') String displayName,@JsonKey(name: 'school_id') String? schoolId,@JsonKey(name: 'standard_school_code') String? standardSchoolCode,@JsonKey(name: 'school_name') String? schoolName, int? grade,@JsonKey(name: 'class_name') String? className, int level,@JsonKey(name: 'total_xp') int totalXp, int coins,@JsonKey(name: 'is_demo') bool isDemo,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
+ String id, UserRole role,@JsonKey(name: 'display_name') String displayName,@JsonKey(name: 'school_id') String? schoolId,@JsonKey(name: 'standard_school_code') String? standardSchoolCode,@JsonKey(name: 'school_name') String? schoolName, int? grade,@JsonKey(name: 'class_name') String? className,@JsonKey(name: 'avatar_key') String avatarKey, int level,@JsonKey(name: 'total_xp') int totalXp, int coins,@JsonKey(name: 'is_demo') bool isDemo,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
 });
 
 
@@ -65,7 +65,7 @@ class _$AppUserProfileCopyWithImpl<$Res>
 
 /// Create a copy of AppUserProfile
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? role = null,Object? displayName = null,Object? schoolId = freezed,Object? standardSchoolCode = freezed,Object? schoolName = freezed,Object? grade = freezed,Object? className = freezed,Object? level = null,Object? totalXp = null,Object? coins = null,Object? isDemo = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? role = null,Object? displayName = null,Object? schoolId = freezed,Object? standardSchoolCode = freezed,Object? schoolName = freezed,Object? grade = freezed,Object? className = freezed,Object? avatarKey = null,Object? level = null,Object? totalXp = null,Object? coins = null,Object? isDemo = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
@@ -75,7 +75,8 @@ as String?,standardSchoolCode: freezed == standardSchoolCode ? _self.standardSch
 as String?,schoolName: freezed == schoolName ? _self.schoolName : schoolName // ignore: cast_nullable_to_non_nullable
 as String?,grade: freezed == grade ? _self.grade : grade // ignore: cast_nullable_to_non_nullable
 as int?,className: freezed == className ? _self.className : className // ignore: cast_nullable_to_non_nullable
-as String?,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
+as String?,avatarKey: null == avatarKey ? _self.avatarKey : avatarKey // ignore: cast_nullable_to_non_nullable
+as String,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
 as int,totalXp: null == totalXp ? _self.totalXp : totalXp // ignore: cast_nullable_to_non_nullable
 as int,coins: null == coins ? _self.coins : coins // ignore: cast_nullable_to_non_nullable
 as int,isDemo: null == isDemo ? _self.isDemo : isDemo // ignore: cast_nullable_to_non_nullable
@@ -166,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  UserRole role, @JsonKey(name: 'display_name')  String displayName, @JsonKey(name: 'school_id')  String? schoolId, @JsonKey(name: 'standard_school_code')  String? standardSchoolCode, @JsonKey(name: 'school_name')  String? schoolName,  int? grade, @JsonKey(name: 'class_name')  String? className,  int level, @JsonKey(name: 'total_xp')  int totalXp,  int coins, @JsonKey(name: 'is_demo')  bool isDemo, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  UserRole role, @JsonKey(name: 'display_name')  String displayName, @JsonKey(name: 'school_id')  String? schoolId, @JsonKey(name: 'standard_school_code')  String? standardSchoolCode, @JsonKey(name: 'school_name')  String? schoolName,  int? grade, @JsonKey(name: 'class_name')  String? className, @JsonKey(name: 'avatar_key')  String avatarKey,  int level, @JsonKey(name: 'total_xp')  int totalXp,  int coins, @JsonKey(name: 'is_demo')  bool isDemo, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppUserProfile() when $default != null:
-return $default(_that.id,_that.role,_that.displayName,_that.schoolId,_that.standardSchoolCode,_that.schoolName,_that.grade,_that.className,_that.level,_that.totalXp,_that.coins,_that.isDemo,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.role,_that.displayName,_that.schoolId,_that.standardSchoolCode,_that.schoolName,_that.grade,_that.className,_that.avatarKey,_that.level,_that.totalXp,_that.coins,_that.isDemo,_that.createdAt,_that.updatedAt);case _:
   return orElse();
 
 }
@@ -187,10 +188,10 @@ return $default(_that.id,_that.role,_that.displayName,_that.schoolId,_that.stand
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  UserRole role, @JsonKey(name: 'display_name')  String displayName, @JsonKey(name: 'school_id')  String? schoolId, @JsonKey(name: 'standard_school_code')  String? standardSchoolCode, @JsonKey(name: 'school_name')  String? schoolName,  int? grade, @JsonKey(name: 'class_name')  String? className,  int level, @JsonKey(name: 'total_xp')  int totalXp,  int coins, @JsonKey(name: 'is_demo')  bool isDemo, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  UserRole role, @JsonKey(name: 'display_name')  String displayName, @JsonKey(name: 'school_id')  String? schoolId, @JsonKey(name: 'standard_school_code')  String? standardSchoolCode, @JsonKey(name: 'school_name')  String? schoolName,  int? grade, @JsonKey(name: 'class_name')  String? className, @JsonKey(name: 'avatar_key')  String avatarKey,  int level, @JsonKey(name: 'total_xp')  int totalXp,  int coins, @JsonKey(name: 'is_demo')  bool isDemo, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _AppUserProfile():
-return $default(_that.id,_that.role,_that.displayName,_that.schoolId,_that.standardSchoolCode,_that.schoolName,_that.grade,_that.className,_that.level,_that.totalXp,_that.coins,_that.isDemo,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.role,_that.displayName,_that.schoolId,_that.standardSchoolCode,_that.schoolName,_that.grade,_that.className,_that.avatarKey,_that.level,_that.totalXp,_that.coins,_that.isDemo,_that.createdAt,_that.updatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -207,10 +208,10 @@ return $default(_that.id,_that.role,_that.displayName,_that.schoolId,_that.stand
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  UserRole role, @JsonKey(name: 'display_name')  String displayName, @JsonKey(name: 'school_id')  String? schoolId, @JsonKey(name: 'standard_school_code')  String? standardSchoolCode, @JsonKey(name: 'school_name')  String? schoolName,  int? grade, @JsonKey(name: 'class_name')  String? className,  int level, @JsonKey(name: 'total_xp')  int totalXp,  int coins, @JsonKey(name: 'is_demo')  bool isDemo, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  UserRole role, @JsonKey(name: 'display_name')  String displayName, @JsonKey(name: 'school_id')  String? schoolId, @JsonKey(name: 'standard_school_code')  String? standardSchoolCode, @JsonKey(name: 'school_name')  String? schoolName,  int? grade, @JsonKey(name: 'class_name')  String? className, @JsonKey(name: 'avatar_key')  String avatarKey,  int level, @JsonKey(name: 'total_xp')  int totalXp,  int coins, @JsonKey(name: 'is_demo')  bool isDemo, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _AppUserProfile() when $default != null:
-return $default(_that.id,_that.role,_that.displayName,_that.schoolId,_that.standardSchoolCode,_that.schoolName,_that.grade,_that.className,_that.level,_that.totalXp,_that.coins,_that.isDemo,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.role,_that.displayName,_that.schoolId,_that.standardSchoolCode,_that.schoolName,_that.grade,_that.className,_that.avatarKey,_that.level,_that.totalXp,_that.coins,_that.isDemo,_that.createdAt,_that.updatedAt);case _:
   return null;
 
 }
@@ -222,7 +223,7 @@ return $default(_that.id,_that.role,_that.displayName,_that.schoolId,_that.stand
 @JsonSerializable()
 
 class _AppUserProfile implements AppUserProfile {
-  const _AppUserProfile({required this.id, this.role = UserRole.student, @JsonKey(name: 'display_name') required this.displayName, @JsonKey(name: 'school_id') this.schoolId, @JsonKey(name: 'standard_school_code') this.standardSchoolCode, @JsonKey(name: 'school_name') this.schoolName, this.grade, @JsonKey(name: 'class_name') this.className, this.level = 1, @JsonKey(name: 'total_xp') this.totalXp = 0, this.coins = 0, @JsonKey(name: 'is_demo') this.isDemo = false, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt});
+  const _AppUserProfile({required this.id, this.role = UserRole.student, @JsonKey(name: 'display_name') required this.displayName, @JsonKey(name: 'school_id') this.schoolId, @JsonKey(name: 'standard_school_code') this.standardSchoolCode, @JsonKey(name: 'school_name') this.schoolName, this.grade, @JsonKey(name: 'class_name') this.className, @JsonKey(name: 'avatar_key') this.avatarKey = 'explorer', this.level = 1, @JsonKey(name: 'total_xp') this.totalXp = 0, this.coins = 0, @JsonKey(name: 'is_demo') this.isDemo = false, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt});
   factory _AppUserProfile.fromJson(Map<String, dynamic> json) => _$AppUserProfileFromJson(json);
 
 @override final  String id;
@@ -233,6 +234,7 @@ class _AppUserProfile implements AppUserProfile {
 @override@JsonKey(name: 'school_name') final  String? schoolName;
 @override final  int? grade;
 @override@JsonKey(name: 'class_name') final  String? className;
+@override@JsonKey(name: 'avatar_key') final  String avatarKey;
 @override@JsonKey() final  int level;
 @override@JsonKey(name: 'total_xp') final  int totalXp;
 @override@JsonKey() final  int coins;
@@ -253,16 +255,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppUserProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.role, role) || other.role == role)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.schoolId, schoolId) || other.schoolId == schoolId)&&(identical(other.standardSchoolCode, standardSchoolCode) || other.standardSchoolCode == standardSchoolCode)&&(identical(other.schoolName, schoolName) || other.schoolName == schoolName)&&(identical(other.grade, grade) || other.grade == grade)&&(identical(other.className, className) || other.className == className)&&(identical(other.level, level) || other.level == level)&&(identical(other.totalXp, totalXp) || other.totalXp == totalXp)&&(identical(other.coins, coins) || other.coins == coins)&&(identical(other.isDemo, isDemo) || other.isDemo == isDemo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppUserProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.role, role) || other.role == role)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.schoolId, schoolId) || other.schoolId == schoolId)&&(identical(other.standardSchoolCode, standardSchoolCode) || other.standardSchoolCode == standardSchoolCode)&&(identical(other.schoolName, schoolName) || other.schoolName == schoolName)&&(identical(other.grade, grade) || other.grade == grade)&&(identical(other.className, className) || other.className == className)&&(identical(other.avatarKey, avatarKey) || other.avatarKey == avatarKey)&&(identical(other.level, level) || other.level == level)&&(identical(other.totalXp, totalXp) || other.totalXp == totalXp)&&(identical(other.coins, coins) || other.coins == coins)&&(identical(other.isDemo, isDemo) || other.isDemo == isDemo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,role,displayName,schoolId,standardSchoolCode,schoolName,grade,className,level,totalXp,coins,isDemo,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,role,displayName,schoolId,standardSchoolCode,schoolName,grade,className,avatarKey,level,totalXp,coins,isDemo,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'AppUserProfile(id: $id, role: $role, displayName: $displayName, schoolId: $schoolId, standardSchoolCode: $standardSchoolCode, schoolName: $schoolName, grade: $grade, className: $className, level: $level, totalXp: $totalXp, coins: $coins, isDemo: $isDemo, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'AppUserProfile(id: $id, role: $role, displayName: $displayName, schoolId: $schoolId, standardSchoolCode: $standardSchoolCode, schoolName: $schoolName, grade: $grade, className: $className, avatarKey: $avatarKey, level: $level, totalXp: $totalXp, coins: $coins, isDemo: $isDemo, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -273,7 +275,7 @@ abstract mixin class _$AppUserProfileCopyWith<$Res> implements $AppUserProfileCo
   factory _$AppUserProfileCopyWith(_AppUserProfile value, $Res Function(_AppUserProfile) _then) = __$AppUserProfileCopyWithImpl;
 @override @useResult
 $Res call({
- String id, UserRole role,@JsonKey(name: 'display_name') String displayName,@JsonKey(name: 'school_id') String? schoolId,@JsonKey(name: 'standard_school_code') String? standardSchoolCode,@JsonKey(name: 'school_name') String? schoolName, int? grade,@JsonKey(name: 'class_name') String? className, int level,@JsonKey(name: 'total_xp') int totalXp, int coins,@JsonKey(name: 'is_demo') bool isDemo,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
+ String id, UserRole role,@JsonKey(name: 'display_name') String displayName,@JsonKey(name: 'school_id') String? schoolId,@JsonKey(name: 'standard_school_code') String? standardSchoolCode,@JsonKey(name: 'school_name') String? schoolName, int? grade,@JsonKey(name: 'class_name') String? className,@JsonKey(name: 'avatar_key') String avatarKey, int level,@JsonKey(name: 'total_xp') int totalXp, int coins,@JsonKey(name: 'is_demo') bool isDemo,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
 });
 
 
@@ -290,7 +292,7 @@ class __$AppUserProfileCopyWithImpl<$Res>
 
 /// Create a copy of AppUserProfile
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? role = null,Object? displayName = null,Object? schoolId = freezed,Object? standardSchoolCode = freezed,Object? schoolName = freezed,Object? grade = freezed,Object? className = freezed,Object? level = null,Object? totalXp = null,Object? coins = null,Object? isDemo = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? role = null,Object? displayName = null,Object? schoolId = freezed,Object? standardSchoolCode = freezed,Object? schoolName = freezed,Object? grade = freezed,Object? className = freezed,Object? avatarKey = null,Object? level = null,Object? totalXp = null,Object? coins = null,Object? isDemo = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
   return _then(_AppUserProfile(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
@@ -300,7 +302,8 @@ as String?,standardSchoolCode: freezed == standardSchoolCode ? _self.standardSch
 as String?,schoolName: freezed == schoolName ? _self.schoolName : schoolName // ignore: cast_nullable_to_non_nullable
 as String?,grade: freezed == grade ? _self.grade : grade // ignore: cast_nullable_to_non_nullable
 as int?,className: freezed == className ? _self.className : className // ignore: cast_nullable_to_non_nullable
-as String?,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
+as String?,avatarKey: null == avatarKey ? _self.avatarKey : avatarKey // ignore: cast_nullable_to_non_nullable
+as String,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
 as int,totalXp: null == totalXp ? _self.totalXp : totalXp // ignore: cast_nullable_to_non_nullable
 as int,coins: null == coins ? _self.coins : coins // ignore: cast_nullable_to_non_nullable
 as int,isDemo: null == isDemo ? _self.isDemo : isDemo // ignore: cast_nullable_to_non_nullable

@@ -52,6 +52,26 @@ class _FakeSchoolRepository implements SchoolRepository {
   }
 
   @override
+  Future<AppUserProfile> updateStudentProfile({
+    required String profileId,
+    required String displayName,
+    required int grade,
+    required School school,
+    required String avatarKey,
+  }) async {
+    return AppUserProfile(
+      id: profileId,
+      displayName: displayName.trim(),
+      schoolId: school.id,
+      standardSchoolCode: school.standardSchoolCode,
+      schoolName: school.schoolName,
+      grade: grade,
+      avatarKey: avatarKey,
+      isDemo: true,
+    );
+  }
+
+  @override
   Future<void> signOut() async {}
 }
 
@@ -311,12 +331,12 @@ void main() {
     await pumpUntilFound(tester, find.text('한자쏘옥 모험'));
 
     expect(find.text('한자쏘옥 모험'), findsOneWidget);
-    await pumpUntilFound(tester, find.text('오늘의 한자 시작'));
-    expect(find.text('오늘의 한자 시작'), findsOneWidget);
+    await pumpUntilFound(tester, find.text('오늘 학습 시작'));
+    expect(find.text('오늘 학습 시작'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FilledButton, '오늘의 한자 시작'));
-    await pumpUntilFound(tester, find.text('획순 보기'));
-    expect(find.text('획순 보기'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, '오늘 학습 시작'));
+    await pumpUntilFound(tester, find.text('오늘 학습'));
+    expect(find.text('시작'), findsOneWidget);
 
     final routeChecks = <String, String>{
       RoutePaths.hanja('HJ-0001'): '쓰기 연습 시작',
@@ -374,7 +394,7 @@ void main() {
 
       expect(find.text('종료하시겠습니까?'), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(TextButton, '취소'));
+      await tester.tap(find.widgetWithText(OutlinedButton, '취소'));
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('종료하시겠습니까?'), findsNothing);

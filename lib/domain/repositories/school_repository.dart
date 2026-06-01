@@ -18,5 +18,13 @@ abstract class SchoolRepository {
     required int grade,
   });
 
+  Future<AppUserProfile> updateStudentProfile({
+    required String profileId,
+    required String displayName,
+    required int grade,
+    required School school,
+    required String avatarKey,
+  });
+
   Future<void> signOut();
 }

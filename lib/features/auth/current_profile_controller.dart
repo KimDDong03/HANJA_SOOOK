@@ -21,8 +21,14 @@ class CurrentProfileController extends Notifier<AppUserProfile?> {
     state = null;
   }
 
+  void updateProfile(AppUserProfile profile) {
+    state = profile;
+  }
+
   Future<bool> restoreFromCurrentSession() async {
-    final profile = await ref.read(schoolRepositoryProvider).getCurrentProfile();
+    final profile = await ref
+        .read(schoolRepositoryProvider)
+        .getCurrentProfile();
     if (profile == null) {
       return false;
     }

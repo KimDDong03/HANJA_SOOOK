@@ -258,6 +258,14 @@ class _RewardTrack extends StatelessWidget {
               fontWeight: FontWeight.w900,
             ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            data.rewardTrackMessage,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             children: [

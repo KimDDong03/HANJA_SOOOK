@@ -59,6 +59,14 @@ class _ChallengeContent extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         _ChallengeModeGrid(data: data),
+        if (!data.canPlayChallengeGames) ...[
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: () => context.push(RoutePaths.dailySession),
+            icon: const Icon(Icons.play_arrow),
+            label: const Text('오늘 학습 먼저 시작'),
+          ),
+        ],
       ],
     );
   }

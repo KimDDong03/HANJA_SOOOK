@@ -158,10 +158,15 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     FilledButton.icon(
-                      onPressed: () =>
-                          context.push(RoutePaths.guidedWriting(hanja.id)),
+                      onPressed: () => context.push(
+                        learning.chapterKey == null
+                            ? RoutePaths.dailySession
+                            : RoutePaths.dailySessionForChapter(
+                                learning.chapterKey!,
+                              ),
+                      ),
                       icon: const Icon(Icons.play_arrow),
-                      label: const Text('오늘의 한자 시작'),
+                      label: const Text('오늘 학습 시작'),
                     ),
                     const SizedBox(height: 8),
                     TextButton.icon(

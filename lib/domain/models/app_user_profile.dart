@@ -24,6 +24,7 @@ abstract class AppUserProfile with _$AppUserProfile {
     @JsonKey(name: 'school_name') String? schoolName,
     int? grade,
     @JsonKey(name: 'class_name') String? className,
+    @JsonKey(name: 'avatar_key') @Default('explorer') String avatarKey,
     @Default(1) int level,
     @JsonKey(name: 'total_xp') @Default(0) int totalXp,
     @Default(0) int coins,

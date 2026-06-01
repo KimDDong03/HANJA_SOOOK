@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_confirm_dialog.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/app_user_profile.dart';
 import '../../domain/models/notification_settings.dart';
+import '../../domain/models/school.dart';
 import '../auth/current_profile_controller.dart';
 import 'learning_environment_controller.dart';
 import 'notification_settings_controller.dart';
+import 'profile_edit_controller.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key, required this.role});
@@ -172,6 +177,7 @@ class _ProfilePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayName = _displayName;
     final detail = _detailText;
+    final avatar = _AvatarSpec.fromKey(profile?.avatarKey);
 
     return PlayfulPanel(
       padding: const EdgeInsets.all(16),
@@ -179,8 +185,8 @@ class _ProfilePanel extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 34,
-            backgroundColor: spec.tint.withValues(alpha: 0.32),
-            child: Icon(spec.icon, color: AppColors.textPrimary, size: 36),
+            backgroundColor: avatar.color,
+            child: Icon(avatar.icon, color: AppColors.textPrimary, size: 36),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -219,7 +225,9 @@ class _ProfilePanel extends StatelessWidget {
           const SizedBox(width: 8),
           IconButton.filledTonal(
             tooltip: '프로필 편집',
-            onPressed: () => _showSnack(context, '프로필 편집은 준비 중이에요.'),
+            onPressed: profile == null
+                ? () => _showSnack(context, '프로필 정보를 불러온 뒤 다시 시도해주세요.')
+                : () => _showProfileEditSheet(context, profile!),
             icon: const Icon(Icons.edit),
           ),
         ],
@@ -253,6 +261,419 @@ class _ProfilePanel extends StatelessWidget {
       className,
     ].whereType<String>().where((text) => text.isNotEmpty).join(' ');
     return [gradeClass.isEmpty ? '3학년 2반' : gradeClass, schoolName].join('\n');
+  }
+}
+
+void _showProfileEditSheet(BuildContext context, AppUserProfile profile) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => _ProfileEditSheet(profile: profile),
+  );
+}
+
+class _ProfileEditSheet extends ConsumerStatefulWidget {
+  const _ProfileEditSheet({required this.profile});
+
+  final AppUserProfile profile;
+
+  @override
+  ConsumerState<_ProfileEditSheet> createState() => _ProfileEditSheetState();
+}
+
+class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _schoolController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.profile.displayName);
+    _schoolController = TextEditingController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(profileEditControllerProvider.notifier)
+          .loadFromProfile(widget.profile, force: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _schoolController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(profileEditControllerProvider);
+    final controller = ref.read(profileEditControllerProvider.notifier);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, 0, 20, bottomInset + 20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                '내 정보 바꾸기',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _nameController,
+                enabled: !state.isSaving,
+                onChanged: controller.updateDisplayName,
+                decoration: const InputDecoration(
+                  labelText: '이름',
+                  hintText: '이름을 입력해주세요',
+                  prefixIcon: Icon(Icons.face),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                '아바타',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _AvatarOptions(
+                selectedAvatarKey: state.avatarKey,
+                onSelected: state.isSaving ? (_) {} : controller.selectAvatar,
+              ),
+              const SizedBox(height: 18),
+              Text(
+                '학년',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _ProfileGradeOptions(
+                selectedGrade: state.grade,
+                onSelected: state.isSaving ? (_) {} : controller.selectGrade,
+              ),
+              const SizedBox(height: 18),
+              TextField(
+                controller: _schoolController,
+                enabled: !state.isSaving,
+                textInputAction: TextInputAction.search,
+                onChanged: controller.updateKeyword,
+                onSubmitted: state.isSaving
+                    ? null
+                    : (_) => controller.searchSchools(),
+                decoration: InputDecoration(
+                  labelText: '학교 변경',
+                  hintText: state.selectedSchool?.schoolName ?? '학교명을 검색해주세요',
+                  prefixIcon: const Icon(Icons.school),
+                ),
+              ),
+              const SizedBox(height: 10),
+              AppButton(
+                label: '학교 검색',
+                onPressed: state.isSaving ? null : controller.searchSchools,
+                isLoading: state.isSearching,
+                variant: AppButtonVariant.outlined,
+                icon: Icons.search,
+              ),
+              if (state.selectedSchool != null) ...[
+                const SizedBox(height: 10),
+                _SelectedSchoolNotice(school: state.selectedSchool!),
+              ],
+              if (state.searchResults.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                _ProfileSchoolResults(
+                  schools: state.searchResults,
+                  selectedSchool: state.selectedSchool,
+                  onSelected: state.isSaving ? (_) {} : controller.selectSchool,
+                ),
+              ],
+              if (state.errorMessage != null) ...[
+                const SizedBox(height: 14),
+                Text(
+                  state.errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              AppButton(
+                label: '저장하기',
+                onPressed: () async {
+                  final didSave = await controller.save();
+                  if (!context.mounted || !didSave) {
+                    return;
+                  }
+                  final messenger = ScaffoldMessenger.of(context);
+                  Navigator.pop(context);
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('내 정보가 저장됐어요.'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                isLoading: state.isSaving,
+                icon: Icons.check,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AvatarOptions extends StatelessWidget {
+  const _AvatarOptions({
+    required this.selectedAvatarKey,
+    required this.onSelected,
+  });
+
+  final String selectedAvatarKey;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        for (final avatar in _AvatarSpec.options)
+          _AvatarOption(
+            avatar: avatar,
+            selected: selectedAvatarKey == avatar.key,
+            onTap: () => onSelected(avatar.key),
+          ),
+      ],
+    );
+  }
+}
+
+class _AvatarOption extends StatelessWidget {
+  const _AvatarOption({
+    required this.avatar,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _AvatarSpec avatar;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.navSelected : AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: selected ? AppColors.primary : AppColors.border,
+          width: selected ? 2 : 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: SizedBox(
+          width: 82,
+          height: 82,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: avatar.color,
+                child: Icon(avatar.icon, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                avatar.label,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileGradeOptions extends StatelessWidget {
+  const _ProfileGradeOptions({
+    required this.selectedGrade,
+    required this.onSelected,
+  });
+
+  final int? selectedGrade;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final grade in AppConstants.supportedGrades)
+          ChoiceChip(
+            label: Text('$grade학년'),
+            selected: selectedGrade == grade,
+            onSelected: (_) => onSelected(grade),
+          ),
+      ],
+    );
+  }
+}
+
+class _SelectedSchoolNotice extends StatelessWidget {
+  const _SelectedSchoolNotice({required this.school});
+
+  final School school;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline, color: AppColors.textSecondary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${school.schoolName} 선택됨\n학교를 바꾸면 반 연결이 달라질 수 있어요.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileSchoolResults extends StatelessWidget {
+  const _ProfileSchoolResults({
+    required this.schools,
+    required this.selectedSchool,
+    required this.onSelected,
+  });
+
+  final List<School> schools;
+  final School? selectedSchool;
+  final ValueChanged<School> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (final school in schools)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _ProfileSchoolResultTile(
+              school: school,
+              selected:
+                  selectedSchool?.standardSchoolCode ==
+                  school.standardSchoolCode,
+              onTap: () => onSelected(school),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ProfileSchoolResultTile extends StatelessWidget {
+  const _ProfileSchoolResultTile({
+    required this.school,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final School school;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.yellow : AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: selected ? AppColors.primary : AppColors.border,
+          width: selected ? 2 : 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              const Icon(Icons.location_on, color: AppColors.textPrimary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      school.schoolName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      [school.regionName, school.roadAddress]
+                          .whereType<String>()
+                          .where((text) => text.isNotEmpty)
+                          .join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (selected)
+                const Icon(Icons.check_circle, color: AppColors.primary),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -522,26 +943,15 @@ class _LogoutRow extends ConsumerWidget {
   }
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
-    final shouldLogout = await showDialog<bool>(
+    final shouldLogout = await showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('로그아웃할까요?'),
-          content: const Text('다시 시작하려면 학교와 학년을 선택해야 해요.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('로그아웃'),
-            ),
-          ],
-        );
-      },
+      title: '로그아웃할까요?',
+      message: '다시 시작하려면 학교와 학년을 선택해야 해요.',
+      confirmLabel: '로그아웃',
+      icon: Icons.logout,
+      isDestructive: true,
     );
-    if (shouldLogout != true || !context.mounted) {
+    if (!shouldLogout || !context.mounted) {
       return;
     }
 
@@ -921,6 +1331,68 @@ class _RoleSpec {
       'teacher' => teacher,
       _ => student,
     };
+  }
+}
+
+class _AvatarSpec {
+  const _AvatarSpec({
+    required this.key,
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  final String key;
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  static const options = [
+    _AvatarSpec(
+      key: 'explorer',
+      label: '탐험',
+      icon: Icons.explore,
+      color: AppColors.blue,
+    ),
+    _AvatarSpec(
+      key: 'scholar',
+      label: '학자',
+      icon: Icons.menu_book,
+      color: AppColors.green,
+    ),
+    _AvatarSpec(
+      key: 'star',
+      label: '별',
+      icon: Icons.auto_awesome,
+      color: AppColors.yellow,
+    ),
+    _AvatarSpec(
+      key: 'rocket',
+      label: '로켓',
+      icon: Icons.rocket_launch,
+      color: AppColors.peach,
+    ),
+    _AvatarSpec(
+      key: 'leaf',
+      label: '새싹',
+      icon: Icons.eco,
+      color: AppColors.mint,
+    ),
+    _AvatarSpec(
+      key: 'medal',
+      label: '메달',
+      icon: Icons.military_tech,
+      color: AppColors.lavender,
+    ),
+  ];
+
+  static _AvatarSpec fromKey(String? key) {
+    for (final avatar in options) {
+      if (avatar.key == key) {
+        return avatar;
+      }
+    }
+    return options.first;
   }
 }
 
