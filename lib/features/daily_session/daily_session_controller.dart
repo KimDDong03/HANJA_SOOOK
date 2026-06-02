@@ -8,6 +8,7 @@ import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/models/stroke_asset.dart';
 import '../../domain/services/learning_plan_service.dart';
+import '../../domain/services/thinking_unit_image_service.dart';
 import '../auth/current_profile_controller.dart';
 import '../learning/learning_progress_controller.dart';
 
@@ -81,6 +82,11 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
       randomWritingItems: randomWritingItems,
       chapterKey: plan.chapterKey,
       chapterName: plan.chapterName,
+      imageAssetPath: plan.chapterKey == null
+          ? null
+          : const ThinkingUnitImageService().imageAssetPathForChapterKey(
+              plan.chapterKey!,
+            ),
     );
   }
 
@@ -105,11 +111,150 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
     }
     state = AsyncData(
       current.copyWith(
+        guidedWritingCompleted: true,
         phase: DailySessionPhase.hanjaToHunQuiz,
         index: 0,
         selectedAnswer: null,
       ),
     );
+  }
+
+  void showGuidedWriting() {
+    _moveToPhase(DailySessionPhase.guidedWriting);
+  }
+
+  void showQuiz() {
+    _moveToPhase(DailySessionPhase.hanjaToHunQuiz);
+  }
+
+  void showRandomWriting() {
+    _moveToPhase(DailySessionPhase.randomWriting);
+  }
+
+  void _moveToPhase(DailySessionPhase phase) {
+    final current = state.value;
+    if (current == null || current.items.isEmpty) {
+      return;
+    }
+    final targetIndex = _targetIndexForPhase(current: current, phase: phase);
+    state = AsyncData(
+      current.copyWith(
+        phase: phase,
+        index: targetIndex,
+        selectedAnswer: _selectedAnswerForPhase(
+          current: current,
+          phase: phase,
+          index: targetIndex,
+        ),
+        incorrectAnswer: null,
+        currentQuestionHadMistake: false,
+      ),
+    );
+  }
+
+  void goBackWithinSession() {
+    final current = state.value;
+    if (current == null) {
+      return;
+    }
+
+    switch (current.phase) {
+      case DailySessionPhase.intro:
+      case DailySessionPhase.complete:
+        return;
+      case DailySessionPhase.guidedWriting:
+        if (current.index > 0) {
+          state = AsyncData(current.copyWith(index: current.index - 1));
+          return;
+        }
+        state = AsyncData(current.copyWith(phase: DailySessionPhase.intro));
+        return;
+      case DailySessionPhase.hanjaToHunQuiz:
+        if (current.index > 0) {
+          final previousIndex = current.index - 1;
+          state = AsyncData(
+            current.copyWith(
+              index: previousIndex,
+              selectedAnswer: _selectedAnswerForPhase(
+                current: current,
+                phase: DailySessionPhase.hanjaToHunQuiz,
+                index: previousIndex,
+              ),
+              incorrectAnswer: null,
+              currentQuestionHadMistake: false,
+            ),
+          );
+          return;
+        }
+        state = AsyncData(
+          current.copyWith(
+            phase: DailySessionPhase.guidedWriting,
+            index: _lastIndexOf(current.items),
+            selectedAnswer: null,
+            incorrectAnswer: null,
+            currentQuestionHadMistake: false,
+          ),
+        );
+        return;
+      case DailySessionPhase.hunToHanjaQuiz:
+        if (current.index > 0) {
+          final previousIndex = current.index - 1;
+          state = AsyncData(
+            current.copyWith(
+              index: previousIndex,
+              selectedAnswer: _selectedAnswerForPhase(
+                current: current,
+                phase: DailySessionPhase.hunToHanjaQuiz,
+                index: previousIndex,
+              ),
+              incorrectAnswer: null,
+              currentQuestionHadMistake: false,
+            ),
+          );
+          return;
+        }
+        state = AsyncData(
+          current.copyWith(
+            phase: DailySessionPhase.hanjaToHunQuiz,
+            index: _lastIndexOf(current.hanjaToHunQuestions),
+            selectedAnswer: _selectedAnswerForPhase(
+              current: current,
+              phase: DailySessionPhase.hanjaToHunQuiz,
+              index: _lastIndexOf(current.hanjaToHunQuestions),
+            ),
+            incorrectAnswer: null,
+            currentQuestionHadMistake: false,
+          ),
+        );
+        return;
+      case DailySessionPhase.randomWriting:
+        if (current.index > 0) {
+          state = AsyncData(current.copyWith(index: current.index - 1));
+          return;
+        }
+        state = AsyncData(
+          current.copyWith(
+            phase: DailySessionPhase.hunToHanjaQuiz,
+            index: _lastIndexOf(current.hunToHanjaQuestions),
+            selectedAnswer: _selectedAnswerForPhase(
+              current: current,
+              phase: DailySessionPhase.hunToHanjaQuiz,
+              index: _lastIndexOf(current.hunToHanjaQuestions),
+            ),
+            incorrectAnswer: null,
+            currentQuestionHadMistake: false,
+          ),
+        );
+        return;
+      case DailySessionPhase.mistakeReview:
+        state = AsyncData(
+          current.copyWith(
+            phase: DailySessionPhase.randomWriting,
+            index: _lastIndexOf(current.randomWritingItems),
+          ),
+        );
+        return;
+    }
   }
 
   void selectQuizAnswer(String answer) {
@@ -128,10 +273,15 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
     }
 
     if (current.index < current.currentQuizQuestions.length - 1) {
+      final nextIndex = current.index + 1;
       state = AsyncData(
         current.copyWith(
-          index: current.index + 1,
-          selectedAnswer: null,
+          index: nextIndex,
+          selectedAnswer: _selectedAnswerForPhase(
+            current: current,
+            phase: current.phase,
+            index: nextIndex,
+          ),
           incorrectAnswer: null,
           currentQuestionHadMistake: false,
         ),
@@ -142,9 +292,14 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
     if (current.phase == DailySessionPhase.hanjaToHunQuiz) {
       state = AsyncData(
         current.copyWith(
+          hanjaToHunQuizCompleted: true,
           phase: DailySessionPhase.hunToHanjaQuiz,
           index: 0,
-          selectedAnswer: null,
+          selectedAnswer: _selectedAnswerForPhase(
+            current: current,
+            phase: DailySessionPhase.hunToHanjaQuiz,
+            index: 0,
+          ),
           incorrectAnswer: null,
           currentQuestionHadMistake: false,
         ),
@@ -154,6 +309,7 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
 
     state = AsyncData(
       current.copyWith(
+        hunToHanjaQuizCompleted: true,
         phase: DailySessionPhase.randomWriting,
         index: 0,
         selectedAnswer: null,
@@ -172,12 +328,14 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
       state = AsyncData(current.copyWith(index: current.index + 1));
       return;
     }
+    final completed = current.copyWith(randomWritingCompleted: true);
     if (current.missedHanjaIds.isNotEmpty) {
       state = AsyncData(
-        current.copyWith(phase: DailySessionPhase.mistakeReview, index: 0),
+        completed.copyWith(phase: DailySessionPhase.mistakeReview, index: 0),
       );
       return;
     }
+    state = AsyncData(completed);
     await finish();
   }
 
@@ -261,6 +419,10 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
   String _hunAnswer(HanjaCharacter item) => item.meaning;
 }
 
+int _lastIndexOf(List<dynamic> values) {
+  return values.isEmpty ? 0 : values.length - 1;
+}
+
 class DailySessionState {
   const DailySessionState({
     required this.items,
@@ -268,6 +430,7 @@ class DailySessionState {
     required this.hanjaToHunQuestions,
     required this.hunToHanjaQuestions,
     required this.randomWritingItems,
+    this.imageAssetPath,
     this.chapterKey,
     this.chapterName,
     this.phase = DailySessionPhase.intro,
@@ -277,6 +440,10 @@ class DailySessionState {
     this.currentQuestionHadMistake = false,
     this.correctCount = 0,
     this.missedHanjaIds = const <String>{},
+    this.guidedWritingCompleted = false,
+    this.hanjaToHunQuizCompleted = false,
+    this.hunToHanjaQuizCompleted = false,
+    this.randomWritingCompleted = false,
     this.isSaving = false,
     this.earnedXp = 0,
     this.completionResult,
@@ -287,6 +454,7 @@ class DailySessionState {
   final List<DailyQuizQuestion> hanjaToHunQuestions;
   final List<DailyQuizQuestion> hunToHanjaQuestions;
   final List<HanjaCharacter> randomWritingItems;
+  final String? imageAssetPath;
   final String? chapterKey;
   final String? chapterName;
   final DailySessionPhase phase;
@@ -296,6 +464,10 @@ class DailySessionState {
   final bool currentQuestionHadMistake;
   final int correctCount;
   final Set<String> missedHanjaIds;
+  final bool guidedWritingCompleted;
+  final bool hanjaToHunQuizCompleted;
+  final bool hunToHanjaQuizCompleted;
+  final bool randomWritingCompleted;
   final bool isSaving;
   final int earnedXp;
   final LearningCompletionResult? completionResult;
@@ -388,6 +560,10 @@ class DailySessionState {
     bool? currentQuestionHadMistake,
     int? correctCount,
     Set<String>? missedHanjaIds,
+    bool? guidedWritingCompleted,
+    bool? hanjaToHunQuizCompleted,
+    bool? hunToHanjaQuizCompleted,
+    bool? randomWritingCompleted,
     bool? isSaving,
     int? earnedXp,
     LearningCompletionResult? completionResult,
@@ -398,6 +574,7 @@ class DailySessionState {
       hanjaToHunQuestions: hanjaToHunQuestions,
       hunToHanjaQuestions: hunToHanjaQuestions,
       randomWritingItems: randomWritingItems,
+      imageAssetPath: imageAssetPath,
       chapterKey: chapterKey,
       chapterName: chapterName,
       phase: phase ?? this.phase,
@@ -412,6 +589,14 @@ class DailySessionState {
           currentQuestionHadMistake ?? this.currentQuestionHadMistake,
       correctCount: correctCount ?? this.correctCount,
       missedHanjaIds: missedHanjaIds ?? this.missedHanjaIds,
+      guidedWritingCompleted:
+          guidedWritingCompleted ?? this.guidedWritingCompleted,
+      hanjaToHunQuizCompleted:
+          hanjaToHunQuizCompleted ?? this.hanjaToHunQuizCompleted,
+      hunToHanjaQuizCompleted:
+          hunToHanjaQuizCompleted ?? this.hunToHanjaQuizCompleted,
+      randomWritingCompleted:
+          randomWritingCompleted ?? this.randomWritingCompleted,
       isSaving: isSaving ?? this.isSaving,
       earnedXp: earnedXp ?? this.earnedXp,
       completionResult: completionResult ?? this.completionResult,
@@ -436,3 +621,42 @@ class DailyQuizQuestion {
 }
 
 const Object _sentinel = Object();
+
+int _targetIndexForPhase({
+  required DailySessionState current,
+  required DailySessionPhase phase,
+}) {
+  return switch (phase) {
+    DailySessionPhase.guidedWriting when current.guidedWritingCompleted =>
+      _lastIndexOf(current.items),
+    DailySessionPhase.hanjaToHunQuiz when current.hanjaToHunQuizCompleted =>
+      _lastIndexOf(current.hanjaToHunQuestions),
+    DailySessionPhase.hunToHanjaQuiz when current.hunToHanjaQuizCompleted =>
+      _lastIndexOf(current.hunToHanjaQuestions),
+    DailySessionPhase.randomWriting when current.randomWritingCompleted =>
+      _lastIndexOf(current.randomWritingItems),
+    _ => 0,
+  };
+}
+
+String? _selectedAnswerForPhase({
+  required DailySessionState current,
+  required DailySessionPhase phase,
+  required int index,
+}) {
+  final question = switch (phase) {
+    DailySessionPhase.hanjaToHunQuiz when current.hanjaToHunQuizCompleted =>
+      _questionAt(current.hanjaToHunQuestions, index),
+    DailySessionPhase.hunToHanjaQuiz when current.hunToHanjaQuizCompleted =>
+      _questionAt(current.hunToHanjaQuestions, index),
+    _ => null,
+  };
+  return question?.correctAnswer;
+}
+
+DailyQuizQuestion? _questionAt(List<DailyQuizQuestion> questions, int index) {
+  if (index < 0 || index >= questions.length) {
+    return null;
+  }
+  return questions[index];
+}

@@ -64,6 +64,10 @@ List<Widget> _sectionsForRole(BuildContext context, String role) {
       _SettingsSection(
         title: '우리 아이 연결',
         children: [
+          const _SettingsInfoBox(
+            text: '학생 화면의 내 학생 연결 코드를 받아 입력하면 이 기기에서 연결 학생을 확인할 수 있어요.',
+          ),
+          const Divider(height: 1),
           _SettingsRow(
             icon: Icons.add_circle,
             title: '학생 연결하기',
@@ -125,6 +129,10 @@ List<Widget> _sectionsForRole(BuildContext context, String role) {
       _SettingsSection(
         title: '학습 연결',
         children: [
+          const _SettingsInfoBox(
+            text: '반 참여는 선생님이 알려준 반 코드를 입력해요. 처음 선택한 역할은 아래 역할 변경에서 바꿀 수 있어요.',
+          ),
+          const Divider(height: 1),
           _SettingsRow(
             icon: Icons.meeting_room_outlined,
             title: '반 참여하기',
@@ -812,6 +820,44 @@ class _RoleChoiceCard extends StatelessWidget {
                 ),
               ),
               Icon(Icons.chevron_right, color: spec.accent),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsInfoBox extends StatelessWidget {
+  const _SettingsInfoBox({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: AppColors.textSecondary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  text,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

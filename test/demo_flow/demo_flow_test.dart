@@ -121,14 +121,14 @@ void main() {
     await _settleStartup(tester);
 
     appRouter.go(RoutePaths.challengeSpeedGame);
-    await _pumpUntilFound(tester, find.text('뜻 보고 한자 선택'));
+    await _pumpUntilFound(tester, find.text('스피드 한자 선택'));
 
     for (final item in _characters) {
       await _tapFilledButtonText(tester, item.character);
       await tester.pumpAndSettle();
     }
 
-    await _pumpUntilFound(tester, find.text('뜻 보고 한자 선택 완료'));
+    await _pumpUntilFound(tester, find.text('스피드 한자 선택 완료'));
     expect(
       challengeRepository.savedResults.single.mode,
       ChallengeMode.speedChoice,

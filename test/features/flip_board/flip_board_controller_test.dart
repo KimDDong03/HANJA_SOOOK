@@ -22,35 +22,99 @@ void main() {
     addTearDown(container.dispose);
 
     final provider = flipBoardProvider(FlipBoardPlayMode.drawHanja);
+    final subscription = container.listen(provider, (_, _) {});
+    addTearDown(subscription.close);
     final controller = container.read(provider.notifier);
     await container.read(provider.future);
-    controller.selectTile(0);
+    expect(container.read(provider).value!.tiles.map((tile) => tile.label), [
+      '한 일',
+      '두 이',
+      '석 삼',
+      '넉 사',
+      '다섯 오',
+      '여섯 육',
+    ]);
     controller.submitDrawing(strokes: [_lineStroke()]);
 
     final state = container.read(provider).value!;
     expect(state.mode, FlipBoardPlayMode.drawHanja);
     expect(state.flippedTileCount, 1);
-    expect(state.isTileOwned(0), isTrue);
-    expect(state.score, 11);
+    expect(state.isTileCorrect(0), isTrue);
+    expect(state.isTileOwned(0), isFalse);
+    expect(state.tiles[0].label, '한 일');
+
+    await Future<void>.delayed(const Duration(milliseconds: 560));
+    final replacedState = container.read(provider).value!;
+    expect(replacedState.isTileCorrect(0), isFalse);
+    expect(replacedState.isTileOwned(0), isFalse);
+    expect(replacedState.tiles[0].label, '일곱 칠');
+    expect(replacedState.remainingTiles.length, 5);
+    expect(replacedState.score, 11);
+    subscription.close();
   });
 
-  test('draw mode only flips the selected matching tile', () async {
+  test('draw mode matches any visible prompt tile and replaces it', () async {
     final container = _container();
     addTearDown(container.dispose);
 
     final provider = flipBoardProvider(FlipBoardPlayMode.drawHanja);
+    final subscription = container.listen(provider, (_, _) {});
+    addTearDown(subscription.close);
     final controller = container.read(provider.notifier);
     await container.read(provider.future);
-    controller.selectTile(1);
     controller.submitDrawing(
       strokes: [_horizontalStroke(35), _horizontalStroke(70)],
     );
 
-    final state = container.read(provider).value!;
+    var state = container.read(provider).value!;
     expect(state.flippedTileCount, 1);
-    expect(state.isTileOwned(1), isTrue);
+    expect(state.isTileCorrect(1), isTrue);
+    expect(state.isTileOwned(1), isFalse);
+    expect(state.tiles[1].label, '두 이');
     expect(state.score, 12);
+    expect(state.feedbackMessage, '정답! 12점을 얻었어요.');
+
+    await Future<void>.delayed(const Duration(milliseconds: 560));
+    state = container.read(provider).value!;
+    expect(state.isTileCorrect(1), isFalse);
+    expect(state.tiles[0].label, '한 일');
+    expect(state.remainingTiles.length, 5);
+    expect(state.tiles[1].label, '일곱 칠');
+    subscription.close();
   });
+
+  test(
+    'competitive draw mode advances only through player owned tiles',
+    () async {
+      final container = _container();
+      addTearDown(container.dispose);
+
+      final provider = flipBoardProvider(
+        FlipBoardPlayMode.competitiveDrawHanja,
+      );
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+      final controller = container.read(provider.notifier);
+      await container.read(provider.future);
+
+      var state = container.read(provider).value!;
+      expect(state.tiles[0].owner, FlipBoardTileOwner.player);
+      expect(state.tiles[1].owner, FlipBoardTileOwner.opponent);
+
+      controller.submitDrawing(strokes: [_lineStroke()]);
+
+      state = container.read(provider).value!;
+      expect(state.isTileCorrect(0), isTrue);
+      expect(state.isTileOwned(0), isFalse);
+      expect(state.isTileOwned(1), isFalse);
+      await Future<void>.delayed(const Duration(milliseconds: 560));
+
+      state = container.read(provider).value!;
+      expect(state.tiles[0].label, '일곱 칠');
+      expect(state.tiles[0].owner, FlipBoardTileOwner.player);
+      subscription.close();
+    },
+  );
 
   test('type mode flips the matching tile from typed meaning text', () async {
     final container = _container();

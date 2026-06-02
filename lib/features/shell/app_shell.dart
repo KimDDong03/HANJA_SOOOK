@@ -19,6 +19,7 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).uri.path;
     final musicTrack = _musicTrackFor(location);
+    final showBottomNavigation = !_usesFullscreenActivity(location);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(ref.read(appAudioControllerProvider).setMusicTrack(musicTrack));
@@ -34,53 +35,55 @@ class AppShell extends ConsumerWidget {
       },
       child: Scaffold(
         body: child,
-        bottomNavigationBar: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            border: Border(top: BorderSide(color: AppColors.border)),
-          ),
-          child: NavigationBar(
-            selectedIndex: _selectedIndex(location),
-            onDestinationSelected: (index) {
-              switch (index) {
-                case 0:
-                  context.go(RoutePaths.appHome);
-                  return;
-                case 1:
-                  context.go(RoutePaths.appLearn);
-                  return;
-                case 2:
-                  context.go(RoutePaths.appChallenge);
-                  return;
-                case 3:
-                  context.go(RoutePaths.appSettings);
-                  return;
-              }
-            },
-            destinations: const [
-              NavigationDestination(
-                selectedIcon: Icon(Icons.home),
-                icon: Icon(Icons.home_outlined),
-                label: '홈',
-              ),
-              NavigationDestination(
-                selectedIcon: Icon(Icons.menu_book),
-                icon: Icon(Icons.menu_book_outlined),
-                label: '학습',
-              ),
-              NavigationDestination(
-                selectedIcon: Icon(Icons.emoji_events),
-                icon: Icon(Icons.emoji_events_outlined),
-                label: '도전',
-              ),
-              NavigationDestination(
-                selectedIcon: Icon(Icons.settings),
-                icon: Icon(Icons.settings_outlined),
-                label: '설정',
-              ),
-            ],
-          ),
-        ),
+        bottomNavigationBar: showBottomNavigation
+            ? DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border(top: BorderSide(color: AppColors.border)),
+                ),
+                child: NavigationBar(
+                  selectedIndex: _selectedIndex(location),
+                  onDestinationSelected: (index) {
+                    switch (index) {
+                      case 0:
+                        context.go(RoutePaths.appHome);
+                        return;
+                      case 1:
+                        context.go(RoutePaths.appLearn);
+                        return;
+                      case 2:
+                        context.go(RoutePaths.appChallenge);
+                        return;
+                      case 3:
+                        context.go(RoutePaths.appSettings);
+                        return;
+                    }
+                  },
+                  destinations: const [
+                    NavigationDestination(
+                      selectedIcon: Icon(Icons.home),
+                      icon: Icon(Icons.home_outlined),
+                      label: '홈',
+                    ),
+                    NavigationDestination(
+                      selectedIcon: Icon(Icons.menu_book),
+                      icon: Icon(Icons.menu_book_outlined),
+                      label: '학습',
+                    ),
+                    NavigationDestination(
+                      selectedIcon: Icon(Icons.emoji_events),
+                      icon: Icon(Icons.emoji_events_outlined),
+                      label: '도전',
+                    ),
+                    NavigationDestination(
+                      selectedIcon: Icon(Icons.settings),
+                      icon: Icon(Icons.settings_outlined),
+                      label: '설정',
+                    ),
+                  ],
+                ),
+              )
+            : null,
       ),
     );
   }
@@ -110,6 +113,10 @@ class AppShell extends ConsumerWidget {
       return AppMusicTrack.activity;
     }
     return AppMusicTrack.home;
+  }
+
+  bool _usesFullscreenActivity(String location) {
+    return location == RoutePaths.flipBoard;
   }
 
   Future<void> _handleBackPressed(BuildContext context, String location) async {

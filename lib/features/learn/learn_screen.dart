@@ -8,6 +8,7 @@ import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/services/learning_plan_service.dart';
+import '../../domain/services/thinking_unit_image_service.dart';
 import 'learn_controller.dart';
 
 enum _LearnTab { review, library, weak }
@@ -23,6 +24,7 @@ class LearnScreen extends ConsumerStatefulWidget {
 
 class _LearnScreenState extends ConsumerState<LearnScreen> {
   _LearnTab _selectedTab = _LearnTab.review;
+  String? _selectedMajorUnitKey;
   final Map<_LearnTab, int> _pageByTab = {
     _LearnTab.review: 0,
     _LearnTab.library: 0,
@@ -52,8 +54,6 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _PrimaryStudyPanel(state: state),
-                  const SizedBox(height: 16),
                   _ProgressSummaryPanel(state: state),
                   const SizedBox(height: 16),
                   _LearnTabPanel(
@@ -63,6 +63,9 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
                     onTabChanged: (tab) => setState(() => _selectedTab = tab),
                     onPageChanged: (pageIndex) =>
                         setState(() => _pageByTab[_selectedTab] = pageIndex),
+                    selectedMajorUnitKey: _selectedMajorUnitKey,
+                    onMajorUnitChanged: (key) =>
+                        setState(() => _selectedMajorUnitKey = key),
                   ),
                 ],
               );
@@ -73,94 +76,6 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
             error: (_, _) => const PlayfulPanel(
               child: Text('학습 데이터를 불러오지 못했습니다.', textAlign: TextAlign.center),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PrimaryStudyPanel extends StatelessWidget {
-  const _PrimaryStudyPanel({required this.state});
-
-  final LearnLibraryState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final item = state.primaryItem;
-    final hasAction = item != null;
-    final title = state.hasReviewDue
-        ? '오늘 복습 ${state.reviewItems.length}개'
-        : state.hasPendingItems
-        ? state.activeChapter == null
-              ? '다음 한자 학습'
-              : state.primaryChapter!.name
-        : '배운 한자 다시 보기';
-    final subtitle = state.hasReviewDue
-        ? '잊기 쉬운 한자부터 다시 써봐요'
-        : state.hasPendingItems
-        ? '단원에 들어있는 한자를 한 번에 배워요'
-        : '완료한 한자를 한자장에서 확인해요';
-    final buttonLabel = state.hasReviewDue
-        ? '복습 시작'
-        : state.hasPendingItems
-        ? '학습 시작'
-        : '한자장 보기';
-
-    return PlayfulPanel(
-      color: AppColors.yellow,
-      borderColor: AppColors.yellow,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              if (item != null) ...[
-                const SizedBox(width: 14),
-                _HanjaPreviewMark(item: item),
-              ],
-            ],
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: hasAction
-                ? () {
-                    if (state.hasPendingItems || state.hasReviewDue) {
-                      final chapterKey = state.primaryChapterKey;
-                      context.push(
-                        chapterKey == null
-                            ? RoutePaths.dailySession
-                            : RoutePaths.dailySessionForChapter(chapterKey),
-                      );
-                    } else {
-                      context.push(RoutePaths.hanja(item.id));
-                    }
-                  }
-                : null,
-            icon: const Icon(Icons.play_arrow),
-            label: Text(buttonLabel),
           ),
         ],
       ),
@@ -245,6 +160,8 @@ class _LearnTabPanel extends StatelessWidget {
     required this.pageIndex,
     required this.onTabChanged,
     required this.onPageChanged,
+    required this.selectedMajorUnitKey,
+    required this.onMajorUnitChanged,
   });
 
   final LearnLibraryState state;
@@ -252,12 +169,19 @@ class _LearnTabPanel extends StatelessWidget {
   final int pageIndex;
   final ValueChanged<_LearnTab> onTabChanged;
   final ValueChanged<int> onPageChanged;
+  final String? selectedMajorUnitKey;
+  final ValueChanged<String> onMajorUnitChanged;
 
   @override
   Widget build(BuildContext context) {
     final tabState = _TabState.from(state, selectedTab);
     if (selectedTab == _LearnTab.library) {
-      return _ChapterTabPanel(state: state, onTabChanged: onTabChanged);
+      return _ChapterTabPanel(
+        state: state,
+        selectedMajorUnitKey: selectedMajorUnitKey,
+        onMajorUnitChanged: onMajorUnitChanged,
+        onTabChanged: onTabChanged,
+      );
     }
 
     final pageCount = tabState.pageCount;
@@ -274,28 +198,7 @@ class _LearnTabPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SegmentedButton<_LearnTab>(
-            showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(
-                value: _LearnTab.review,
-                label: Text('복습'),
-                icon: Icon(Icons.refresh),
-              ),
-              ButtonSegment(
-                value: _LearnTab.library,
-                label: Text('한자장'),
-                icon: Icon(Icons.library_books),
-              ),
-              ButtonSegment(
-                value: _LearnTab.weak,
-                label: Text('약점'),
-                icon: Icon(Icons.flag),
-              ),
-            ],
-            selected: {selectedTab},
-            onSelectionChanged: (selection) => onTabChanged(selection.first),
-          ),
+          _LearnModeTabs(selectedTab: selectedTab, onTabChanged: onTabChanged),
           const SizedBox(height: 16),
           Text(
             tabState.title,
@@ -383,43 +286,39 @@ class _TabState {
 }
 
 class _ChapterTabPanel extends StatelessWidget {
-  const _ChapterTabPanel({required this.state, required this.onTabChanged});
+  const _ChapterTabPanel({
+    required this.state,
+    required this.selectedMajorUnitKey,
+    required this.onMajorUnitChanged,
+    required this.onTabChanged,
+  });
 
   final LearnLibraryState state;
+  final String? selectedMajorUnitKey;
+  final ValueChanged<String> onMajorUnitChanged;
   final ValueChanged<_LearnTab> onTabChanged;
 
   @override
   Widget build(BuildContext context) {
+    final majorUnits = _MajorUnitGroup.fromChapters(state.chapters);
+    final activeUnit = _activeMajorUnit(
+      majorUnits: majorUnits,
+      selectedMajorUnitKey: selectedMajorUnitKey,
+      activeChapterKey: state.primaryChapterKey,
+    );
+
     return PlayfulPanel(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SegmentedButton<_LearnTab>(
-            showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(
-                value: _LearnTab.review,
-                label: Text('복습'),
-                icon: Icon(Icons.refresh),
-              ),
-              ButtonSegment(
-                value: _LearnTab.library,
-                label: Text('한자장'),
-                icon: Icon(Icons.library_books),
-              ),
-              ButtonSegment(
-                value: _LearnTab.weak,
-                label: Text('약점'),
-                icon: Icon(Icons.flag),
-              ),
-            ],
-            selected: const {_LearnTab.library},
-            onSelectionChanged: (selection) => onTabChanged(selection.first),
+          _LearnModeTabs(
+            selectedTab: _LearnTab.library,
+            onTabChanged: onTabChanged,
           ),
           const SizedBox(height: 16),
           Text(
-            '단원별 한자장',
+            activeUnit == null ? '단원별 한자장' : activeUnit.title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.w900,
@@ -427,17 +326,27 @@ class _ChapterTabPanel extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '단원 카드에서 오늘 학습처럼 따라쓰기, 퀴즈, 랜덤 쓰기를 진행해요.',
+            activeUnit == null
+                ? '대단원을 선택하면 해당 소단원만 보여줘요.'
+                : '선택한 대단원에 속한 소단원만 모아 보여줘요.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 12),
-          if (state.chapters.isEmpty)
+          const SizedBox(height: 14),
+          if (majorUnits.isNotEmpty && activeUnit != null) ...[
+            _MajorUnitSelector(
+              groups: majorUnits,
+              selectedKey: activeUnit.key,
+              onSelected: onMajorUnitChanged,
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (activeUnit == null)
             const _EmptyTabMessage(text: '표시할 단원이 아직 없습니다.')
           else
-            for (final chapter in state.chapters)
+            for (final chapter in activeUnit.chapters)
               _ChapterListRow(
                 chapter: chapter,
                 completedCount: state.completedCountInChapter(chapter),
@@ -450,6 +359,346 @@ class _ChapterTabPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MajorUnitSelector extends StatelessWidget {
+  const _MajorUnitSelector({
+    required this.groups,
+    required this.selectedKey,
+    required this.onSelected,
+  });
+
+  final List<_MajorUnitGroup> groups;
+  final String selectedKey;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final group in groups) ...[
+            _MajorUnitChip(
+              label: group.shortLabel,
+              selected: group.key == selectedKey,
+              onTap: () => onSelected(group.key),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LearnModeTabs extends StatelessWidget {
+  const _LearnModeTabs({required this.selectedTab, required this.onTabChanged});
+
+  final _LearnTab selectedTab;
+  final ValueChanged<_LearnTab> onTabChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: Material(
+        color: Colors.white,
+        shape: const StadiumBorder(side: BorderSide(color: AppColors.border)),
+        clipBehavior: Clip.antiAlias,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _LearnModeTabButton(
+              icon: Icons.refresh,
+              label: '복습',
+              selected: selectedTab == _LearnTab.review,
+              onTap: () => onTabChanged(_LearnTab.review),
+            ),
+            const _TabDivider(),
+            _LearnModeTabButton(
+              icon: Icons.library_books,
+              label: '한자장',
+              selected: selectedTab == _LearnTab.library,
+              onTap: () => onTabChanged(_LearnTab.library),
+            ),
+            const _TabDivider(),
+            _LearnModeTabButton(
+              icon: Icons.flag,
+              label: '약점',
+              selected: selectedTab == _LearnTab.weak,
+              onTap: () => onTabChanged(_LearnTab.weak),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LearnModeTabButton extends StatelessWidget {
+  const _LearnModeTabButton({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? AppColors.navSelected : Colors.white;
+    return Expanded(
+      child: Material(
+        color: color,
+        child: InkWell(
+          onTap: selected ? null : onTap,
+          splashFactory: NoSplash.splashFactory,
+          highlightColor: Colors.transparent,
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 22, color: AppColors.textPrimary),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TabDivider extends StatelessWidget {
+  const _TabDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(color: AppColors.border, child: SizedBox(width: 1));
+  }
+}
+
+class _MajorUnitChip extends StatelessWidget {
+  const _MajorUnitChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.yellow : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(999),
+        side: BorderSide(color: selected ? AppColors.yellow : AppColors.border),
+      ),
+      child: InkWell(
+        onTap: selected ? null : onTap,
+        borderRadius: BorderRadius.circular(999),
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          child: Text(
+            label,
+            maxLines: 1,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MajorUnitGroup {
+  const _MajorUnitGroup({
+    required this.key,
+    required this.shortLabel,
+    required this.title,
+    required this.chapters,
+  });
+
+  final String key;
+  final String shortLabel;
+  final String title;
+  final List<HanjaChapter> chapters;
+
+  int get totalCount {
+    return chapters.fold(0, (sum, chapter) => sum + chapter.items.length);
+  }
+
+  int completedCount(LearnLibraryState state) {
+    return chapters.fold(
+      0,
+      (sum, chapter) => sum + state.completedCountInChapter(chapter),
+    );
+  }
+
+  static List<_MajorUnitGroup> fromChapters(List<HanjaChapter> chapters) {
+    final grouped = <String, List<HanjaChapter>>{};
+    for (final chapter in chapters) {
+      final key = _majorUnitKeyFor(chapter);
+      grouped.putIfAbsent(key, () => []).add(chapter);
+    }
+    return [
+      for (final entry in grouped.entries)
+        _MajorUnitGroup(
+          key: entry.key,
+          shortLabel: _majorUnitShortLabel(entry.key, entry.value),
+          title: _majorUnitTitle(entry.key, entry.value),
+          chapters: List<HanjaChapter>.unmodifiable(entry.value),
+        ),
+    ];
+  }
+}
+
+_MajorUnitGroup? _activeMajorUnit({
+  required List<_MajorUnitGroup> majorUnits,
+  required String? selectedMajorUnitKey,
+  required String? activeChapterKey,
+}) {
+  for (final unit in majorUnits) {
+    if (unit.key == selectedMajorUnitKey) {
+      return unit;
+    }
+  }
+  for (final unit in majorUnits) {
+    if (unit.chapters.any((chapter) => chapter.key == activeChapterKey)) {
+      return unit;
+    }
+  }
+  return majorUnits.isEmpty ? null : majorUnits.first;
+}
+
+String _majorUnitKeyFor(HanjaChapter chapter) {
+  final parsedKey = const ThinkingUnitImageService().majorUnitKeyForChapterKey(
+    chapter.key,
+  );
+  if (parsedKey != null) {
+    return parsedKey;
+  }
+
+  final keyMatch = RegExp(r'^(\d+)[-_](\d+)').firstMatch(chapter.key);
+  if (keyMatch != null) {
+    return 'G${keyMatch.group(1)}-U${keyMatch.group(2)!.padLeft(2, '0')}';
+  }
+
+  final nameMatch = RegExp(r'(\d+)\s*단원').firstMatch(chapter.name);
+  if (nameMatch != null) {
+    return 'U${nameMatch.group(1)!.padLeft(2, '0')}';
+  }
+
+  return chapter.key;
+}
+
+String _majorUnitShortLabel(String key, List<HanjaChapter> chapters) {
+  final unitNumber = _unitNumberFromKey(key);
+  if (unitNumber != null) {
+    return '$unitNumber단원';
+  }
+  final nameMatch = RegExp(r'(\d+)\s*단원').firstMatch(chapters.first.name);
+  if (nameMatch != null) {
+    return '${nameMatch.group(1)}단원';
+  }
+  return chapters.first.name;
+}
+
+String _majorUnitTitle(String key, List<HanjaChapter> chapters) {
+  final parts = _chapterTitleParts(chapters.first);
+  if (parts.majorLabel != null && parts.storyTitle != null) {
+    return '${parts.majorLabel} · ${parts.storyTitle}';
+  }
+
+  final gradeNumber = _gradeNumberFromKey(key);
+  final unitNumber = _unitNumberFromKey(key);
+  if (gradeNumber != null && unitNumber != null) {
+    return '초$gradeNumber $unitNumber단원 한자장';
+  }
+  if (unitNumber != null) {
+    return '$unitNumber단원 한자장';
+  }
+  return '${chapters.first.name} 한자장';
+}
+
+int? _gradeNumberFromKey(String key) {
+  final match = RegExp(r'G(\d+)').firstMatch(key);
+  return match == null ? null : int.tryParse(match.group(1)!);
+}
+
+int? _unitNumberFromKey(String key) {
+  final match = RegExp(r'U(\d+)').firstMatch(key);
+  return match == null ? null : int.tryParse(match.group(1)!);
+}
+
+_ChapterTitleParts _chapterTitleParts(HanjaChapter chapter) {
+  final name = chapter.name.trim();
+  final match = RegExp(
+    r'^(초\d+)\s+(\d+단원)\s+(?:(\d+)\.\s*)?(.+)$',
+  ).firstMatch(name);
+  if (match == null) {
+    return _ChapterTitleParts(rowTitle: name);
+  }
+
+  final majorLabel = '${match.group(1)} ${match.group(2)}';
+  final lessonNumber = match.group(3);
+  final storyTitle = match.group(4)?.trim();
+  final subUnitTitle = const ThinkingUnitImageService()
+      .subUnitTitleForChapterKey(chapter.key);
+  final rowTitle = [
+    if (lessonNumber != null) '$lessonNumber.',
+    if (subUnitTitle != null)
+      subUnitTitle
+    else if (lessonNumber == null &&
+        storyTitle != null &&
+        storyTitle.isNotEmpty)
+      storyTitle
+    else if (lessonNumber != null)
+      '소단원 $lessonNumber',
+  ].join(' ');
+
+  return _ChapterTitleParts(
+    majorLabel: majorLabel,
+    storyTitle: storyTitle,
+    rowTitle: rowTitle.isEmpty ? name : rowTitle,
+  );
+}
+
+class _ChapterTitleParts {
+  const _ChapterTitleParts({
+    required this.rowTitle,
+    this.majorLabel,
+    this.storyTitle,
+  });
+
+  final String? majorLabel;
+  final String? storyTitle;
+  final String rowTitle;
 }
 
 class _ChapterListRow extends StatelessWidget {
@@ -469,6 +718,7 @@ class _ChapterListRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalCount = chapter.items.length;
     final ratio = totalCount == 0 ? 0.0 : completedCount / totalCount;
+    final titleParts = _chapterTitleParts(chapter);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
@@ -491,7 +741,7 @@ class _ChapterListRow extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        chapter.name,
+                        titleParts.rowTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleMedium
@@ -724,36 +974,6 @@ class _StatusBadge extends StatelessWidget {
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w900,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HanjaPreviewMark extends StatelessWidget {
-  const _HanjaPreviewMark({required this.item});
-
-  final HanjaCharacter item;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: SizedBox.square(
-        dimension: 82,
-        child: Center(
-          child: Text(
-            item.character,
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              fontFamily: AppFonts.hanjaSerif,
-              fontWeight: FontWeight.w900,
-              color: AppColors.textPrimary,
-            ),
           ),
         ),
       ),

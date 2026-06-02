@@ -9,10 +9,14 @@ import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../core/widgets/success_feedback_popup.dart';
 import '../../domain/models/hanja_character.dart';
+import '../../domain/services/thinking_unit_image_service.dart';
 import '../writing/free_writing_score_controller.dart';
+import '../writing/svg_path_parser.dart';
 import '../writing/widgets/hanja_free_writing_canvas.dart';
 import '../writing/widgets/hanja_writing_practice_canvas.dart';
 import 'daily_session_controller.dart';
+
+enum _DailyLearningType { guidedWriting, quiz, randomWriting }
 
 class DailySessionScreen extends ConsumerWidget {
   const DailySessionScreen({super.key, this.chapterKey});
@@ -44,30 +48,33 @@ class DailySessionScreen extends ConsumerWidget {
 
           final isCompactWriting =
               state.phase == DailySessionPhase.randomWriting;
-          return PlayfulPage(
-            title: _titleFor(state.phase),
-            subtitle: state.phase == DailySessionPhase.intro
-                ? ''
-                : _subtitleFor(state),
-            trailing: state.phase == DailySessionPhase.intro
-                ? null
-                : _SessionCountBadge(count: state.items.length),
-            padding: isCompactWriting
-                ? const EdgeInsets.fromLTRB(16, 2, 16, 16)
-                : state.phase == DailySessionPhase.intro ||
-                      state.phase == DailySessionPhase.guidedWriting
-                ? const EdgeInsets.fromLTRB(20, 4, 20, 18)
-                : const EdgeInsets.fromLTRB(20, 8, 20, 28),
-            children:
-                state.phase == DailySessionPhase.intro ||
-                    state.phase == DailySessionPhase.guidedWriting ||
-                    isCompactWriting
-                ? [_StepBody(state: state)]
-                : [
-                    _ProgressPanel(state: state),
-                    const SizedBox(height: 14),
-                    _StepBody(state: state),
-                  ],
+          return PopScope<Object?>(
+            canPop: !_handlesBackWithinSession(state),
+            onPopInvokedWithResult: (didPop, _) {
+              if (didPop) {
+                return;
+              }
+              ref
+                  .read(dailySessionProvider(chapterKey).notifier)
+                  .goBackWithinSession();
+            },
+            child: PlayfulPage(
+              title: _titleFor(state.phase),
+              subtitle: state.phase == DailySessionPhase.intro
+                  ? ''
+                  : _subtitleFor(state),
+              trailing: state.phase == DailySessionPhase.intro
+                  ? null
+                  : _SessionCountBadge(count: state.items.length),
+              padding: isCompactWriting
+                  ? const EdgeInsets.fromLTRB(16, 2, 16, 16)
+                  : state.phase == DailySessionPhase.intro
+                  ? const EdgeInsets.fromLTRB(18, 0, 18, 12)
+                  : state.phase == DailySessionPhase.guidedWriting
+                  ? const EdgeInsets.fromLTRB(20, 4, 20, 18)
+                  : const EdgeInsets.fromLTRB(20, 8, 20, 28),
+              children: _childrenFor(state, isCompactWriting),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -106,7 +113,7 @@ class DailySessionScreen extends ConsumerWidget {
       DailySessionPhase.intro =>
         state.chapterName == null
             ? '오늘의 한자 ${state.items.length}자'
-            : '${state.chapterName} · ${state.items.length}자',
+            : '${_chapterDisplayName(state)} · ${state.items.length}자',
       DailySessionPhase.guidedWriting =>
         '${state.index + 1}/${state.items.length} · 획을 따라 써요',
       DailySessionPhase.hanjaToHunQuiz =>
@@ -117,6 +124,46 @@ class DailySessionScreen extends ConsumerWidget {
         '${state.index + 1}/${state.randomWritingItems.length} · 순서 없이 써요',
       DailySessionPhase.mistakeReview => '${state.missedItems.length}자 확인',
       DailySessionPhase.complete => '오늘 한자를 모두 확인했어요',
+    };
+  }
+
+  List<Widget> _childrenFor(DailySessionState state, bool isCompactWriting) {
+    final hasPhaseSwitcher = _showsLearningTypeSwitcher(state);
+    if (state.phase == DailySessionPhase.intro) {
+      return [_StepBody(state: state)];
+    }
+
+    if (hasPhaseSwitcher) {
+      return [
+        _LearningTypeSwitcher(state: state),
+        SizedBox(height: isCompactWriting ? 8 : 10),
+        _ProgressPanel(state: state),
+        SizedBox(height: isCompactWriting ? 10 : 12),
+        _StepBody(state: state),
+      ];
+    }
+
+    return [
+      _ProgressPanel(state: state),
+      const SizedBox(height: 14),
+      _StepBody(state: state),
+    ];
+  }
+
+  bool _handlesBackWithinSession(DailySessionState state) {
+    return state.phase != DailySessionPhase.intro &&
+        state.phase != DailySessionPhase.complete;
+  }
+
+  bool _showsLearningTypeSwitcher(DailySessionState state) {
+    return switch (state.phase) {
+      DailySessionPhase.guidedWriting ||
+      DailySessionPhase.hanjaToHunQuiz ||
+      DailySessionPhase.hunToHanjaQuiz ||
+      DailySessionPhase.randomWriting => true,
+      DailySessionPhase.intro ||
+      DailySessionPhase.mistakeReview ||
+      DailySessionPhase.complete => false,
     };
   }
 }
@@ -145,6 +192,94 @@ class _StepBody extends ConsumerWidget {
   }
 }
 
+class _LearningTypeSwitcher extends ConsumerWidget {
+  const _LearningTypeSwitcher({required this.state});
+
+  final DailySessionState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedType = _typeForPhase(state.phase);
+    final controller = ref.read(
+      dailySessionProvider(state.chapterKey).notifier,
+    );
+
+    return PlayfulPanel(
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        children: [
+          _LearningTypeButton(
+            icon: Icons.edit,
+            label: '따라쓰기',
+            selected: selectedType == _DailyLearningType.guidedWriting,
+            onTap: controller.showGuidedWriting,
+          ),
+          const SizedBox(width: 8),
+          _LearningTypeButton(
+            icon: Icons.quiz,
+            label: '훈음 맞히기',
+            selected: selectedType == _DailyLearningType.quiz,
+            onTap: controller.showQuiz,
+          ),
+          const SizedBox(width: 8),
+          _LearningTypeButton(
+            icon: Icons.shuffle,
+            label: '랜덤쓰기',
+            selected: selectedType == _DailyLearningType.randomWriting,
+            onTap: controller.showRandomWriting,
+          ),
+        ],
+      ),
+    );
+  }
+
+  _DailyLearningType _typeForPhase(DailySessionPhase phase) {
+    return switch (phase) {
+      DailySessionPhase.guidedWriting => _DailyLearningType.guidedWriting,
+      DailySessionPhase.hanjaToHunQuiz ||
+      DailySessionPhase.hunToHanjaQuiz => _DailyLearningType.quiz,
+      DailySessionPhase.randomWriting => _DailyLearningType.randomWriting,
+      _ => _DailyLearningType.guidedWriting,
+    };
+  }
+}
+
+class _LearningTypeButton extends StatelessWidget {
+  const _LearningTypeButton({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: FilledButton.tonalIcon(
+        onPressed: selected ? null : onTap,
+        icon: Icon(icon, size: 18),
+        label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        style: FilledButton.styleFrom(
+          backgroundColor: selected ? AppColors.yellow : AppColors.surfaceMuted,
+          foregroundColor: AppColors.textPrimary,
+          disabledBackgroundColor: AppColors.yellow,
+          disabledForegroundColor: AppColors.textPrimary,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          minimumSize: const Size(0, 44),
+          textStyle: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
+      ),
+    );
+  }
+}
+
 class _IntroStep extends ConsumerWidget {
   const _IntroStep({required this.state});
 
@@ -153,12 +288,14 @@ class _IntroStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return PlayfulPanel(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _IntroLessonSummary(state: state),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          _IntroThinkingImage(assetPath: state.imageAssetPath),
+          const SizedBox(height: 8),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -166,32 +303,14 @@ class _IntroStep extends ConsumerWidget {
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 10,
-              mainAxisSpacing: 8,
-              childAspectRatio: 1.55,
+              mainAxisSpacing: 6,
+              childAspectRatio: 1.82,
             ),
             itemBuilder: (context, index) {
               return _IntroHanjaCard(item: state.items[index]);
             },
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: const [
-              PlayfulStat(
-                icon: Icons.edit,
-                label: '쓰기',
-                value: '2회',
-                color: AppColors.green,
-              ),
-              SizedBox(width: 10),
-              PlayfulStat(
-                icon: Icons.quiz,
-                label: '확인',
-                value: '8문항',
-                color: AppColors.blue,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           FilledButton.icon(
             onPressed: () => ref
                 .read(dailySessionProvider(state.chapterKey).notifier)
@@ -205,6 +324,48 @@ class _IntroStep extends ConsumerWidget {
   }
 }
 
+class _IntroThinkingImage extends StatelessWidget {
+  const _IntroThinkingImage({required this.assetPath});
+
+  final String? assetPath;
+
+  @override
+  Widget build(BuildContext context) {
+    final path = assetPath;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        height: 128,
+        child: path == null
+            ? const ColoredBox(
+                color: AppColors.surfaceMuted,
+                child: Center(
+                  child: Icon(Icons.image_not_supported_outlined, size: 38),
+                ),
+              )
+            : ColoredBox(
+                color: Colors.white,
+                child: Image.asset(
+                  path,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const ColoredBox(
+                      color: AppColors.surfaceMuted,
+                      child: Center(
+                        child: Icon(
+                          Icons.image_not_supported_outlined,
+                          size: 38,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+      ),
+    );
+  }
+}
+
 class _IntroLessonSummary extends StatelessWidget {
   const _IntroLessonSummary({required this.state});
 
@@ -212,7 +373,7 @@ class _IntroLessonSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chapterName = state.chapterName ?? '오늘의 한자';
+    final displayName = _chapterDisplayName(state);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceMuted,
@@ -220,14 +381,14 @@ class _IntroLessonSummary extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           children: [
-            const Icon(Icons.menu_book, color: AppColors.primary, size: 24),
+            const Icon(Icons.menu_book, color: AppColors.primary, size: 22),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                chapterName,
+                displayName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -249,6 +410,18 @@ class _IntroLessonSummary extends StatelessWidget {
       ),
     );
   }
+}
+
+String _chapterDisplayName(DailySessionState state) {
+  final chapterName = state.chapterName ?? '오늘의 한자';
+  final chapterKey = state.chapterKey;
+  if (chapterKey == null) {
+    return chapterName;
+  }
+  return const ThinkingUnitImageService().displayTitleForChapterKey(
+    chapterKey: chapterKey,
+    fallbackName: chapterName,
+  );
 }
 
 class _GuidedWritingStep extends ConsumerStatefulWidget {
@@ -283,6 +456,8 @@ class _GuidedWritingStepState extends ConsumerState<_GuidedWritingStep> {
       dailySessionProvider(state.chapterKey).notifier,
     );
     final isLastItem = state.index >= state.items.length - 1;
+    final canContinue =
+        _isComplete || paths.isEmpty || state.guidedWritingCompleted;
 
     return Stack(
       alignment: Alignment.center,
@@ -310,7 +485,7 @@ class _GuidedWritingStepState extends ConsumerState<_GuidedWritingStep> {
                 ),
               const SizedBox(height: 12),
               FilledButton.icon(
-                onPressed: _isComplete || paths.isEmpty
+                onPressed: canContinue
                     ? controller.completeGuidedWriting
                     : null,
                 icon: Icon(isLastItem ? Icons.quiz : Icons.chevron_right),
@@ -453,6 +628,8 @@ class _RandomWritingStep extends ConsumerStatefulWidget {
 
 class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
   bool _hasStrokes = false;
+  bool _showCharacterHint = false;
+  bool _showFirstStrokeHint = false;
   bool _showSuccessPopup = false;
   List<Path> _strokes = const [];
   FreeWritingScoreResult? _scoreResult;
@@ -463,6 +640,8 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
     if (oldWidget.state.currentHanja?.id != widget.state.currentHanja?.id ||
         oldWidget.state.index != widget.state.index) {
       _hasStrokes = false;
+      _showCharacterHint = false;
+      _showFirstStrokeHint = false;
       _showSuccessPopup = false;
       _strokes = const [];
       _scoreResult = null;
@@ -476,7 +655,12 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
       dailySessionProvider(widget.state.chapterKey).notifier,
     );
     final scoreResult = _scoreResult;
-    final canContinue = scoreResult?.canContinueDemoFlow == true;
+    final canContinue =
+        widget.state.randomWritingCompleted ||
+        scoreResult?.canContinueDemoFlow == true;
+    final firstHintPath = _showFirstStrokeHint
+        ? _firstExpectedHintPath(widget.state.svgPathsFor(item.id))
+        : null;
 
     return Stack(
       alignment: Alignment.center,
@@ -486,15 +670,32 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _HanjaPrompt(item: item, showCharacter: false, compact: true),
-              const SizedBox(height: 10),
+              _HanjaPrompt(
+                item: item,
+                showCharacter: _showCharacterHint,
+                compact: true,
+              ),
+              const SizedBox(height: 8),
+              _RandomWritingHints(
+                showCharacterHint: _showCharacterHint,
+                showFirstStrokeHint: _showFirstStrokeHint,
+                hasStrokeHint: widget.state.svgPathsFor(item.id).isNotEmpty,
+                onToggleCharacterHint: () {
+                  setState(() => _showCharacterHint = !_showCharacterHint);
+                },
+                onToggleFirstStrokeHint: () {
+                  setState(() => _showFirstStrokeHint = !_showFirstStrokeHint);
+                },
+              ),
+              const SizedBox(height: 8),
               HanjaFreeWritingCanvas(
                 key: ValueKey('random-free-${item.id}'),
                 expectedStrokeCount: item.strokeCount,
                 canvasExtent: 252,
                 showTitle: false,
                 failedStrokeIndex: scoreResult?.failedStrokeIndex,
-                expectedHintPath: scoreResult?.expectedHintPath,
+                expectedHintPath:
+                    scoreResult?.expectedHintPath ?? firstHintPath,
                 onStrokesChanged: (strokes) {
                   setState(() {
                     _strokes = strokes;
@@ -531,11 +732,6 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
                   icon: const Icon(Icons.check),
                   label: const Text('확인하기'),
                 ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: controller.completeRandomWriting,
-                child: const Text('건너뛰기'),
-              ),
             ],
           ),
         ),
@@ -568,6 +764,58 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
       }
       setState(() => _showSuccessPopup = false);
     });
+  }
+
+  Path? _firstExpectedHintPath(List<String> svgPaths) {
+    if (svgPaths.isEmpty) {
+      return null;
+    }
+    return SvgPathParser.tryParse(svgPaths.first);
+  }
+}
+
+class _RandomWritingHints extends StatelessWidget {
+  const _RandomWritingHints({
+    required this.showCharacterHint,
+    required this.showFirstStrokeHint,
+    required this.hasStrokeHint,
+    required this.onToggleCharacterHint,
+    required this.onToggleFirstStrokeHint,
+  });
+
+  final bool showCharacterHint;
+  final bool showFirstStrokeHint;
+  final bool hasStrokeHint;
+  final VoidCallback onToggleCharacterHint;
+  final VoidCallback onToggleFirstStrokeHint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: onToggleCharacterHint,
+            icon: Icon(
+              showCharacterHint ? Icons.visibility_off : Icons.visibility,
+              size: 18,
+            ),
+            label: Text(showCharacterHint ? '한자 가리기' : '한자 힌트'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: hasStrokeHint ? onToggleFirstStrokeHint : null,
+            icon: Icon(
+              showFirstStrokeHint ? Icons.layers_clear : Icons.gesture,
+              size: 18,
+            ),
+            label: Text(showFirstStrokeHint ? '획 힌트 끄기' : '첫 획 힌트'),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -930,19 +1178,19 @@ class _IntroHanjaCard extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               item.character,
               maxLines: 1,
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontFamily: AppFonts.hanjaSerif,
                 fontWeight: FontWeight.w900,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               item.meaning,
               maxLines: 1,

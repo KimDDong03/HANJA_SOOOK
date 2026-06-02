@@ -272,6 +272,10 @@ class _FreeWritingPainter extends CustomPainter {
   final int? failedStrokeIndex;
   final Path? expectedHintPath;
 
+  static const _hintStrokeWidth = 8.0;
+  static const _failedStrokeWidth = 7.0;
+  static const _userStrokeWidth = 6.0;
+
   @override
   void paint(Canvas canvas, Size size) {
     _drawGrid(canvas, size);
@@ -287,7 +291,7 @@ class _FreeWritingPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = 7;
+        ..strokeWidth = _hintStrokeWidth;
       canvas.drawPath(hintPath, hintPaint);
     }
 
@@ -298,12 +302,15 @@ class _FreeWritingPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round
-          ..strokeWidth = 6;
+          ..strokeWidth = _failedStrokeWidth;
         canvas.drawPath(strokes[index], failedPaint);
       } else {
         canvas.drawPath(
           strokes[index],
-          _strokePaint(HanjaStrokeColorPalette.colorFor(index), width: 5),
+          _strokePaint(
+            HanjaStrokeColorPalette.colorFor(index),
+            width: _userStrokeWidth,
+          ),
         );
       }
     }
@@ -314,7 +321,7 @@ class _FreeWritingPainter extends CustomPainter {
         activePath,
         _strokePaint(
           HanjaStrokeColorPalette.colorFor(strokes.length),
-          width: 5,
+          width: _userStrokeWidth,
         ),
       );
     }

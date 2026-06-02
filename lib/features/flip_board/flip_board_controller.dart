@@ -23,30 +23,44 @@ final flipBoardProvider = AsyncNotifierProvider.autoDispose
     );
 
 enum FlipBoardPlayMode {
-  drawHanja('draw-hanja', '훈음 보고 한자 그리기'),
-  typeMeaning('type-meaning', '한자 보고 뜻 쓰기');
+  drawHanja('draw-hanja', '솔로 판뒤집기'),
+  typeMeaning('type-meaning', '한자 보고 뜻 쓰기'),
+  competitiveDrawHanja('competitive-draw-hanja', '경쟁 판뒤집기');
 
   const FlipBoardPlayMode(this.routeValue, this.label);
 
   final String routeValue;
   final String label;
 
+  bool get usesDrawing => switch (this) {
+    FlipBoardPlayMode.drawHanja ||
+    FlipBoardPlayMode.competitiveDrawHanja => true,
+    FlipBoardPlayMode.typeMeaning => false,
+  };
+
+  bool get isCompetitive => this == FlipBoardPlayMode.competitiveDrawHanja;
+
   static FlipBoardPlayMode fromRouteValue(String? value) {
     return switch (value) {
       'type-meaning' => FlipBoardPlayMode.typeMeaning,
+      'competitive-draw-hanja' => FlipBoardPlayMode.competitiveDrawHanja,
       _ => FlipBoardPlayMode.drawHanja,
     };
   }
 }
 
+enum FlipBoardTileOwner { player, opponent }
+
 class FlipBoardController extends AsyncNotifier<FlipBoardState> {
   FlipBoardController(this.mode);
 
   static const _drawingMatchMinScore = 65;
+  static const _correctFlashDuration = Duration(milliseconds: 520);
 
   final FlipBoardPlayMode mode;
   DateTime Function() now = DateTime.now;
   Timer? _timer;
+  Timer? _replacementTimer;
 
   @override
   Future<FlipBoardState> build() async {
@@ -66,22 +80,29 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
       );
     }
     final allTiles = <FlipBoardTile>[];
-    for (final hanja in learnedItems) {
-      final strokeAsset = mode == FlipBoardPlayMode.drawHanja
+    for (var index = 0; index < learnedItems.length; index += 1) {
+      final hanja = learnedItems[index];
+      final strokeAsset = mode.usesDrawing
           ? await contentRepository.getStrokeAsset(hanja.id)
           : null;
-      allTiles.add(_tileFor(hanja: hanja, strokeAsset: strokeAsset));
+      allTiles.add(
+        _tileFor(hanja: hanja, strokeAsset: strokeAsset, tileIndex: index),
+      );
     }
     final visibleCount = AppConstants.flipBoardVisibleTileCount.clamp(
       0,
       allTiles.length,
     );
+    final visibleTiles = allTiles.take(visibleCount).toList();
     _startTimer();
-    ref.onDispose(() => _timer?.cancel());
+    ref.onDispose(() {
+      _timer?.cancel();
+      _replacementTimer?.cancel();
+    });
     return FlipBoardState(
       startedAt: now(),
       mode: mode,
-      tiles: allTiles.take(visibleCount).toList(),
+      tiles: visibleTiles,
       remainingTiles: allTiles.skip(visibleCount).toList(),
       learnedHanjaCount: learnedItems.length,
     );
@@ -111,18 +132,16 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
   FlipBoardTile _tileFor({
     required HanjaCharacter hanja,
     required StrokeAsset? strokeAsset,
+    required int tileIndex,
   }) {
     return FlipBoardTile(
       hanjaId: hanja.id,
-      label: mode == FlipBoardPlayMode.drawHanja
-          ? hanja.meaning
-          : hanja.character,
-      answer: mode == FlipBoardPlayMode.drawHanja
-          ? hanja.character
-          : hanja.meaning,
-      extraAnswers: mode == FlipBoardPlayMode.drawHanja
-          ? const []
-          : _textAnswersFor(hanja),
+      label: mode.usesDrawing ? hanja.meaning : hanja.character,
+      answer: mode.usesDrawing ? hanja.character : hanja.meaning,
+      owner: mode.isCompetitive && tileIndex.isOdd
+          ? FlipBoardTileOwner.opponent
+          : FlipBoardTileOwner.player,
+      extraAnswers: mode.usesDrawing ? const [] : _textAnswersFor(hanja),
       expectedStrokeCount: hanja.strokeCount,
       expectedSvgPaths:
           strokeAsset?.svgPaths?.whereType<String>().toList() ?? const [],
@@ -149,6 +168,7 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
   void selectTile(int index) {
     final current = state.value;
     if (current == null ||
+        current.mode.usesDrawing ||
         index < 0 ||
         index >= current.tiles.length ||
         current.isTileOwned(index) ||
@@ -192,47 +212,72 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
     if (current == null || !current.isActive) {
       return;
     }
-    if (current.selectedTile == null) {
-      state = AsyncData(current.copyWith(feedbackMessage: '뒤집을 판을 먼저 골라주세요.'));
+    if (current.correctTileIndex != null) {
       return;
     }
     if (strokes.isEmpty) {
       return;
     }
-    if (current.mode != FlipBoardPlayMode.drawHanja) {
+    if (!current.mode.usesDrawing) {
       state = AsyncData(
         current.copyWith(feedbackMessage: '이 모드는 훈음을 적어서 뒤집어요.'),
       );
       return;
     }
 
-    final isMatched = _selectedDrawingMatches(
+    final matchedTileIndex = _matchedDrawingTileIndex(
       current: current,
       strokes: strokes,
     );
-    if (isMatched) {
-      markTileCorrect(current.selectedTileIndex!);
+    if (matchedTileIndex == null) {
+      state = AsyncData(current.copyWith(feedbackMessage: '아쉬워요. 다시 그려봐요.'));
       return;
     }
-
-    state = AsyncData(current.copyWith(feedbackMessage: '아쉬워요. 다시 그려봐요.'));
+    final matchedTile = current.tiles[matchedTileIndex];
+    if (current.mode.isCompetitive &&
+        matchedTile.owner != FlipBoardTileOwner.player) {
+      state = AsyncData(current.copyWith(feedbackMessage: '내 색깔 판만 뒤집어요.'));
+      return;
+    }
+    markTileCorrect(matchedTileIndex);
   }
 
-  bool _selectedDrawingMatches({
+  int? _matchedDrawingTileIndex({
     required FlipBoardState current,
     required List<Path> strokes,
   }) {
-    final selectedTile = current.selectedTile;
-    if (selectedTile == null) {
-      return false;
+    var bestScore = -1;
+    int? bestIndex;
+    for (var index = 0; index < current.tiles.length; index += 1) {
+      if (current.isTileOwned(index)) {
+        continue;
+      }
+      final tile = current.tiles[index];
+      if (current.mode.isCompetitive &&
+          tile.owner != FlipBoardTileOwner.player) {
+        continue;
+      }
+      final score = _drawingScore(tile: tile, strokes: strokes);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
     }
+    return bestScore >= _drawingMatchMinScore ? bestIndex : null;
+  }
+
+  int _drawingScore({
+    required FlipBoardTile tile,
+    required List<Path> strokes,
+  }) {
     final scorer = ref.read(freeWritingScoreControllerProvider);
-    final scoreResult = scorer.score(
-      userStrokes: strokes,
-      expectedSvgPaths: selectedTile.expectedSvgPaths,
-      expectedStrokeCount: selectedTile.expectedStrokeCount,
-    );
-    return scoreResult.score >= _drawingMatchMinScore;
+    return scorer
+        .score(
+          userStrokes: strokes,
+          expectedSvgPaths: tile.expectedSvgPaths,
+          expectedStrokeCount: tile.expectedStrokeCount,
+        )
+        .score;
   }
 
   void markTileCorrect(int index) {
@@ -244,6 +289,11 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
     if (current.ownedHanjaIds.contains(tile.hanjaId)) {
       return;
     }
+    if (current.mode.usesDrawing) {
+      _markDrawingTileCorrect(current: current, index: index, tile: tile);
+      return;
+    }
+
     state = AsyncData(
       current.copyWith(
         score: current.score + _scoreFor(tile),
@@ -255,6 +305,110 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
         feedbackMessage: '정답! ${_scoreFor(tile)}점을 얻었어요.',
       ),
     );
+  }
+
+  void _markDrawingTileCorrect({
+    required FlipBoardState current,
+    required int index,
+    required FlipBoardTile tile,
+  }) {
+    _replacementTimer?.cancel();
+    final replacement = _takeReplacementTile(
+      remainingTiles: current.remainingTiles,
+      owner: current.mode.isCompetitive ? tile.owner : null,
+    );
+    if (replacement.tile == null) {
+      final ownedHanjaIds = {...current.ownedHanjaIds, tile.hanjaId};
+      state = AsyncData(
+        current.copyWith(
+          score: current.score + _scoreFor(tile),
+          correctAttemptCount: current.correctAttemptCount + 1,
+          flippedTileCount: current.flippedTileCount + 1,
+          ownedHanjaIds: ownedHanjaIds,
+          selectedTileIndex: null,
+          correctTileIndex: index,
+          answerText: '',
+          feedbackMessage: '정답! ${_scoreFor(tile)}점을 얻었어요.',
+        ),
+      );
+      if (_allPlayableDrawingTilesOwned(state.value!)) {
+        unawaited(finishGame());
+      }
+      return;
+    }
+
+    state = AsyncData(
+      current.copyWith(
+        score: current.score + _scoreFor(tile),
+        correctAttemptCount: current.correctAttemptCount + 1,
+        flippedTileCount: current.flippedTileCount + 1,
+        selectedTileIndex: null,
+        correctTileIndex: index,
+        answerText: '',
+        feedbackMessage: '정답! ${_scoreFor(tile)}점을 얻었어요.',
+      ),
+    );
+    _replacementTimer = Timer(_correctFlashDuration, () {
+      final latest = state.value;
+      if (latest == null ||
+          latest.completedResult != null ||
+          index < 0 ||
+          index >= latest.tiles.length ||
+          latest.tiles[index].hanjaId != tile.hanjaId) {
+        return;
+      }
+      final nextTiles = latest.tiles.toList()..[index] = replacement.tile!;
+      state = AsyncData(
+        latest.copyWith(
+          tiles: nextTiles,
+          remainingTiles: replacement.remainingTiles,
+          correctTileIndex: null,
+        ),
+      );
+    });
+  }
+
+  _TileReplacement _takeReplacementTile({
+    required List<FlipBoardTile> remainingTiles,
+    required FlipBoardTileOwner? owner,
+  }) {
+    if (remainingTiles.isEmpty) {
+      return const _TileReplacement(tile: null, remainingTiles: []);
+    }
+    if (owner == null) {
+      return _TileReplacement(
+        tile: remainingTiles.first,
+        remainingTiles: remainingTiles.skip(1).toList(),
+      );
+    }
+    for (var index = 0; index < remainingTiles.length; index += 1) {
+      final tile = remainingTiles[index];
+      if (tile.owner != owner) {
+        continue;
+      }
+      return _TileReplacement(
+        tile: tile,
+        remainingTiles: [
+          ...remainingTiles.take(index),
+          ...remainingTiles.skip(index + 1),
+        ],
+      );
+    }
+    return _TileReplacement(tile: null, remainingTiles: remainingTiles);
+  }
+
+  bool _allPlayableDrawingTilesOwned(FlipBoardState current) {
+    for (var index = 0; index < current.tiles.length; index += 1) {
+      final tile = current.tiles[index];
+      if (current.mode.isCompetitive &&
+          tile.owner != FlipBoardTileOwner.player) {
+        continue;
+      }
+      if (!current.ownedHanjaIds.contains(tile.hanjaId)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   int _scoreFor(FlipBoardTile tile) {
@@ -325,6 +479,13 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
   }
 }
 
+class _TileReplacement {
+  const _TileReplacement({required this.tile, required this.remainingTiles});
+
+  final FlipBoardTile? tile;
+  final List<FlipBoardTile> remainingTiles;
+}
+
 class FlipBoardState {
   const FlipBoardState({
     required this.startedAt,
@@ -338,6 +499,7 @@ class FlipBoardState {
     this.correctAttemptCount = 0,
     this.score = 0,
     this.selectedTileIndex,
+    this.correctTileIndex,
     this.ownedHanjaIds = const {},
     this.isSaving = false,
     this.completedResult,
@@ -355,6 +517,7 @@ class FlipBoardState {
   final int correctAttemptCount;
   final int score;
   final int? selectedTileIndex;
+  final int? correctTileIndex;
   final Set<String> ownedHanjaIds;
   final bool isSaving;
   final ChallengeResult? completedResult;
@@ -382,6 +545,10 @@ class FlipBoardState {
     return ownedHanjaIds.contains(tiles[index].hanjaId);
   }
 
+  bool isTileCorrect(int index) {
+    return correctTileIndex == index;
+  }
+
   FlipBoardState copyWith({
     DateTime? startedAt,
     FlipBoardPlayMode? mode,
@@ -394,6 +561,7 @@ class FlipBoardState {
     int? correctAttemptCount,
     int? score,
     Object? selectedTileIndex = _sentinel,
+    Object? correctTileIndex = _sentinel,
     Set<String>? ownedHanjaIds,
     bool? isSaving,
     ChallengeResult? completedResult,
@@ -413,6 +581,9 @@ class FlipBoardState {
       selectedTileIndex: identical(selectedTileIndex, _sentinel)
           ? this.selectedTileIndex
           : selectedTileIndex as int?,
+      correctTileIndex: identical(correctTileIndex, _sentinel)
+          ? this.correctTileIndex
+          : correctTileIndex as int?,
       ownedHanjaIds: ownedHanjaIds ?? this.ownedHanjaIds,
       isSaving: isSaving ?? this.isSaving,
       completedResult: completedResult ?? this.completedResult,
@@ -428,6 +599,7 @@ class FlipBoardTile {
     required this.hanjaId,
     required this.label,
     required this.answer,
+    this.owner = FlipBoardTileOwner.player,
     this.extraAnswers = const [],
     this.expectedStrokeCount,
     this.expectedSvgPaths = const [],
@@ -436,6 +608,7 @@ class FlipBoardTile {
   final String hanjaId;
   final String label;
   final String answer;
+  final FlipBoardTileOwner owner;
   final List<String> extraAnswers;
   final int? expectedStrokeCount;
   final List<String> expectedSvgPaths;

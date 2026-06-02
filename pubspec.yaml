@@ -76,6 +76,10 @@ flutter:
     - assets/data/
     - assets/images/
     - assets/images/textbook_covers/
+    - assets/images/thinking_units/g3/
+    - assets/images/thinking_units/g4/
+    - assets/images/thinking_units/g5/
+    - assets/images/thinking_units/g6/
     - assets/audio/sfx/
     - assets/audio/music/
 

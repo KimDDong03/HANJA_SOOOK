@@ -45,6 +45,7 @@ void main() {
       expect(find.text('반 코드로 참여하기'), findsOneWidget);
       expect(find.text('3학년 1반'), findsOneWidget);
       expect(find.text('랭킹 보기'), findsOneWidget);
+      expect(find.text('경쟁 판뒤집기'), findsOneWidget);
       expect(find.text('보호자 연결'), findsNothing);
       expect(find.text('연결된 학생'), findsNothing);
 

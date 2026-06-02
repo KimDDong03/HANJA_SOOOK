@@ -1,4 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hanja_soook/domain/models/hanja_character.dart';
+import 'package:hanja_soook/domain/services/learning_plan_service.dart';
+import 'package:hanja_soook/domain/services/thinking_unit_image_service.dart';
 import 'package:hanja_soook/features/growth/growth_controller.dart';
 import 'package:hanja_soook/features/home/home_controller.dart';
 
@@ -50,5 +53,63 @@ void main() {
     expect(state.todayRemainingCount, 0);
     expect(state.rewardLabel, '큰 배지');
     expect(state.message, '오늘 미션 완료! 누적 XP가 성장 게이지에 반영됐어요.');
+  });
+
+  test('HomeUnitSlide maps chapter keys to thinking image assets', () {
+    const chapter = HanjaChapter(
+      key: 'G5-U08-L04',
+      name: '초5 8단원 4. 조선 시대 역사 인물4',
+      items: [
+        HanjaCharacter(
+          id: 'HJ-1',
+          character: '一',
+          sound: '일',
+          meaning: '한 일',
+          grade: 5,
+        ),
+        HanjaCharacter(
+          id: 'HJ-2',
+          character: '二',
+          sound: '이',
+          meaning: '두 이',
+          grade: 5,
+        ),
+      ],
+    );
+
+    final slide = HomeUnitSlide.fromChapter(
+      chapter: chapter,
+      learningDate: '20260602',
+      progressRecords: const [],
+      completedHanjaIds: const {'HJ-1'},
+      isUnlocked: true,
+    );
+
+    expect(slide.chapterKey, 'G5-U08-L04');
+    expect(
+      slide.imageAssetPath,
+      'assets/images/thinking_units/g5/g5_u08_l04.png',
+    );
+    expect(slide.completedCount, 1);
+    expect(slide.totalCount, 2);
+    expect(slide.newCount, 2);
+    expect(slide.reviewCount, 0);
+    expect(slide.isUnlocked, isTrue);
+    expect(slide.isComplete, isFalse);
+    expect(
+      const ThinkingUnitImageService().imageAssetPathForChapterKey('3-1'),
+      isNull,
+    );
+  });
+
+  test('ThinkingUnitImageService maps chapter keys to major unit keys', () {
+    const service = ThinkingUnitImageService();
+
+    expect(service.majorUnitKeyForChapterKey('G3-U01-L04'), 'G3-U01');
+    expect(
+      service.imageAssetPathForChapterKey('G3-U01-L04'),
+      'assets/images/thinking_units/g3/g3_u01_l04.png',
+    );
+    expect(service.majorUnitKeyForChapterKey('bad-key'), isNull);
   });
 }

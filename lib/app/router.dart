@@ -5,6 +5,7 @@ import '../features/auth/login_screen.dart';
 import '../features/challenge/challenge_screen.dart';
 import '../features/class_ranking/class_ranking_screen.dart';
 import '../features/daily_session/daily_session_screen.dart';
+import '../features/flip_board/competitive_flip_board_lobby_screen.dart';
 import '../features/flip_board/flip_board_controller.dart';
 import '../features/flip_board/flip_board_screen.dart';
 import '../features/game/typing_game_screen.dart';
@@ -117,7 +118,21 @@ final appRouter = GoRouter(
           builder: (context, state) => const TypingGameScreen(),
         ),
         GoRoute(
+          path: RoutePaths.competitiveFlipBoardLobby,
+          builder: (context, state) => const CompetitiveFlipBoardLobbyScreen(),
+        ),
+        GoRoute(
           path: RoutePaths.flipBoard,
+          redirect: (context, state) {
+            final mode = FlipBoardPlayMode.fromRouteValue(
+              state.uri.queryParameters['mode'],
+            );
+            final roomCode = state.uri.queryParameters['room']?.trim();
+            if (mode.isCompetitive && (roomCode == null || roomCode.isEmpty)) {
+              return RoutePaths.competitiveFlipBoardLobby;
+            }
+            return null;
+          },
           builder: (context, state) => FlipBoardScreen(
             mode: FlipBoardPlayMode.fromRouteValue(
               state.uri.queryParameters['mode'],

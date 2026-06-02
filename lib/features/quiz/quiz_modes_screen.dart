@@ -33,15 +33,6 @@ class QuizModesScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           PlayfulActionTile(
-            icon: Icons.text_fields,
-            title: '뜻 보고 한자',
-            subtitle: '뜻에 맞는 한자를 골라요',
-            color: AppColors.surface,
-            onTap: () =>
-                context.push(RoutePaths.quizPlayFor('meaning-to-hanja')),
-          ),
-          const SizedBox(height: 12),
-          PlayfulActionTile(
             icon: Icons.shuffle,
             title: '혼합 퀴즈',
             subtitle: '여러 유형을 섞어 도전해요',

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/audio/app_audio_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_paths.dart';
@@ -26,6 +29,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.initState();
     _schoolController = TextEditingController();
     _nameController = TextEditingController();
+    unawaited(
+      ref.read(appAudioControllerProvider).setMusicTrack(AppMusicTrack.home),
+    );
   }
 
   @override

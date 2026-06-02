@@ -459,6 +459,10 @@ class _PracticePainter extends CustomPainter {
   final Color errorColor;
   final Color gridColor;
 
+  static const _guideStrokeWidth = 8.0;
+  static const _completedStrokeWidth = 5.7;
+  static const _activeStrokeWidth = 6.0;
+
   @override
   void paint(Canvas canvas, Size size) {
     _drawGrid(canvas, size);
@@ -476,7 +480,7 @@ class _PracticePainter extends CustomPainter {
 
     final guidePaint = _strokePaint(
       strokeColor.withValues(alpha: 0.13),
-      width: 7.0,
+      width: _guideStrokeWidth,
     );
     for (final path in paths) {
       canvas.drawPath(path, guidePaint);
@@ -490,7 +494,7 @@ class _PracticePainter extends CustomPainter {
         completedPath,
         _strokePaint(
           HanjaStrokeColorPalette.colorFor(index).withValues(alpha: 0.88),
-          width: 4.8,
+          width: _completedStrokeWidth,
         ),
       );
     }
@@ -502,7 +506,7 @@ class _PracticePainter extends CustomPainter {
         HanjaPathMorph.lerp(fromPath, toPath, acceptedProgress),
         _strokePaint(
           HanjaStrokeColorPalette.colorFor(completedStrokeCount),
-          width: 5.2,
+          width: _activeStrokeWidth,
         ),
       );
     }
@@ -513,7 +517,7 @@ class _PracticePainter extends CustomPainter {
         errorPath,
         _strokePaint(
           errorColor.withValues(alpha: (1 - errorProgress).clamp(0.0, 1.0)),
-          width: 5.0,
+          width: _activeStrokeWidth,
         ),
       );
     }
@@ -524,7 +528,7 @@ class _PracticePainter extends CustomPainter {
         userPath,
         _strokePaint(
           HanjaStrokeColorPalette.colorFor(completedStrokeCount),
-          width: 5.0,
+          width: _activeStrokeWidth,
         ),
       );
     }
@@ -546,7 +550,7 @@ class _PracticePainter extends CustomPainter {
         paths[index],
         _strokePaint(
           HanjaStrokeColorPalette.colorFor(index).withValues(alpha: 0.88),
-          width: 4.8,
+          width: _completedStrokeWidth,
         ),
       );
     }
@@ -555,7 +559,7 @@ class _PracticePainter extends CustomPainter {
         _extractPath(paths[completedCount], currentProgress),
         _strokePaint(
           HanjaStrokeColorPalette.colorFor(completedCount),
-          width: 5.2,
+          width: _activeStrokeWidth,
         ),
       );
     }

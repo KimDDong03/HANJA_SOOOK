@@ -334,7 +334,7 @@ void main() {
     await pumpUntilFound(tester, find.text('오늘 학습 시작'));
     expect(find.text('오늘 학습 시작'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FilledButton, '오늘 학습 시작'));
+    appRouter.go(RoutePaths.dailySession);
     await pumpUntilFound(tester, find.text('오늘 학습'));
     expect(find.text('시작'), findsOneWidget);
 

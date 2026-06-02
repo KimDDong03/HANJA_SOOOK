@@ -191,7 +191,7 @@ class _ClassJoinPanel extends StatelessWidget {
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 8),
-          const Text('선생님이 알려준 반 코드를 입력하면 반 랭킹에 참여할 수 있어요.'),
+          const Text('선생님이 알려준 반 코드를 복사해 붙여넣거나 직접 입력해요.'),
           const SizedBox(height: 14),
           TextField(
             controller: controller,
@@ -242,7 +242,7 @@ class _JoinedClassesPanel extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (classes.isEmpty)
-            const Text('아직 참여한 반이 없습니다. 반 코드를 입력해요.')
+            const Text('아직 참여한 반이 없습니다. 선생님에게 받은 반 코드를 입력해요.')
           else
             for (final classRoom in classes) ...[
               _InfoRow(
@@ -259,6 +259,13 @@ class _JoinedClassesPanel extends StatelessWidget {
               onPressed: () => context.push(RoutePaths.classRanking),
               icon: const Icon(Icons.leaderboard),
               label: const Text('랭킹 보기'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () =>
+                  context.push(RoutePaths.competitiveFlipBoardLobby),
+              icon: const Icon(Icons.dashboard_customize),
+              label: const Text('경쟁 판뒤집기'),
             ),
           ],
         ],
@@ -293,7 +300,7 @@ class _GuardianLinkPanel extends StatelessWidget {
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 8),
-          const Text('보호자 앱에서 받은 학생 연결 코드를 입력해요.'),
+          const Text('학생 화면의 내 학생 연결 코드를 복사해 붙여넣거나 직접 입력해요.'),
           const SizedBox(height: 14),
           TextField(
             controller: controller,
@@ -393,6 +400,8 @@ class _LinkedStudentsPanel extends StatelessWidget {
               ),
               const SizedBox(height: 8),
             ],
+          const SizedBox(height: 8),
+          const Text('연결 학생의 실시간 반 랭킹 확인은 서버 동기화가 필요한 2차 기능입니다.'),
         ],
       ),
     );

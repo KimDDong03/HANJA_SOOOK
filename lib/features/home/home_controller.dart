@@ -4,7 +4,9 @@ import '../../core/constants/app_constants.dart';
 import '../../data/repositories/content_repository_provider.dart';
 import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../domain/models/hanja_character.dart';
+import '../../domain/models/learning_progress_record.dart';
 import '../../domain/services/learning_plan_service.dart';
+import '../../domain/services/thinking_unit_image_service.dart';
 import '../auth/current_profile_controller.dart';
 import '../growth/growth_controller.dart';
 import '../learning/learning_progress_controller.dart';
@@ -43,6 +45,73 @@ final todayLearningProvider = FutureProvider<TodayLearningState>((ref) async {
 final todayHanjaProvider = FutureProvider<HanjaCharacter?>((ref) async {
   final state = await ref.watch(todayLearningProvider.future);
   return state.firstHanja;
+});
+
+final homeUnitCarouselProvider = FutureProvider<HomeUnitCarouselState>((
+  ref,
+) async {
+  final profileGrade = ref.watch(currentProfileProvider)?.grade;
+  final grade = profileGrade ?? 3;
+  ref.watch(learningProgressTickProvider);
+
+  final contentRepository = ref.watch(contentRepositoryProvider);
+  final progressRepository = ref.watch(learningProgressRepositoryProvider);
+  final studentKey = currentStudentKey(ref);
+  final learningDate = currentLearningDate();
+  final allItems = await contentRepository.getHanjaList(grade: grade);
+  final progressRecords = await progressRepository
+      .getCompletedHanjaRecordsForStudent(studentKey: studentKey);
+  final plan = const LearningPlanService().buildDailyPlan(
+    allItems: allItems,
+    progressRecords: progressRecords,
+    learningDate: learningDate,
+    newItemLimit: AppConstants.dailyHanjaCount,
+    reviewItemLimit: AppConstants.dailyReviewCount,
+  );
+  final completedHanjaIds = progressRecords
+      .map((record) => record.hanjaId)
+      .toSet();
+  final chapters = const LearningPlanService().buildChapters(allItems);
+  final thinkingImageService = const ThinkingUnitImageService();
+  final activeMajorUnitKey = plan.chapterKey == null
+      ? null
+      : thinkingImageService.majorUnitKeyForChapterKey(plan.chapterKey!);
+  final fallbackMajorUnitKey = chapters.isEmpty
+      ? null
+      : thinkingImageService.majorUnitKeyForChapterKey(chapters.first.key);
+  final majorUnitKey = activeMajorUnitKey ?? fallbackMajorUnitKey;
+  final visibleChapters = majorUnitKey == null
+      ? chapters
+      : chapters
+            .where(
+              (chapter) =>
+                  thinkingImageService.majorUnitKeyForChapterKey(chapter.key) ==
+                  majorUnitKey,
+            )
+            .toList();
+  final slides = [
+    for (var index = 0; index < visibleChapters.length; index += 1)
+      HomeUnitSlide.fromChapter(
+        chapter: visibleChapters[index],
+        learningDate: learningDate,
+        progressRecords: progressRecords,
+        completedHanjaIds: completedHanjaIds,
+        isUnlocked: _isChapterUnlocked(
+          chapters: visibleChapters,
+          index: index,
+          completedHanjaIds: completedHanjaIds,
+        ),
+      ),
+  ];
+  final activeSlideIndex = slides.indexWhere(
+    (slide) => slide.chapterKey == plan.chapterKey,
+  );
+
+  return HomeUnitCarouselState(
+    grade: grade,
+    slides: slides,
+    activeSlideIndex: activeSlideIndex < 0 ? 0 : activeSlideIndex,
+  );
 });
 
 final homeGrowthSummaryProvider = Provider<AsyncValue<HomeGrowthSummaryState>>((
@@ -109,6 +178,98 @@ String _rewardLabelForProgress(int rewardProgress) {
     return '별 배지';
   }
   return '도전중';
+}
+
+class HomeUnitCarouselState {
+  const HomeUnitCarouselState({
+    required this.grade,
+    required this.slides,
+    required this.activeSlideIndex,
+  });
+
+  final int grade;
+  final List<HomeUnitSlide> slides;
+  final int activeSlideIndex;
+}
+
+class HomeUnitSlide {
+  const HomeUnitSlide({
+    required this.chapterKey,
+    required this.title,
+    required this.imageAssetPath,
+    required this.completedCount,
+    required this.totalCount,
+    required this.newCount,
+    required this.reviewCount,
+    required this.isUnlocked,
+  });
+
+  final String chapterKey;
+  final String title;
+  final String? imageAssetPath;
+  final int completedCount;
+  final int totalCount;
+  final int newCount;
+  final int reviewCount;
+  final bool isUnlocked;
+
+  bool get isComplete => totalCount > 0 && completedCount >= totalCount;
+
+  factory HomeUnitSlide.fromChapter({
+    required HanjaChapter chapter,
+    required String learningDate,
+    required List<LearningProgressRecord> progressRecords,
+    required Set<String> completedHanjaIds,
+    required bool isUnlocked,
+  }) {
+    final plan = const LearningPlanService().buildDailyPlan(
+      allItems: chapter.items,
+      progressRecords: progressRecords,
+      learningDate: learningDate,
+      newItemLimit: AppConstants.dailyHanjaCount,
+      reviewItemLimit: AppConstants.dailyReviewCount,
+      chapterKey: chapter.key,
+    );
+    const thinkingImageService = ThinkingUnitImageService();
+    return HomeUnitSlide(
+      chapterKey: chapter.key,
+      title: thinkingImageService.displayTitleForChapterKey(
+        chapterKey: chapter.key,
+        fallbackName: chapter.name,
+      ),
+      imageAssetPath: thinkingImageService.imageAssetPathForChapterKey(
+        chapter.key,
+      ),
+      completedCount: chapter.items
+          .where((item) => completedHanjaIds.contains(item.id))
+          .length,
+      totalCount: chapter.items.length,
+      newCount: plan.newItems.length,
+      reviewCount: plan.reviewItems.length,
+      isUnlocked: isUnlocked,
+    );
+  }
+}
+
+bool _isChapterUnlocked({
+  required List<HanjaChapter> chapters,
+  required int index,
+  required Set<String> completedHanjaIds,
+}) {
+  if (index <= 0) {
+    return true;
+  }
+  for (var previousIndex = 0; previousIndex < index; previousIndex += 1) {
+    if (!_isChapterComplete(chapters[previousIndex], completedHanjaIds)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool _isChapterComplete(HanjaChapter chapter, Set<String> completedHanjaIds) {
+  return chapter.items.isNotEmpty &&
+      chapter.items.every((item) => completedHanjaIds.contains(item.id));
 }
 
 class TodayLearningState {

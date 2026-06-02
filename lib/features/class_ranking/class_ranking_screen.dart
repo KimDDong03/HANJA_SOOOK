@@ -44,6 +44,11 @@ class _RankingContent extends ConsumerWidget {
           : '${data.className} 기록을 비교해요',
       children: [
         if (data.isSample) ...[
+          const _RankingNotice(
+            icon: Icons.info_outline,
+            message: '현재는 샘플 랭킹입니다. 실제 반 랭킹은 반 코드 참여 후 이 기기의 도전 기록으로 표시됩니다.',
+          ),
+          const SizedBox(height: 12),
           PlayfulActionTile(
             icon: Icons.meeting_room,
             title: '반 코드로 참여하기',
@@ -98,12 +103,15 @@ class _RankingContent extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               if (data.entries.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text(
-                    '아직 비교할 반 기록이 없습니다.',
-                    textAlign: TextAlign.center,
-                  ),
+                _RankingEmptyState(
+                  message: data.isEmptyClass
+                      ? '참여한 반에 아직 학생이 없습니다.'
+                      : '아직 비교할 반 기록이 없습니다.',
+                  actionLabel: data.isSample ? '반 코드로 참여하기' : '도전하러 가기',
+                  onPressed: data.isSample
+                      ? () =>
+                            context.push(RoutePaths.studentLinksFor('student'))
+                      : () => context.go(RoutePaths.appChallenge),
                 )
               else
                 for (final entry in data.entries)
@@ -123,6 +131,78 @@ class _RankingContent extends ConsumerWidget {
           label: const Text('도전하러 가기'),
         ),
       ],
+    );
+  }
+}
+
+class _RankingNotice extends StatelessWidget {
+  const _RankingNotice({required this.icon, required this.message});
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return PlayfulPanel(
+      color: AppColors.blue.withValues(alpha: 0.24),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.textSecondary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RankingEmptyState extends StatelessWidget {
+  const _RankingEmptyState({
+    required this.message,
+    required this.actionLabel,
+    required this.onPressed,
+  });
+
+  final String message;
+  final String actionLabel;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.leaderboard_outlined,
+            size: 42,
+            color: AppColors.textSecondary,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: onPressed,
+            icon: const Icon(Icons.chevron_right),
+            label: Text(actionLabel),
+          ),
+        ],
+      ),
     );
   }
 }

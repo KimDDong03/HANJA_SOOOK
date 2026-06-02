@@ -65,7 +65,7 @@ class _ChallengeLockedView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PlayfulPage(
-      title: '뜻 보고 한자 선택',
+      title: '스피드 한자 선택',
       subtitle: '배운 한자로 도전해요',
       children: [
         PlayfulPanel(
@@ -129,7 +129,7 @@ class _GameRoundViewState extends ConsumerState<_GameRoundView> {
       alignment: Alignment.center,
       children: [
         PlayfulPage(
-          title: '뜻 보고 한자 선택',
+          title: '스피드 한자 선택',
           subtitle: '라운드 ${data.currentIndex + 1}/${data.totalCount}',
           children: [
             LinearProgressIndicator(

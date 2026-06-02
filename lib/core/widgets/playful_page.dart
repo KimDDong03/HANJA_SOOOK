@@ -14,6 +14,7 @@ class PlayfulPage extends StatelessWidget {
     this.showMascot = false,
     this.showHeader = true,
     this.padding = const EdgeInsets.fromLTRB(20, 8, 20, 28),
+    this.physics,
   });
 
   final String title;
@@ -24,6 +25,7 @@ class PlayfulPage extends StatelessWidget {
   final bool showMascot;
   final bool showHeader;
   final EdgeInsetsGeometry padding;
+  final ScrollPhysics? physics;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +33,7 @@ class PlayfulPage extends StatelessWidget {
       SafeArea(
         child: ListView(
           padding: padding,
+          physics: physics,
           children: [
             if (showHeader) ...[
               _PlayfulHeader(

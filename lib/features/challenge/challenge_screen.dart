@@ -97,7 +97,7 @@ class _JoinClassPrompt extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '게임은 바로 할 수 있어요.\n반 코드로 참여하면 친구들과 점수를 비교할 수 있어요.',
+            '게임은 바로 할 수 있어요.\n선생님이 알려준 반 코드를 붙여넣으면 친구들과 점수를 비교할 수 있어요.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textSecondary,
@@ -364,9 +364,9 @@ class _ChallengeModeGrid extends StatelessWidget {
         ),
         _ChallengeModeCard(
           icon: Icons.speed,
-          title: '뜻 보고 선택',
+          title: '스피드 한자 선택',
           subtitle: data.canPlayChallengeGames
-              ? '오답마다 감점'
+              ? '뜻 보고 빠르게 골라요'
               : '${data.minLearnedHanjaCount}개부터',
           color: AppColors.blue,
           isEnabled: data.canPlayChallengeGames,
@@ -374,8 +374,8 @@ class _ChallengeModeGrid extends StatelessWidget {
         ),
         _ChallengeModeCard(
           icon: Icons.grid_view,
-          title: '판뒤집기',
-          subtitle: data.canPlayFlipBoard ? '훈음 보고 그리기' : '12개부터',
+          title: '솔로 판뒤집기',
+          subtitle: data.canPlayFlipBoard ? '새 훈음 맞히기' : '12개부터',
           color: AppColors.green,
           isEnabled: data.canPlayFlipBoard,
           onTap: () => context.push(

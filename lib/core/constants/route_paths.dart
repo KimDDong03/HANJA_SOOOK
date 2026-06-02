@@ -28,6 +28,7 @@ class RoutePaths {
   static const quizModes = '/app/challenge/quiz';
   static const quizPlay = '/app/challenge/quiz/play';
   static const challengeSpeedGame = '/app/challenge/speed-game';
+  static const competitiveFlipBoardLobby = '/app/challenge/flip-board/lobby';
   static const flipBoard = '/app/challenge/flip-board';
   static const classRanking = '/app/challenge/ranking';
 
@@ -61,6 +62,13 @@ class RoutePaths {
 
   static String flipBoardFor(String mode) {
     return Uri(path: flipBoard, queryParameters: {'mode': mode}).toString();
+  }
+
+  static String competitiveFlipBoardMatch(String roomCode) {
+    return Uri(
+      path: flipBoard,
+      queryParameters: {'mode': 'competitive-draw-hanja', 'room': roomCode},
+    ).toString();
   }
 
   static String studentLinksFor(String role) {

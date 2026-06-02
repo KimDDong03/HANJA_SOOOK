@@ -1,14 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/audio/app_audio_controller.dart';
 import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 
-class RoleSelectScreen extends StatelessWidget {
+class RoleSelectScreen extends ConsumerWidget {
   const RoleSelectScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        ref.read(appAudioControllerProvider).setMusicTrack(AppMusicTrack.home),
+      );
+    });
+
     return Scaffold(
       body: PlayfulPage(
         title: '한자쏘옥',
