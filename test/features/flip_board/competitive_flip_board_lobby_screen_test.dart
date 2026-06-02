@@ -74,10 +74,14 @@ void main() {
       await _pumpUntilFound(tester, find.text('새 방 만들기'));
 
       expect(find.text('3학년 1반 대결방'), findsOneWidget);
+      expect(find.text('제한시간'), findsOneWidget);
+      expect(find.text('30초'), findsOneWidget);
+      expect(find.text('1분'), findsOneWidget);
       expect(find.text('코드로 입장'), findsOneWidget);
       expect(find.text('방 입장'), findsOneWidget);
       expect(find.text('시작'), findsNothing);
 
+      await tester.ensureVisible(find.text('새 방 만들기'));
       await tester.tap(find.text('새 방 만들기'));
       await tester.pump();
 

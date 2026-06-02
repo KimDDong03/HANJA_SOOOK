@@ -133,11 +133,17 @@ final appRouter = GoRouter(
             }
             return null;
           },
-          builder: (context, state) => FlipBoardScreen(
-            mode: FlipBoardPlayMode.fromRouteValue(
+          builder: (context, state) {
+            final mode = FlipBoardPlayMode.fromRouteValue(
               state.uri.queryParameters['mode'],
-            ),
-          ),
+            );
+            return FlipBoardScreen(
+              mode: mode,
+              timeLimitSeconds: FlipBoardGameConfig.timeLimitFromRouteValue(
+                state.uri.queryParameters['time'],
+              ),
+            );
+          },
         ),
         GoRoute(
           path: RoutePaths.classRanking,

@@ -18,9 +18,37 @@ import '../learning/learning_progress_controller.dart';
 import '../writing/free_writing_score_controller.dart';
 
 final flipBoardProvider = AsyncNotifierProvider.autoDispose
-    .family<FlipBoardController, FlipBoardState, FlipBoardPlayMode>(
+    .family<FlipBoardController, FlipBoardState, FlipBoardGameConfig>(
       FlipBoardController.new,
     );
+
+class FlipBoardGameConfig {
+  const FlipBoardGameConfig({
+    required this.mode,
+    this.timeLimitSeconds = AppConstants.flipBoardTimeLimitSeconds,
+  });
+
+  final FlipBoardPlayMode mode;
+  final int timeLimitSeconds;
+
+  static int timeLimitFromRouteValue(String? value) {
+    final seconds = int.tryParse(value ?? '');
+    if (AppConstants.flipBoardTimeLimitOptionsSeconds.contains(seconds)) {
+      return seconds!;
+    }
+    return AppConstants.flipBoardTimeLimitSeconds;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is FlipBoardGameConfig &&
+        other.mode == mode &&
+        other.timeLimitSeconds == timeLimitSeconds;
+  }
+
+  @override
+  int get hashCode => Object.hash(mode, timeLimitSeconds);
+}
 
 enum FlipBoardPlayMode {
   drawHanja('draw-hanja', '솔로 판뒤집기'),
@@ -52,15 +80,17 @@ enum FlipBoardPlayMode {
 enum FlipBoardTileOwner { player, opponent }
 
 class FlipBoardController extends AsyncNotifier<FlipBoardState> {
-  FlipBoardController(this.mode);
+  FlipBoardController(this.config);
 
   static const _drawingMatchMinScore = 65;
   static const _correctFlashDuration = Duration(milliseconds: 520);
 
-  final FlipBoardPlayMode mode;
+  final FlipBoardGameConfig config;
   DateTime Function() now = DateTime.now;
   Timer? _timer;
   Timer? _replacementTimer;
+
+  FlipBoardPlayMode get mode => config.mode;
 
   @override
   Future<FlipBoardState> build() async {
@@ -74,6 +104,8 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
       return FlipBoardState(
         startedAt: now(),
         mode: mode,
+        timeLimitSeconds: config.timeLimitSeconds,
+        remainingSeconds: config.timeLimitSeconds,
         tiles: const [],
         remainingTiles: const [],
         learnedHanjaCount: learnedItems.length,
@@ -102,6 +134,8 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
     return FlipBoardState(
       startedAt: now(),
       mode: mode,
+      timeLimitSeconds: config.timeLimitSeconds,
+      remainingSeconds: config.timeLimitSeconds,
       tiles: visibleTiles,
       remainingTiles: allTiles.skip(visibleCount).toList(),
       learnedHanjaCount: learnedItems.length,
@@ -435,8 +469,7 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
       score: current.score,
       correctCount: current.correctAttemptCount,
       totalCount: current.learnedHanjaCount,
-      timeSec:
-          AppConstants.flipBoardTimeLimitSeconds - current.remainingSeconds,
+      timeSec: current.timeLimitSeconds - current.remainingSeconds,
       flippedTileCount: current.flippedTileCount,
     );
     final earnedXp = challengeService.earnedXpFor(input);
@@ -490,6 +523,7 @@ class FlipBoardState {
   const FlipBoardState({
     required this.startedAt,
     required this.mode,
+    required this.timeLimitSeconds,
     required this.tiles,
     required this.remainingTiles,
     required this.learnedHanjaCount,
@@ -508,6 +542,7 @@ class FlipBoardState {
 
   final DateTime startedAt;
   final FlipBoardPlayMode mode;
+  final int timeLimitSeconds;
   final List<FlipBoardTile> tiles;
   final List<FlipBoardTile> remainingTiles;
   final int learnedHanjaCount;
@@ -552,6 +587,7 @@ class FlipBoardState {
   FlipBoardState copyWith({
     DateTime? startedAt,
     FlipBoardPlayMode? mode,
+    int? timeLimitSeconds,
     List<FlipBoardTile>? tiles,
     List<FlipBoardTile>? remainingTiles,
     int? learnedHanjaCount,
@@ -570,6 +606,7 @@ class FlipBoardState {
     return FlipBoardState(
       startedAt: startedAt ?? this.startedAt,
       mode: mode ?? this.mode,
+      timeLimitSeconds: timeLimitSeconds ?? this.timeLimitSeconds,
       tiles: tiles ?? this.tiles,
       remainingTiles: remainingTiles ?? this.remainingTiles,
       learnedHanjaCount: learnedHanjaCount ?? this.learnedHanjaCount,

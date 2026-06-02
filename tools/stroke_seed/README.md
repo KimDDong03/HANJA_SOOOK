@@ -34,6 +34,22 @@ manual review workbook/HTML under
 total stroke counts from the textbook PDFs and writes them back to a copy of the
 source Excel workbook as `교과서한자`, `교과서획수`, `획수출처`, and `획수검증`.
 
+To manually produce only the characters currently missing from
+`assets/data/stroke_seed.example.json`, run:
+
+```powershell
+python tools/stroke_seed/generate_current_missing_stroke_capture_page.py
+```
+
+Open `docs/prototypes/manual_stroke_capture_missing.html`, draw each missing
+character, and save the JSON from the page. Then merge it into the final manual
+capture file and rebuild the app stroke seed:
+
+```powershell
+python tools/stroke_seed/merge_manual_stroke_capture.py "C:\Users\User\Downloads\manual_stroke_capture_textbook_refs.json"
+python tools/stroke_seed/build_app_stroke_seed.py
+```
+
 Run:
 
 ```powershell

@@ -1,3 +1,5 @@
+import 'app_constants.dart';
+
 class RoutePaths {
   const RoutePaths._();
 
@@ -60,14 +62,27 @@ class RoutePaths {
     return Uri(path: quizPlay, queryParameters: {'mode': mode}).toString();
   }
 
-  static String flipBoardFor(String mode) {
-    return Uri(path: flipBoard, queryParameters: {'mode': mode}).toString();
-  }
-
-  static String competitiveFlipBoardMatch(String roomCode) {
+  static String flipBoardFor(
+    String mode, {
+    int timeLimitSeconds = AppConstants.flipBoardTimeLimitSeconds,
+  }) {
     return Uri(
       path: flipBoard,
-      queryParameters: {'mode': 'competitive-draw-hanja', 'room': roomCode},
+      queryParameters: {'mode': mode, 'time': timeLimitSeconds.toString()},
+    ).toString();
+  }
+
+  static String competitiveFlipBoardMatch(
+    String roomCode, {
+    int timeLimitSeconds = AppConstants.flipBoardTimeLimitSeconds,
+  }) {
+    return Uri(
+      path: flipBoard,
+      queryParameters: {
+        'mode': 'competitive-draw-hanja',
+        'room': roomCode,
+        'time': timeLimitSeconds.toString(),
+      },
     ).toString();
   }
 

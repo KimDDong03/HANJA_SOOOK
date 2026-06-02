@@ -32,7 +32,8 @@ void main() {
     test('matches product data count settings', () {
       expect(AppConstants.dailyHanjaCount, 5);
       expect(AppConstants.challengeQuestionCount, 10);
-      expect(AppConstants.flipBoardTimeLimitSeconds, 20);
+      expect(AppConstants.flipBoardTimeLimitSeconds, 30);
+      expect(AppConstants.flipBoardTimeLimitOptionsSeconds, [30, 60]);
     });
   });
 }

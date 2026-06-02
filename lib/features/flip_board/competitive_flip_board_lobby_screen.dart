@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 import '../student_links/student_link_controller.dart';
+import 'flip_board_time_limit_picker.dart';
 
 class CompetitiveFlipBoardLobbyScreen extends ConsumerStatefulWidget {
   const CompetitiveFlipBoardLobbyScreen({super.key});
@@ -23,6 +25,7 @@ class _CompetitiveFlipBoardLobbyScreenState
   final TextEditingController _roomCodeController = TextEditingController();
   String? _roomCode;
   bool _isReady = false;
+  int _timeLimitSeconds = AppConstants.flipBoardTimeLimitSeconds;
 
   @override
   void dispose() {
@@ -106,6 +109,34 @@ class _CompetitiveFlipBoardLobbyScreenState
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
+                      '제한시간',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      flipBoardTimeLimitDescription(_timeLimitSeconds),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FlipBoardTimeLimitSelector(
+                      selectedSeconds: _timeLimitSeconds,
+                      onChanged: (seconds) =>
+                          setState(() => _timeLimitSeconds = seconds),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              PlayfulPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
                       '코드로 입장',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
@@ -141,7 +172,10 @@ class _CompetitiveFlipBoardLobbyScreenState
                   onReady: () => setState(() => _isReady = true),
                   onStart: _isReady
                       ? () => context.go(
-                          RoutePaths.competitiveFlipBoardMatch(_roomCode!),
+                          RoutePaths.competitiveFlipBoardMatch(
+                            _roomCode!,
+                            timeLimitSeconds: _timeLimitSeconds,
+                          ),
                         )
                       : null,
                 ),

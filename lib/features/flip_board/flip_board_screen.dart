@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_fonts.dart';
 import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
@@ -12,9 +13,14 @@ import '../writing/widgets/hanja_free_writing_canvas.dart';
 import 'flip_board_controller.dart';
 
 class FlipBoardScreen extends ConsumerStatefulWidget {
-  const FlipBoardScreen({super.key, required this.mode});
+  const FlipBoardScreen({
+    super.key,
+    required this.mode,
+    this.timeLimitSeconds = AppConstants.flipBoardTimeLimitSeconds,
+  });
 
   final FlipBoardPlayMode mode;
+  final int timeLimitSeconds;
 
   @override
   ConsumerState<FlipBoardScreen> createState() => _FlipBoardScreenState();
@@ -32,7 +38,12 @@ class _FlipBoardScreenState extends ConsumerState<FlipBoardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = flipBoardProvider(widget.mode);
+    final provider = flipBoardProvider(
+      FlipBoardGameConfig(
+        mode: widget.mode,
+        timeLimitSeconds: widget.timeLimitSeconds,
+      ),
+    );
     ref.listen(provider, (previous, next) {
       final previousResult = previous?.value?.completedResult;
       final nextResult = next.value?.completedResult;

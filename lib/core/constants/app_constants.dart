@@ -11,7 +11,8 @@ class AppConstants {
   static const speedChoiceWrongPenalty = 5;
   static const flipBoardMinLearnedHanjaCount = 12;
   static const flipBoardVisibleTileCount = 6;
-  static const flipBoardTimeLimitSeconds = 20;
+  static const flipBoardTimeLimitSeconds = 30;
+  static const flipBoardTimeLimitOptionsSeconds = [30, 60];
   static const schoolSearchMinLength = 2;
   static const schoolSearchLimit = 20;
 

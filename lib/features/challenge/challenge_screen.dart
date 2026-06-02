@@ -7,6 +7,7 @@ import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/class_ranking.dart';
 import '../flip_board/flip_board_controller.dart';
+import '../flip_board/flip_board_time_limit_picker.dart';
 import 'challenge_controller.dart';
 
 class ChallengeScreen extends ConsumerWidget {
@@ -375,12 +376,25 @@ class _ChallengeModeGrid extends StatelessWidget {
         _ChallengeModeCard(
           icon: Icons.grid_view,
           title: '솔로 판뒤집기',
-          subtitle: data.canPlayFlipBoard ? '새 훈음 맞히기' : '12개부터',
+          subtitle: data.canPlayFlipBoard ? '30초 / 1분 선택' : '12개부터',
           color: AppColors.green,
           isEnabled: data.canPlayFlipBoard,
-          onTap: () => context.push(
-            RoutePaths.flipBoardFor(FlipBoardPlayMode.drawHanja.routeValue),
-          ),
+          onTap: () async {
+            final seconds = await showFlipBoardTimeLimitPicker(
+              context,
+              title: '솔로 판뒤집기',
+              subtitle: '제한시간을 골라서 시작해요',
+            );
+            if (seconds == null || !context.mounted) {
+              return;
+            }
+            context.push(
+              RoutePaths.flipBoardFor(
+                FlipBoardPlayMode.drawHanja.routeValue,
+                timeLimitSeconds: seconds,
+              ),
+            );
+          },
         ),
         _ChallengeModeCard(
           icon: Icons.leaderboard,

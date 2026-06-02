@@ -25,6 +25,15 @@ class RoleSelectScreen extends ConsumerWidget {
         subtitle: '어떤 모드로 시작할까요?',
         showMascot: true,
         children: [
+          Text(
+            '한자 쏙쏙 실력 쑥쑥',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: const Color(0xFFD6272F),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 18),
           _RoleCard(
             icon: Icons.face,
             title: '학생',

@@ -321,6 +321,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('어떤 모드로 시작할까요?'), findsOneWidget);
+    expect(find.text('한자 쏙쏙 실력 쑥쑥'), findsOneWidget);
 
     appRouter.go(RoutePaths.studentSetup);
     await pumpUntilFound(tester, find.text('학년 선택'));

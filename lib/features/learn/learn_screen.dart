@@ -23,7 +23,7 @@ class LearnScreen extends ConsumerStatefulWidget {
 }
 
 class _LearnScreenState extends ConsumerState<LearnScreen> {
-  _LearnTab _selectedTab = _LearnTab.review;
+  _LearnTab _selectedTab = _LearnTab.library;
   String? _selectedMajorUnitKey;
   final Map<_LearnTab, int> _pageByTab = {
     _LearnTab.review: 0,
@@ -324,16 +324,6 @@ class _ChapterTabPanel extends StatelessWidget {
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            activeUnit == null
-                ? '대단원을 선택하면 해당 소단원만 보여줘요.'
-                : '선택한 대단원에 속한 소단원만 모아 보여줘요.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
           const SizedBox(height: 14),
           if (majorUnits.isNotEmpty && activeUnit != null) ...[
             _MajorUnitSelector(
@@ -410,17 +400,17 @@ class _LearnModeTabs extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _LearnModeTabButton(
-              icon: Icons.refresh,
-              label: '복습',
-              selected: selectedTab == _LearnTab.review,
-              onTap: () => onTabChanged(_LearnTab.review),
-            ),
-            const _TabDivider(),
-            _LearnModeTabButton(
               icon: Icons.library_books,
               label: '한자장',
               selected: selectedTab == _LearnTab.library,
               onTap: () => onTabChanged(_LearnTab.library),
+            ),
+            const _TabDivider(),
+            _LearnModeTabButton(
+              icon: Icons.refresh,
+              label: '복습',
+              selected: selectedTab == _LearnTab.review,
+              onTap: () => onTabChanged(_LearnTab.review),
             ),
             const _TabDivider(),
             _LearnModeTabButton(

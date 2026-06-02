@@ -177,6 +177,24 @@ def read_preserved_seed_rows(path: Path) -> list[dict[str, object]]:
     return preserved
 
 
+def read_existing_seed_rows_by_hanja(path: Path) -> dict[str, dict[str, object]]:
+    if not path.exists():
+        return {}
+
+    rows = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(rows, list):
+        return {}
+
+    result: dict[str, dict[str, object]] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        hanja_id = str(row.get("hanjaId") or row.get("hanja_id") or "")
+        if hanja_id and not hanja_id.startswith("HJ-DEMO-"):
+            result[hanja_id] = row
+    return result
+
+
 def read_expected_stroke_counts(path: Path) -> dict[str, str]:
     if not path.exists():
         return {}
@@ -284,10 +302,11 @@ def build_seed(
     use_hanzi_writer: bool,
     use_network: bool,
     preserve_existing_demo: bool,
-) -> tuple[int, int, int, int, int, int, int]:
+) -> tuple[int, int, int, int, int, int, int, int]:
     hanja_rows = read_textbook_rows(textbook_counts) or read_hanja_rows(xlsx)
     demo_paths = read_demo_paths(demo_db)
     manual_rows = read_manual_rows(manual_json)
+    existing_seed_rows = read_existing_seed_rows_by_hanja(output_json)
     preserved_rows = read_preserved_seed_rows(output_json) if preserve_existing_demo else []
 
     seed_rows: list[dict[str, object]] = list(preserved_rows)
@@ -296,6 +315,7 @@ def build_seed(
     alias_count = 0
     demo_count = 0
     hanzi_writer_count = 0
+    preserved_existing_count = 0
     missing_count = 0
     rejected_count = 0
 
@@ -375,6 +395,26 @@ def build_seed(
                 if hanzi_paths:
                     rejected_count += 1
 
+        existing = existing_seed_rows.get(hanja.hanja_id)
+        if existing:
+            existing_paths = [str(path) for path in existing.get("svgPaths") or []]
+            existing_character = str(existing.get("character") or "")
+            if existing_paths and existing_character == hanja.character and count_matches(hanja, len(existing_paths)):
+                seed_rows.append(existing)
+                report_rows.append(
+                    report_row(
+                        hanja,
+                        str(existing.get("source") or "existing_seed"),
+                        str(existing.get("sourceCharacter") or existing_character),
+                        len(existing_paths),
+                        "preserved from existing app stroke seed",
+                    )
+                )
+                preserved_existing_count += 1
+                continue
+            if existing_paths:
+                rejected_count += 1
+
         report = report_row(
             hanja,
             "missing",
@@ -424,6 +464,7 @@ def build_seed(
         alias_count,
         manual_count,
         hanzi_writer_count,
+        preserved_existing_count,
         missing_count,
         rejected_count,
     )
@@ -506,6 +547,7 @@ def main() -> None:
         alias_count,
         manual_count,
         hanzi_writer_count,
+        preserved_existing_count,
         missing_count,
         rejected_count,
     ) = build_seed(
@@ -525,6 +567,7 @@ def main() -> None:
     print(f"hanja_demo alias rows: {alias_count}")
     print(f"manual rows: {manual_count}")
     print(f"hanzi_writer_data rows: {hanzi_writer_count}")
+    print(f"preserved existing rows: {preserved_existing_count}")
     print(f"missing rows: {missing_count}")
     print(f"rejected candidates: {rejected_count}")
     print(f"Wrote report to {args.report_csv}")

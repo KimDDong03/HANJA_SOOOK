@@ -21,7 +21,9 @@ void main() {
     final container = _container();
     addTearDown(container.dispose);
 
-    final provider = flipBoardProvider(FlipBoardPlayMode.drawHanja);
+    final provider = flipBoardProvider(
+      const FlipBoardGameConfig(mode: FlipBoardPlayMode.drawHanja),
+    );
     final subscription = container.listen(provider, (_, _) {});
     addTearDown(subscription.close);
     final controller = container.read(provider.notifier);
@@ -57,7 +59,9 @@ void main() {
     final container = _container();
     addTearDown(container.dispose);
 
-    final provider = flipBoardProvider(FlipBoardPlayMode.drawHanja);
+    final provider = flipBoardProvider(
+      const FlipBoardGameConfig(mode: FlipBoardPlayMode.drawHanja),
+    );
     final subscription = container.listen(provider, (_, _) {});
     addTearDown(subscription.close);
     final controller = container.read(provider.notifier);
@@ -90,7 +94,7 @@ void main() {
       addTearDown(container.dispose);
 
       final provider = flipBoardProvider(
-        FlipBoardPlayMode.competitiveDrawHanja,
+        const FlipBoardGameConfig(mode: FlipBoardPlayMode.competitiveDrawHanja),
       );
       final subscription = container.listen(provider, (_, _) {});
       addTearDown(subscription.close);
@@ -120,7 +124,9 @@ void main() {
     final container = _container();
     addTearDown(container.dispose);
 
-    final provider = flipBoardProvider(FlipBoardPlayMode.typeMeaning);
+    final provider = flipBoardProvider(
+      const FlipBoardGameConfig(mode: FlipBoardPlayMode.typeMeaning),
+    );
     final controller = container.read(provider.notifier);
     await container.read(provider.future);
     controller.selectTile(1);
@@ -139,7 +145,9 @@ void main() {
     final container = _container();
     addTearDown(container.dispose);
 
-    final provider = flipBoardProvider(FlipBoardPlayMode.typeMeaning);
+    final provider = flipBoardProvider(
+      const FlipBoardGameConfig(mode: FlipBoardPlayMode.typeMeaning),
+    );
     final controller = container.read(provider.notifier);
     await container.read(provider.future);
     controller.selectTile(0);
@@ -157,7 +165,9 @@ void main() {
     final container = _container(challengeRepository: repository);
     addTearDown(container.dispose);
 
-    final provider = flipBoardProvider(FlipBoardPlayMode.drawHanja);
+    final provider = flipBoardProvider(
+      const FlipBoardGameConfig(mode: FlipBoardPlayMode.drawHanja),
+    );
     final controller = container.read(provider.notifier);
     await container.read(provider.future);
     controller.selectTile(0);
@@ -168,6 +178,23 @@ void main() {
     expect(repository.savedInput?.mode, ChallengeMode.flipBoard);
     expect(repository.savedInput?.flippedTileCount, 1);
     expect(state.completedResult?.earnedXp, 25);
+  });
+
+  test('FlipBoardController uses the selected time limit', () async {
+    final container = _container();
+    addTearDown(container.dispose);
+
+    final provider = flipBoardProvider(
+      const FlipBoardGameConfig(
+        mode: FlipBoardPlayMode.drawHanja,
+        timeLimitSeconds: 60,
+      ),
+    );
+    await container.read(provider.future);
+
+    final state = container.read(provider).value!;
+    expect(state.timeLimitSeconds, 60);
+    expect(state.remainingSeconds, 60);
   });
 }
 
