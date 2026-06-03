@@ -315,5 +315,5 @@ class FreeWritingScoreResult {
   final String? failureMessage;
   final Path? expectedHintPath;
 
-  bool get canContinueDemoFlow => score > 0;
+  bool get canContinueDemoFlow => passed;
 }

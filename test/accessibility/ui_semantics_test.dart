@@ -48,7 +48,7 @@ void main() {
       ),
     );
 
-    expect(find.byTooltip('다시 시작'), findsOneWidget);
+    expect(find.byTooltip('다시 하기'), findsOneWidget);
     expect(find.text('획순 보기'), findsOneWidget);
   });
 }

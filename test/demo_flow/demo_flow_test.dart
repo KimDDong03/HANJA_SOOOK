@@ -7,6 +7,7 @@ import 'package:hanja_soook/core/constants/route_paths.dart';
 import 'package:hanja_soook/data/repositories/challenge_result_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/content_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/game_result_repository_provider.dart';
+import 'package:hanja_soook/data/repositories/learning_diagnostics_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/learning_progress_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/quiz_result_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/school_repository_provider.dart';
@@ -14,6 +15,7 @@ import 'package:hanja_soook/domain/models/app_user_profile.dart';
 import 'package:hanja_soook/domain/models/challenge_result.dart';
 import 'package:hanja_soook/domain/models/hanja_character.dart';
 import 'package:hanja_soook/domain/models/hanja_example.dart';
+import 'package:hanja_soook/domain/models/learning_diagnostics.dart';
 import 'package:hanja_soook/domain/models/learning_progress_record.dart';
 import 'package:hanja_soook/domain/models/learning_result.dart';
 import 'package:hanja_soook/domain/models/learning_session.dart';
@@ -23,6 +25,7 @@ import 'package:hanja_soook/domain/models/stroke_asset.dart';
 import 'package:hanja_soook/domain/repositories/challenge_result_repository.dart';
 import 'package:hanja_soook/domain/repositories/content_repository.dart';
 import 'package:hanja_soook/domain/repositories/game_result_repository.dart';
+import 'package:hanja_soook/domain/repositories/learning_diagnostics_repository.dart';
 import 'package:hanja_soook/domain/repositories/learning_progress_repository.dart';
 import 'package:hanja_soook/domain/repositories/quiz_result_repository.dart';
 import 'package:hanja_soook/domain/repositories/school_repository.dart';
@@ -75,16 +78,16 @@ void main() {
     await _pumpUntilFound(tester, find.text('혼합 퀴즈'));
 
     final answers = <String>[
-      _characters[0].sound,
       _characters[0].meaning,
       _characters[0].character,
-      _characters[1].sound,
       _characters[1].meaning,
       _characters[1].character,
-      _characters[2].sound,
       _characters[2].meaning,
       _characters[2].character,
-      _characters[3].sound,
+      _characters[3].meaning,
+      _characters[3].character,
+      _characters[4].meaning,
+      _characters[4].character,
     ];
     for (var index = 0; index < answers.length; index += 1) {
       await _tapQuizAnswer(tester, answers[index]);
@@ -121,14 +124,17 @@ void main() {
     await _settleStartup(tester);
 
     appRouter.go(RoutePaths.challengeSpeedGame);
-    await _pumpUntilFound(tester, find.text('스피드 한자 선택'));
+    await _pumpUntilFound(tester, find.text('스피드 퀴즈'));
 
-    for (final item in _characters) {
-      await _tapFilledButtonText(tester, item.character);
-      await tester.pumpAndSettle();
+    final answers = [
+      for (final item in _characters.take(5)) ...[item.meaning, item.character],
+    ];
+    for (final answer in answers) {
+      await _tapFilledButtonText(tester, answer);
+      await tester.pump(const Duration(milliseconds: 700));
     }
 
-    await _pumpUntilFound(tester, find.text('스피드 한자 선택 완료'));
+    await _pumpUntilFound(tester, find.text('스피드 퀴즈 완료'));
     expect(
       challengeRepository.savedResults.single.mode,
       ChallengeMode.speedChoice,
@@ -202,6 +208,9 @@ Widget _demoApp({
       ),
       challengeResultRepositoryProvider.overrideWithValue(
         challengeRepository ?? _FakeChallengeResultRepository(),
+      ),
+      learningDiagnosticsRepositoryProvider.overrideWithValue(
+        _FakeLearningDiagnosticsRepository(),
       ),
     ],
     child: const HanjaSoookApp(),
@@ -498,6 +507,42 @@ class _FakeChallengeResultRepository implements ChallengeResultRepository {
   }) async {
     return null;
   }
+}
+
+class _FakeLearningDiagnosticsRepository
+    implements LearningDiagnosticsRepository {
+  @override
+  Future<List<HanjaPracticeEvent>> getPracticeEventsForHanja({
+    required String studentKey,
+    required String hanjaId,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<List<HanjaWeaknessRecord>> getActiveWeaknesses({
+    required String studentKey,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<Map<String, List<HanjaWeaknessRecord>>> getWeaknessesByHanja({
+    required String studentKey,
+    required Set<String> hanjaIds,
+  }) async {
+    return const {};
+  }
+
+  @override
+  Future<void> markWeaknessResolved({
+    required String studentKey,
+    required String hanjaId,
+    required HanjaWeaknessType weaknessType,
+  }) async {}
+
+  @override
+  Future<void> recordPracticeEvent(HanjaPracticeEventInput input) async {}
 }
 
 const _school = School(

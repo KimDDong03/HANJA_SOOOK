@@ -14,6 +14,10 @@ class HanjaWritingPracticeCanvas extends StatefulWidget {
     required this.svgPaths,
     this.canvasExtent,
     this.autoPlayOnStart = false,
+    this.completedStrokeCount = 0,
+    this.headerLeading,
+    this.canvasLeading,
+    this.canvasTrailing,
     this.onCompleted,
     this.onStrokeTexture,
     this.viewBox = defaultHanjaViewBox,
@@ -22,6 +26,10 @@ class HanjaWritingPracticeCanvas extends StatefulWidget {
   final List<String> svgPaths;
   final double? canvasExtent;
   final bool autoPlayOnStart;
+  final int completedStrokeCount;
+  final Widget? headerLeading;
+  final Widget? canvasLeading;
+  final Widget? canvasTrailing;
   final VoidCallback? onCompleted;
   final VoidCallback? onStrokeTexture;
   final Rect viewBox;
@@ -49,7 +57,6 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
   Path? _errorUserPath;
   int? _activePointer;
   int _paintRevision = 0;
-  String _statusText = '1획';
   DateTime? _lastStrokeTextureAt;
 
   static const _strokeTextureInterval = Duration(milliseconds: 120);
@@ -58,7 +65,7 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
   void initState() {
     super.initState();
     _paths = _parsePaths(widget.svgPaths);
-    _statusText = _paths.isEmpty ? '데이터 없음' : _nextStatusText;
+    _applyInitialCompletedStrokeCount();
     _errorController =
         AnimationController(
           vsync: this,
@@ -82,7 +89,6 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
               _completedStrokeCount += 1;
               _acceptedFromPath = null;
               _acceptedToPath = null;
-              _statusText = _isComplete ? '완료' : _nextStatusText;
             });
             if (_isComplete) {
               widget.onCompleted?.call();
@@ -110,10 +116,12 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
   @override
   void didUpdateWidget(covariant HanjaWritingPracticeCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!listEquals(oldWidget.svgPaths, widget.svgPaths)) {
+    if (!listEquals(oldWidget.svgPaths, widget.svgPaths) ||
+        oldWidget.completedStrokeCount != widget.completedStrokeCount) {
       setState(() {
         _paths = _parsePaths(widget.svgPaths);
         _resetPracticeState();
+        _applyInitialCompletedStrokeCount();
       });
     }
   }
@@ -129,8 +137,6 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
   bool get _isComplete => _completedStrokeCount >= _paths.length;
 
   bool get _isAnimatingAccepted => _acceptedToPath != null;
-
-  String get _nextStatusText => '${_completedStrokeCount + 1}획';
 
   int get _reviewDurationMillis {
     return (_paths.length * 650).clamp(1200, 12000);
@@ -157,10 +163,19 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
     _errorUserPath = null;
     _activePointer = null;
     _paintRevision += 1;
-    _statusText = _paths.isEmpty ? '데이터 없음' : '1획';
     _errorController.reset();
     _acceptedController.reset();
     _reviewController.reset();
+  }
+
+  void _applyInitialCompletedStrokeCount() {
+    final completedCount = widget.completedStrokeCount
+        .clamp(0, _paths.length)
+        .toInt();
+    _completedStrokeCount = completedCount;
+    _completedDisplayPaths
+      ..clear()
+      ..addAll(_paths.take(completedCount));
   }
 
   void _playStrokeOrder() {
@@ -196,7 +211,6 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
     setState(() {
       _currentUserPath = Path()..moveTo(source.dx, source.dy);
       _paintRevision += 1;
-      _statusText = _nextStatusText;
     });
     _playStrokeTexture();
   }
@@ -236,7 +250,6 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
         _currentUserPath = null;
         _acceptedFromPath = userPath;
         _acceptedToPath = expectedPath;
-        _statusText = '좋아요';
       });
       _acceptedController.forward(from: 0);
       return;
@@ -245,7 +258,6 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
     setState(() {
       _currentUserPath = null;
       _errorUserPath = expectedPath;
-      _statusText = '위치 확인';
     });
     _errorController.forward(from: 0);
   }
@@ -276,17 +288,20 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('$_completedStrokeCount / ${_paths.length} · $_statusText'),
-            const Spacer(),
+            if (widget.headerLeading case final headerLeading?)
+              Expanded(child: headerLeading)
+            else
+              const Spacer(),
             const SizedBox(width: 8),
             SizedBox(
-              width: 112,
-              height: 44,
+              width: 108,
+              height: 38,
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   textStyle: Theme.of(
                     context,
                   ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900),
@@ -299,122 +314,154 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
                 label: Text(_reviewController.isAnimating ? '정지' : '획순 보기'),
               ),
             ),
-            const SizedBox(width: 8),
-            IconButton.filledTonal(
-              onPressed: () => setState(_resetPracticeState),
-              icon: const Icon(Icons.refresh),
-              tooltip: '다시 시작',
+            const SizedBox(width: 6),
+            SizedBox.square(
+              dimension: 38,
+              child: IconButton.filledTonal(
+                onPressed: () => setState(_resetPracticeState),
+                icon: const Icon(Icons.refresh, size: 21),
+                tooltip: '다시 하기',
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         LayoutBuilder(
           builder: (context, constraints) {
+            final hasLeading = widget.canvasLeading != null;
+            final hasTrailing = widget.canvasTrailing != null;
+            final sideSlotWidth = hasLeading || hasTrailing ? 44.0 : 0.0;
+            final sideGap = hasLeading || hasTrailing ? 8.0 : 0.0;
+            final sideSpace =
+                (hasLeading ? sideSlotWidth + sideGap : 0.0) +
+                (hasTrailing ? sideSlotWidth + sideGap : 0.0);
             final canvasExtent =
-                widget.canvasExtent?.clamp(0, constraints.maxWidth) ??
-                constraints.maxWidth;
+                widget.canvasExtent?.clamp(
+                  0,
+                  (constraints.maxWidth - sideSpace).clamp(
+                    0.0,
+                    constraints.maxWidth,
+                  ),
+                ) ??
+                (constraints.maxWidth - sideSpace).clamp(
+                  0.0,
+                  constraints.maxWidth,
+                );
             return Align(
               alignment: Alignment.center,
-              child: SizedBox.square(
-                dimension: canvasExtent.toDouble(),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final canvasSize = Size(
-                      constraints.maxWidth,
-                      constraints.maxHeight,
-                    );
-                    return Listener(
-                      onPointerDown: (event) {
-                        if (_activePointer != null) {
-                          return;
-                        }
-                        _activePointer = event.pointer;
-                        _startStroke(event.localPosition, canvasSize);
-                      },
-                      onPointerMove: (event) {
-                        if (_activePointer != event.pointer) {
-                          return;
-                        }
-                        _updateStroke(event.localPosition, canvasSize);
-                      },
-                      onPointerUp: (event) {
-                        if (_activePointer != event.pointer) {
-                          return;
-                        }
-                        _activePointer = null;
-                        _endStroke();
-                      },
-                      onPointerCancel: (event) {
-                        if (_activePointer != event.pointer) {
-                          return;
-                        }
-                        setState(() {
-                          _activePointer = null;
-                          _currentUserPath = null;
-                        });
-                      },
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onVerticalDragStart: (_) {},
-                        onVerticalDragUpdate: (_) {},
-                        onVerticalDragEnd: (_) {},
-                        onHorizontalDragStart: (_) {},
-                        onHorizontalDragUpdate: (_) {},
-                        onHorizontalDragEnd: (_) {},
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: colorScheme.surface,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: colorScheme.outlineVariant,
-                            ),
-                          ),
-                          child: Stack(
-                            children: [
-                              Positioned.fill(
-                                child: AnimatedBuilder(
-                                  animation: Listenable.merge([
-                                    _errorController,
-                                    _acceptedController,
-                                    _reviewController,
-                                  ]),
-                                  builder: (context, _) {
-                                    return CustomPaint(
-                                      painter: _PracticePainter(
-                                        paths: _paths,
-                                        completedDisplayPaths: List<Path>.of(
-                                          _completedDisplayPaths,
-                                        ),
-                                        completedStrokeCount:
-                                            _completedStrokeCount,
-                                        acceptedFromPath: _acceptedFromPath,
-                                        acceptedToPath: _acceptedToPath,
-                                        acceptedProgress:
-                                            _acceptedController.value,
-                                        errorProgress: _errorController.value,
-                                        reviewProgress:
-                                            _reviewController.isAnimating
-                                            ? _reviewController.value
-                                            : null,
-                                        paintRevision: _paintRevision,
-                                        currentUserPath: _currentUserPath,
-                                        errorUserPath: _errorUserPath,
-                                        viewBox: widget.viewBox,
-                                        strokeColor: colorScheme.onSurface,
-                                        errorColor: colorScheme.error,
-                                        gridColor: colorScheme.outlineVariant,
-                                      ),
-                                    );
-                                  },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.canvasLeading case final leading?) ...[
+                    SizedBox(
+                      width: sideSlotWidth,
+                      child: Center(child: leading),
+                    ),
+                    SizedBox(width: sideGap),
+                  ],
+                  SizedBox.square(
+                    dimension: canvasExtent.toDouble(),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final canvasSize = Size(
+                          constraints.maxWidth,
+                          constraints.maxHeight,
+                        );
+                        return Listener(
+                          onPointerDown: (event) {
+                            if (_activePointer != null) {
+                              return;
+                            }
+                            _activePointer = event.pointer;
+                            _startStroke(event.localPosition, canvasSize);
+                          },
+                          onPointerMove: (event) {
+                            if (_activePointer != event.pointer) {
+                              return;
+                            }
+                            _updateStroke(event.localPosition, canvasSize);
+                          },
+                          onPointerUp: (event) {
+                            if (_activePointer != event.pointer) {
+                              return;
+                            }
+                            _activePointer = null;
+                            _endStroke();
+                          },
+                          onPointerCancel: (event) {
+                            if (_activePointer != event.pointer) {
+                              return;
+                            }
+                            setState(() {
+                              _activePointer = null;
+                              _currentUserPath = null;
+                            });
+                          },
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onVerticalDragStart: (_) {},
+                            onVerticalDragUpdate: (_) {},
+                            onVerticalDragEnd: (_) {},
+                            onHorizontalDragStart: (_) {},
+                            onHorizontalDragUpdate: (_) {},
+                            onHorizontalDragEnd: (_) {},
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: colorScheme.outlineVariant,
                                 ),
                               ),
-                            ],
+                              child: AnimatedBuilder(
+                                animation: Listenable.merge([
+                                  _errorController,
+                                  _acceptedController,
+                                  _reviewController,
+                                ]),
+                                builder: (context, _) {
+                                  return CustomPaint(
+                                    painter: _PracticePainter(
+                                      paths: _paths,
+                                      completedDisplayPaths: List<Path>.of(
+                                        _completedDisplayPaths,
+                                      ),
+                                      completedStrokeCount:
+                                          _completedStrokeCount,
+                                      acceptedFromPath: _acceptedFromPath,
+                                      acceptedToPath: _acceptedToPath,
+                                      acceptedProgress:
+                                          _acceptedController.value,
+                                      errorProgress: _errorController.value,
+                                      reviewProgress:
+                                          _reviewController.isAnimating
+                                          ? _reviewController.value
+                                          : null,
+                                      paintRevision: _paintRevision,
+                                      currentUserPath: _currentUserPath,
+                                      errorUserPath: _errorUserPath,
+                                      viewBox: widget.viewBox,
+                                      strokeColor: colorScheme.onSurface,
+                                      errorColor: colorScheme.error,
+                                      gridColor: colorScheme.outlineVariant,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
+                  ),
+                  if (widget.canvasTrailing case final trailing?) ...[
+                    SizedBox(width: sideGap),
+                    SizedBox(
+                      width: sideSlotWidth,
+                      child: Center(child: trailing),
+                    ),
+                  ],
+                ],
               ),
             );
           },

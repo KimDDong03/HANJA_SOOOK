@@ -26,6 +26,21 @@ class LearningPlanService {
       learnedBeforeTodayIds: learnedBeforeTodayIds,
       chapterKey: chapterKey,
     );
+    final selectedChapterKey = chapterKey?.trim();
+    final isSelectedChapter =
+        selectedChapterKey != null &&
+        selectedChapterKey.isNotEmpty &&
+        activeChapter?.key == selectedChapterKey;
+
+    if (isSelectedChapter && activeChapter != null) {
+      return DailyLearningPlan(
+        reviewItems: const [],
+        newItems: activeChapter.items,
+        todayCompletedIds: todayCompletedIds,
+        chapterKey: activeChapter.key,
+        chapterName: activeChapter.name,
+      );
+    }
 
     final reviewItems = allItems
         .where((item) {

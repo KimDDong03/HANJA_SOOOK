@@ -7,6 +7,7 @@ import '../../core/constants/app_fonts.dart';
 import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/hanja_character.dart';
+import '../../domain/models/learning_diagnostics.dart';
 import '../../domain/services/learning_plan_service.dart';
 import '../../domain/services/thinking_unit_image_service.dart';
 import 'learn_controller.dart';
@@ -225,8 +226,9 @@ class _LearnTabPanel extends StatelessWidget {
                   _HanjaListRow(
                     item: pageItems[index],
                     status: state.statusOf(pageItems[index].id),
+                    weakness: state.primaryWeaknessFor(pageItems[index].id),
                     onTap: () => context.push(
-                      RoutePaths.guidedWriting(pageItems[index].id),
+                      _routeForTab(selectedTab, pageItems[index].id),
                     ),
                   ),
                 if (pageCount > 1) ...[
@@ -277,7 +279,7 @@ class _TabState {
       ),
       _LearnTab.weak => _TabState(
         title: '더 연습할 한자',
-        subtitle: '복습 시기가 된 한자를 먼저 보여줘요.',
+        subtitle: '반복해서 헷갈린 한자를 유형별로 다시 잡아요.',
         emptyText: '지금 더 연습할 한자가 없어요.',
         items: state.weakItems,
       ),
@@ -859,11 +861,13 @@ class _HanjaListRow extends StatelessWidget {
     required this.item,
     required this.status,
     required this.onTap,
+    this.weakness,
   });
 
   final HanjaCharacter item;
   final LearnItemStatus status;
   final VoidCallback onTap;
+  final HanjaWeaknessRecord? weakness;
 
   @override
   Widget build(BuildContext context) {
@@ -908,7 +912,9 @@ class _HanjaListRow extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        item.unitName ?? '교과서 단원 정보 없음',
+                        weakness == null
+                            ? item.unitName ?? '교과서 단원 정보 없음'
+                            : '${weakness!.typeLabel} · 약점 ${weakness!.score}점',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -931,6 +937,7 @@ class _HanjaListRow extends StatelessWidget {
 
   Color _statusBackground(LearnItemStatus status) {
     return switch (status) {
+      LearnItemStatus.weak => AppColors.peach.withValues(alpha: 0.42),
       LearnItemStatus.reviewDue => AppColors.blue.withValues(alpha: 0.32),
       LearnItemStatus.learned => AppColors.green.withValues(alpha: 0.32),
       LearnItemStatus.notLearned => AppColors.surface,
@@ -946,6 +953,7 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
+      LearnItemStatus.weak => ('약점', AppColors.peach),
       LearnItemStatus.reviewDue => ('복습', AppColors.blue),
       LearnItemStatus.learned => ('배움', AppColors.green),
       LearnItemStatus.notLearned => ('미학습', AppColors.surfaceMuted),
@@ -969,6 +977,14 @@ class _StatusBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+String _routeForTab(_LearnTab tab, String hanjaId) {
+  return switch (tab) {
+    _LearnTab.review => RoutePaths.reviewSessionFor(hanjaId),
+    _LearnTab.weak => RoutePaths.weaknessSessionFor(hanjaId),
+    _LearnTab.library => RoutePaths.guidedWriting(hanjaId),
+  };
 }
 
 class _HanjaSmallMark extends StatelessWidget {

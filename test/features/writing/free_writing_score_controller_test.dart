@@ -101,7 +101,7 @@ void main() {
       expect(result.passed, isFalse);
       expect(result.failedStrokeIndex, 1);
       expect(result.failureReason, FreeWritingFailureReason.missingStroke);
-      expect(result.canContinueDemoFlow, isTrue);
+      expect(result.canContinueDemoFlow, isFalse);
     });
 
     test('does not pass a vertical stroke for horizontal one hanja', () {

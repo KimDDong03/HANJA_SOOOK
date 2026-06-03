@@ -7,12 +7,14 @@ import '../../data/repositories/game_result_repository_provider.dart';
 import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../domain/models/challenge_result.dart';
 import '../../domain/models/hanja_character.dart';
+import '../../domain/models/learning_diagnostics.dart';
 import '../../domain/models/learning_result.dart';
 import '../../domain/services/challenge_result_service.dart';
 import '../../domain/services/xp_service.dart';
 import '../../core/constants/app_constants.dart';
 import '../challenge/challenge_result_tick.dart';
 import '../challenge/challenge_hanja_pool.dart';
+import '../learning/learning_diagnostics_controller.dart';
 import '../learning/learning_progress_controller.dart';
 
 final typingGameProvider =
@@ -21,11 +23,12 @@ final typingGameProvider =
     );
 
 class TypingGameController extends AsyncNotifier<TypingGameState> {
-  static const _roundTimeLimitSeconds = 20;
+  static const _gameTimeLimitSeconds = AppConstants.speedQuizTimeLimitSeconds;
   static const minChoiceHanjaCount = 4;
 
   DateTime Function() now = DateTime.now;
   Timer? _timer;
+  bool _isSaving = false;
 
   @override
   Future<TypingGameState> build() async {
@@ -48,6 +51,7 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
           : _buildRounds(learnedItems),
       startedAt: now(),
       roundStartedAt: now(),
+      remainingSeconds: _gameTimeLimitSeconds,
       latestResult: latestResult,
       learnedHanjaCount: learnedItems.length,
     );
@@ -60,19 +64,11 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
       if (current == null ||
           !current.canPlay ||
           current.isComplete ||
-          current.selectedAnswer != null) {
+          _isSaving) {
         return;
       }
       if (current.remainingSeconds <= 1) {
-        state = AsyncData(
-          current.copyWith(
-            selectedAnswer: '',
-            wrongCount: current.wrongCount + 1,
-            comboCount: 0,
-            remainingSeconds: 0,
-            timedOut: true,
-          ),
-        );
+        unawaited(_saveCompletedGame(current.copyWith(remainingSeconds: 0)));
         return;
       }
       state = AsyncData(
@@ -88,8 +84,32 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
     }
 
     final isCorrect = current.currentRound?.correctAnswer == answer;
+    final round = current.currentRound;
+    if (round != null) {
+      unawaited(
+        ref
+            .read(learningDiagnosticsControllerProvider)
+            .recordAttempt(
+              hanjaId: round.hanjaId,
+              source: HanjaPracticeSource.speedQuiz,
+              activityType: round.optionsUseHanjaFont
+                  ? HanjaPracticeActivityType.hunToHanja
+                  : HanjaPracticeActivityType.hanjaToHun,
+              result: isCorrect
+                  ? HanjaPracticeResult.correct
+                  : HanjaPracticeResult.incorrect,
+              isLearned: true,
+              elapsedMs: now()
+                  .difference(current.roundStartedAt)
+                  .inMilliseconds,
+            ),
+      );
+    }
     final nextCombo = isCorrect ? current.comboCount + 1 : 0;
-    final earnedScore = isCorrect ? _scoreForCorrect(current, nextCombo) : 0;
+    final scoreDelta = isCorrect
+        ? _scoreForCorrect(current, nextCombo)
+        : -AppConstants.speedChoiceWrongPenalty;
+    final nextScore = (current.score + scoreDelta).clamp(0, 1 << 30).toInt();
 
     state = AsyncData(
       current.copyWith(
@@ -102,18 +122,15 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
         bestCombo: nextCombo > current.bestCombo
             ? nextCombo
             : current.bestCombo,
-        score: current.score + earnedScore,
-        lastEarnedScore: earnedScore,
+        score: nextScore,
+        lastEarnedScore: scoreDelta,
         timedOut: false,
       ),
     );
   }
 
   int _scoreForCorrect(TypingGameState current, int nextCombo) {
-    final speedBonus = current.remainingSeconds.clamp(
-      0,
-      current.roundTimeLimit,
-    );
+    final speedBonus = current.remainingSeconds.clamp(0, current.timeLimit);
     final comboBonus = (nextCombo - 1).clamp(0, current.totalCount) * 2;
     return AppConstants.speedChoiceScorePerQuestion + speedBonus + comboBonus;
   }
@@ -124,13 +141,12 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
       return;
     }
 
-    if (!current.isLastRound) {
+    if (!current.isLastRound && current.remainingSeconds > 0) {
       state = AsyncData(
         current.copyWith(
           currentIndex: current.currentIndex + 1,
           selectedAnswer: null,
           roundStartedAt: now(),
-          remainingSeconds: current.roundTimeLimit,
           lastEarnedScore: 0,
           timedOut: false,
         ),
@@ -138,6 +154,14 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
       return;
     }
 
+    await _saveCompletedGame(current);
+  }
+
+  Future<void> _saveCompletedGame(TypingGameState current) async {
+    if (_isSaving || current.isComplete) {
+      return;
+    }
+    _isSaving = true;
     final completedAt = now();
     final timeSec = completedAt.difference(current.startedAt).inSeconds;
     final result = await ref
@@ -158,8 +182,11 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
       current.copyWith(
         savedResult: result,
         savedChallengeResult: challengeResult,
+        remainingSeconds: current.remainingSeconds,
+        timedOut: current.remainingSeconds <= 0,
       ),
     );
+    _isSaving = false;
   }
 
   Future<ChallengeResult> _saveChallengeResult({
@@ -210,18 +237,36 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
 
   List<TypingGameRound> _buildRounds(List<HanjaCharacter> items) {
     final activeItems = items.where((item) => item.isActive).toList();
-    return [
-      for (var index = 0; index < activeItems.length; index++)
-        TypingGameRound(
-          hanjaId: activeItems[index].id,
-          prompt: activeItems[index].meaning,
-          correctAnswer: activeItems[index].character,
-          options: _buildOptions(activeItems, index),
-        ),
-    ];
+    final rounds = <TypingGameRound>[];
+    for (var index = 0; index < activeItems.length; index++) {
+      final item = activeItems[index];
+      rounds
+        ..add(
+          TypingGameRound(
+            hanjaId: item.id,
+            prompt: item.character,
+            correctAnswer: _hunAnswer(item),
+            options: _buildHunOptions(activeItems, index),
+            promptUsesHanjaFont: true,
+          ),
+        )
+        ..add(
+          TypingGameRound(
+            hanjaId: item.id,
+            prompt: _hunAnswer(item),
+            correctAnswer: item.character,
+            options: _buildHanjaOptions(activeItems, index),
+            optionsUseHanjaFont: true,
+          ),
+        );
+      if (rounds.length >= AppConstants.challengeQuestionCount) {
+        break;
+      }
+    }
+    return rounds.take(AppConstants.challengeQuestionCount).toList();
   }
 
-  List<String> _buildOptions(List<HanjaCharacter> items, int index) {
+  List<String> _buildHanjaOptions(List<HanjaCharacter> items, int index) {
     final correct = items[index].character;
     final options = items
         .where((item) => item.character != correct)
@@ -232,6 +277,22 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
     options.insert(insertIndex, correct);
     return options;
   }
+
+  List<String> _buildHunOptions(List<HanjaCharacter> items, int index) {
+    final correct = _hunAnswer(items[index]);
+    final options = items
+        .where((item) => item.id != items[index].id)
+        .map(_hunAnswer)
+        .where((option) => option != correct)
+        .toSet()
+        .take(3)
+        .toList();
+    final insertIndex = index % (options.length + 1);
+    options.insert(insertIndex, correct);
+    return options;
+  }
+
+  String _hunAnswer(HanjaCharacter item) => item.meaning;
 }
 
 class TypingGameRound {
@@ -240,12 +301,16 @@ class TypingGameRound {
     required this.prompt,
     required this.correctAnswer,
     required this.options,
+    this.promptUsesHanjaFont = false,
+    this.optionsUseHanjaFont = false,
   });
 
   final String hanjaId;
   final String prompt;
   final String correctAnswer;
   final List<String> options;
+  final bool promptUsesHanjaFont;
+  final bool optionsUseHanjaFont;
 }
 
 class TypingGameState {
@@ -261,7 +326,7 @@ class TypingGameState {
     this.comboCount = 0,
     this.bestCombo = 0,
     this.score = 0,
-    this.remainingSeconds = TypingGameController._roundTimeLimitSeconds,
+    this.remainingSeconds = TypingGameController._gameTimeLimitSeconds,
     this.lastEarnedScore = 0,
     this.timedOut = false,
     this.latestResult,
@@ -293,7 +358,7 @@ class TypingGameState {
 
   bool get canPlay => learnedHanjaCount >= minLearnedHanjaCount;
 
-  int get roundTimeLimit => TypingGameController._roundTimeLimitSeconds;
+  int get timeLimit => TypingGameController._gameTimeLimitSeconds;
 
   int get accuracyPercent =>
       totalCount <= 0 ? 0 : ((correctCount / totalCount) * 100).round();

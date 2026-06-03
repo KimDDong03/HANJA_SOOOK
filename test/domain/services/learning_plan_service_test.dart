@@ -108,6 +108,34 @@ void main() {
     expect(plan.chapterName, '둘째 단원');
     expect(plan.newItems.map((item) => item.id), ['HJ-4']);
   });
+
+  test('buildDailyPlan keeps selected chapter separate from reviews', () {
+    final plan = service.buildDailyPlan(
+      allItems: _chapterItems,
+      progressRecords: [
+        LearningProgressRecord(
+          studentKey: 'student-1',
+          learningDate: '20260529',
+          hanjaId: 'HJ-1',
+          completedAt: DateTime(2026, 5, 29),
+        ),
+        LearningProgressRecord(
+          studentKey: 'student-1',
+          learningDate: '20260529',
+          hanjaId: 'HJ-4',
+          completedAt: DateTime(2026, 5, 29),
+        ),
+      ],
+      learningDate: '20260530',
+      newItemLimit: 2,
+      reviewItemLimit: 2,
+      chapterKey: '3-2',
+    );
+
+    expect(plan.chapterKey, '3-2');
+    expect(plan.reviewItems, isEmpty);
+    expect(plan.items.map((item) => item.id), ['HJ-4']);
+  });
 }
 
 const _items = [

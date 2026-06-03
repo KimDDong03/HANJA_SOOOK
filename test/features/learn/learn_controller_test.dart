@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hanja_soook/domain/models/hanja_character.dart';
+import 'package:hanja_soook/domain/models/learning_diagnostics.dart';
 import 'package:hanja_soook/domain/services/learning_plan_service.dart';
 import 'package:hanja_soook/features/learn/learn_controller.dart';
 
@@ -19,9 +20,42 @@ void main() {
       expect(state.primaryItem, _one);
       expect(state.hasReviewDue, isTrue);
       expect(state.hasPendingItems, isTrue);
-      expect(state.weakItems, const [_one]);
+      expect(state.weakItems, isEmpty);
       expect(state.statusOf('HJ-1'), LearnItemStatus.reviewDue);
       expect(state.statusOf('HJ-2'), LearnItemStatus.notLearned);
+    });
+
+    test('uses active weakness records separately from review items', () {
+      final state = LearnLibraryState(
+        grade: 3,
+        items: _hanjaList,
+        todayCompletedIds: const {},
+        completedHanjaIds: const {'HJ-1', 'HJ-2'},
+        reviewItems: const [_one],
+        weaknessesByHanja: {
+          'HJ-2': [
+            HanjaWeaknessRecord(
+              studentKey: 'student-1',
+              hanjaId: 'HJ-2',
+              weaknessType: HanjaWeaknessType.hanjaRecognition,
+              score: 4,
+              status: HanjaWeaknessStatus.active,
+              mistakeCount: 2,
+              successStreak: 0,
+              lastEventAt: _date,
+              createdAt: _date,
+              updatedAt: _date,
+            ),
+          ],
+        },
+        chapters: const [],
+        activeChapterKey: null,
+      );
+
+      expect(state.weakItems, const [_two]);
+      expect(state.statusOf('HJ-1'), LearnItemStatus.reviewDue);
+      expect(state.statusOf('HJ-2'), LearnItemStatus.weak);
+      expect(state.primaryWeaknessFor('HJ-2')?.score, 4);
     });
 
     test('uses the next unlearned item when there are no reviews', () {
@@ -98,3 +132,4 @@ const _three = HanjaCharacter(
 );
 
 const _hanjaList = [_one, _two, _three];
+final _date = DateTime(2026, 6, 3);

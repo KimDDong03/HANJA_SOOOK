@@ -365,9 +365,9 @@ class _ChallengeModeGrid extends StatelessWidget {
         ),
         _ChallengeModeCard(
           icon: Icons.speed,
-          title: '스피드 한자 선택',
+          title: '스피드 퀴즈',
           subtitle: data.canPlayChallengeGames
-              ? '뜻 보고 빠르게 골라요'
+              ? '혼합 문제를 빠르게 풀어요'
               : '${data.minLearnedHanjaCount}개부터',
           color: AppColors.blue,
           isEnabled: data.canPlayChallengeGames,

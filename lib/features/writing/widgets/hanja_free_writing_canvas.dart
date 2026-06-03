@@ -8,8 +8,12 @@ class HanjaFreeWritingCanvas extends StatefulWidget {
   const HanjaFreeWritingCanvas({
     super.key,
     this.expectedStrokeCount,
+    this.initialStrokes = const [],
     this.onStrokesChanged,
     this.canvasExtent,
+    this.canvasLeading,
+    this.canvasTrailing,
+    this.toolbarLeading,
     this.showTitle = true,
     this.onStrokeTexture,
     this.viewBox = defaultHanjaViewBox,
@@ -18,8 +22,12 @@ class HanjaFreeWritingCanvas extends StatefulWidget {
   });
 
   final int? expectedStrokeCount;
+  final List<Path> initialStrokes;
   final ValueChanged<List<Path>>? onStrokesChanged;
   final double? canvasExtent;
+  final Widget? canvasLeading;
+  final Widget? canvasTrailing;
+  final Widget? toolbarLeading;
   final bool showTitle;
   final VoidCallback? onStrokeTexture;
   final Rect viewBox;
@@ -38,6 +46,26 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
   DateTime? _lastStrokeTextureAt;
 
   static const _strokeTextureInterval = Duration(milliseconds: 120);
+
+  @override
+  void initState() {
+    super.initState();
+    _strokes.addAll(widget.initialStrokes);
+  }
+
+  @override
+  void didUpdateWidget(covariant HanjaFreeWritingCanvas oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialStrokes != widget.initialStrokes) {
+      setState(() {
+        _strokes
+          ..clear()
+          ..addAll(widget.initialStrokes);
+        _currentPath = null;
+        _paintRevision += 1;
+      });
+    }
+  }
 
   void _startStroke(Offset localPosition, Size canvasSize) {
     final source = _sourcePoint(localPosition, canvasSize);
@@ -140,111 +168,191 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               )
+            else if (widget.toolbarLeading case final toolbarLeading?)
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: toolbarLeading,
+                ),
+              )
             else
               const Spacer(),
-            Text(countLabel),
-            const SizedBox(width: 8),
-            IconButton.filledTonal(
-              onPressed: _undoStroke,
+            Text(
+              countLabel,
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(width: 6),
+            _CanvasToolButton(
+              onPressed: _strokes.isEmpty ? null : _undoStroke,
               icon: const Icon(Icons.undo),
               tooltip: '한 획 지우기',
             ),
-            IconButton.filledTonal(
-              onPressed: _clearStrokes,
+            const SizedBox(width: 6),
+            _CanvasToolButton(
+              onPressed: _strokes.isEmpty && _currentPath == null
+                  ? null
+                  : _clearStrokes,
               icon: const Icon(Icons.delete_outline),
               tooltip: '모두 지우기',
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
+            final hasLeading = widget.canvasLeading != null;
+            final hasTrailing = widget.canvasTrailing != null;
+            final sideSlotWidth = hasLeading || hasTrailing ? 44.0 : 0.0;
+            final sideGap = hasLeading || hasTrailing ? 8.0 : 0.0;
+            final sideSpace =
+                (hasLeading ? sideSlotWidth + sideGap : 0.0) +
+                (hasTrailing ? sideSlotWidth + sideGap : 0.0);
             final canvasExtent =
-                widget.canvasExtent?.clamp(0, constraints.maxWidth) ??
-                constraints.maxWidth;
+                widget.canvasExtent?.clamp(
+                  0,
+                  (constraints.maxWidth - sideSpace).clamp(
+                    0.0,
+                    constraints.maxWidth,
+                  ),
+                ) ??
+                (constraints.maxWidth - sideSpace).clamp(
+                  0.0,
+                  constraints.maxWidth,
+                );
             return Align(
               alignment: Alignment.center,
-              child: SizedBox.square(
-                dimension: canvasExtent.toDouble(),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final canvasSize = Size(
-                      constraints.maxWidth,
-                      constraints.maxHeight,
-                    );
-                    return Listener(
-                      onPointerDown: (event) {
-                        if (_activePointer != null) {
-                          return;
-                        }
-                        _activePointer = event.pointer;
-                        _startStroke(event.localPosition, canvasSize);
-                      },
-                      onPointerMove: (event) {
-                        if (_activePointer != event.pointer) {
-                          return;
-                        }
-                        _updateStroke(event.localPosition, canvasSize);
-                      },
-                      onPointerUp: (event) {
-                        if (_activePointer != event.pointer) {
-                          return;
-                        }
-                        _activePointer = null;
-                        _endStroke();
-                      },
-                      onPointerCancel: (event) {
-                        if (_activePointer != event.pointer) {
-                          return;
-                        }
-                        setState(() {
-                          _activePointer = null;
-                          _currentPath = null;
-                          _paintRevision += 1;
-                        });
-                      },
-                      child: GestureDetector(
-                        key: const ValueKey('hanja-free-writing-canvas-input'),
-                        behavior: HitTestBehavior.opaque,
-                        onVerticalDragStart: (_) {},
-                        onVerticalDragUpdate: (_) {},
-                        onVerticalDragEnd: (_) {},
-                        onHorizontalDragStart: (_) {},
-                        onHorizontalDragUpdate: (_) {},
-                        onHorizontalDragEnd: (_) {},
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: colorScheme.surface,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: colorScheme.outlineVariant,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.canvasLeading case final leading?) ...[
+                    SizedBox(
+                      width: sideSlotWidth,
+                      child: Center(child: leading),
+                    ),
+                    SizedBox(width: sideGap),
+                  ],
+                  SizedBox.square(
+                    dimension: canvasExtent.toDouble(),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final canvasSize = Size(
+                          constraints.maxWidth,
+                          constraints.maxHeight,
+                        );
+                        return Listener(
+                          onPointerDown: (event) {
+                            if (_activePointer != null) {
+                              return;
+                            }
+                            _activePointer = event.pointer;
+                            _startStroke(event.localPosition, canvasSize);
+                          },
+                          onPointerMove: (event) {
+                            if (_activePointer != event.pointer) {
+                              return;
+                            }
+                            _updateStroke(event.localPosition, canvasSize);
+                          },
+                          onPointerUp: (event) {
+                            if (_activePointer != event.pointer) {
+                              return;
+                            }
+                            _activePointer = null;
+                            _endStroke();
+                          },
+                          onPointerCancel: (event) {
+                            if (_activePointer != event.pointer) {
+                              return;
+                            }
+                            setState(() {
+                              _activePointer = null;
+                              _currentPath = null;
+                              _paintRevision += 1;
+                            });
+                          },
+                          child: GestureDetector(
+                            key: const ValueKey(
+                              'hanja-free-writing-canvas-input',
                             ),
-                          ),
-                          child: CustomPaint(
-                            painter: _FreeWritingPainter(
-                              strokes: List<Path>.of(_strokes),
-                              currentPath: _currentPath,
-                              paintRevision: _paintRevision,
-                              viewBox: widget.viewBox,
-                              failedStrokeColor: colorScheme.error,
-                              hintStrokeColor: colorScheme.error.withValues(
-                                alpha: 0.28,
+                            behavior: HitTestBehavior.opaque,
+                            onVerticalDragStart: (_) {},
+                            onVerticalDragUpdate: (_) {},
+                            onVerticalDragEnd: (_) {},
+                            onHorizontalDragStart: (_) {},
+                            onHorizontalDragUpdate: (_) {},
+                            onHorizontalDragEnd: (_) {},
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: colorScheme.outlineVariant,
+                                ),
                               ),
-                              gridColor: colorScheme.outlineVariant,
-                              failedStrokeIndex: widget.failedStrokeIndex,
-                              expectedHintPath: widget.expectedHintPath,
+                              child: CustomPaint(
+                                painter: _FreeWritingPainter(
+                                  strokes: List<Path>.of(_strokes),
+                                  currentPath: _currentPath,
+                                  paintRevision: _paintRevision,
+                                  viewBox: widget.viewBox,
+                                  failedStrokeColor: colorScheme.error,
+                                  hintStrokeColor: colorScheme.error.withValues(
+                                    alpha: 0.28,
+                                  ),
+                                  gridColor: colorScheme.outlineVariant,
+                                  failedStrokeIndex: widget.failedStrokeIndex,
+                                  expectedHintPath: widget.expectedHintPath,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
+                  ),
+                  if (widget.canvasTrailing case final trailing?) ...[
+                    SizedBox(width: sideGap),
+                    SizedBox(
+                      width: sideSlotWidth,
+                      child: Center(child: trailing),
+                    ),
+                  ],
+                ],
               ),
             );
           },
         ),
       ],
+    );
+  }
+}
+
+class _CanvasToolButton extends StatelessWidget {
+  const _CanvasToolButton({
+    required this.onPressed,
+    required this.icon,
+    required this.tooltip,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget icon;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 40,
+      child: IconButton.filledTonal(
+        style: IconButton.styleFrom(
+          padding: EdgeInsets.zero,
+          minimumSize: const Size.square(40),
+        ),
+        onPressed: onPressed,
+        icon: icon,
+        tooltip: tooltip,
+      ),
     );
   }
 }

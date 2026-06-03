@@ -18,6 +18,7 @@ import '../features/quiz/quiz_screen.dart';
 import '../features/quiz/quiz_modes_screen.dart';
 import '../features/result/result_screen.dart';
 import '../features/role_select/role_select_screen.dart';
+import '../features/review_session/review_session_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/shared/placeholder_shell.dart';
 import '../features/shell/app_shell.dart';
@@ -25,6 +26,7 @@ import '../features/splash/splash_screen.dart';
 import '../features/student_links/student_link_screen.dart';
 import '../features/teacher_preview/teacher_preview_screen.dart';
 import '../features/textbook_gate/textbook_gate_screen.dart';
+import '../features/weakness_session/weakness_session_screen.dart';
 import '../features/writing/free_writing_score_screen.dart';
 import '../features/writing/writing_mode_select_screen.dart';
 import '../features/writing/writing_screen.dart';
@@ -67,6 +69,18 @@ final appRouter = GoRouter(
           path: RoutePaths.dailySession,
           builder: (context, state) => DailySessionScreen(
             chapterKey: state.uri.queryParameters['chapter'],
+          ),
+        ),
+        GoRoute(
+          path: RoutePaths.reviewSession,
+          builder: (context, state) => ReviewSessionScreen(
+            focusHanjaId: state.uri.queryParameters['hanja'],
+          ),
+        ),
+        GoRoute(
+          path: RoutePaths.weaknessSession,
+          builder: (context, state) => WeaknessSessionScreen(
+            focusHanjaId: state.uri.queryParameters['hanja'],
           ),
         ),
         GoRoute(

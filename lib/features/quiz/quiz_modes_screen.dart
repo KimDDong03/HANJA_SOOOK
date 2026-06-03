@@ -17,19 +17,18 @@ class QuizModesScreen extends StatelessWidget {
         children: [
           PlayfulActionTile(
             icon: Icons.translate,
-            title: '한자 보고 음',
-            subtitle: '한자를 보고 소리를 맞혀요',
+            title: '한자 보고 훈음',
+            subtitle: '한자를 보고 훈음을 맞혀요',
             color: AppColors.surface,
-            onTap: () => context.push(RoutePaths.quizPlayFor('hanja-to-sound')),
+            onTap: () => context.push(RoutePaths.quizPlayFor('hanja-to-hun')),
           ),
           const SizedBox(height: 12),
           PlayfulActionTile(
             icon: Icons.menu_book,
-            title: '한자 보고 뜻',
-            subtitle: '한자를 보고 뜻을 맞혀요',
+            title: '훈음 보고 한자',
+            subtitle: '훈음을 보고 한자를 맞혀요',
             color: AppColors.surface,
-            onTap: () =>
-                context.push(RoutePaths.quizPlayFor('hanja-to-meaning')),
+            onTap: () => context.push(RoutePaths.quizPlayFor('hun-to-hanja')),
           ),
           const SizedBox(height: 12),
           PlayfulActionTile(

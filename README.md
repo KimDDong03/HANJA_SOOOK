@@ -16,6 +16,18 @@ Flutter 앱 코드는 아직 구현하지 않고, 구현 기준/폴더 구조/DB
 4. Codex는 `docs/06_CODEX_TASKS.md`의 Ticket 00부터 순서대로 구현해야 합니다.
 5. 각 Ticket은 `flutter analyze`와 필요한 테스트를 통과하기 전까지 완료로 간주하지 않습니다.
 
+## 앱 실행/빌드
+
+앱을 실행하거나 빌드할 때는 루트의 `.env` 파일을 Dart define으로 반드시 전달합니다.
+
+```txt
+flutter run -d emulator-5554 --dart-define-from-file=.env
+flutter build apk --debug --dart-define-from-file=.env
+```
+
+`.env`에는 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_ENV` 키가 있어야 합니다.
+실제 `.env` 값은 커밋하지 말고, 키 이름은 `.env.example`을 기준으로 맞춥니다.
+
 ## 핵심 결정
 
 - 앱: Flutter

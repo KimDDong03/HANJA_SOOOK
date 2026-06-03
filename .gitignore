@@ -9,6 +9,7 @@ build/
 coverage/
 
 # Local tool output
+.codex/
 .playwright-cli/
 output/
 ngrok.log
@@ -34,3 +35,4 @@ Thumbs.db
 # Secrets
 supabase/.env
 supabase/.branches/
+supabase/.temp/

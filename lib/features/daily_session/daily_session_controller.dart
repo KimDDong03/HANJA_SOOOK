@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,18 +8,18 @@ import '../../core/constants/app_constants.dart';
 import '../../data/repositories/content_repository_provider.dart';
 import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../domain/models/hanja_character.dart';
+import '../../domain/models/learning_diagnostics.dart';
 import '../../domain/models/stroke_asset.dart';
 import '../../domain/services/learning_plan_service.dart';
 import '../../domain/services/thinking_unit_image_service.dart';
 import '../auth/current_profile_controller.dart';
+import '../learning/learning_diagnostics_controller.dart';
 import '../learning/learning_progress_controller.dart';
 
-final dailySessionProvider =
-    AsyncNotifierProvider.family<
-      DailySessionController,
-      DailySessionState,
-      String?
-    >(DailySessionController.new);
+final dailySessionProvider = AsyncNotifierProvider.autoDispose
+    .family<DailySessionController, DailySessionState, String?>(
+      DailySessionController.new,
+    );
 
 enum DailySessionPhase {
   intro,
@@ -54,6 +56,13 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
       chapterKey: chapterKey,
     );
     final items = plan.items;
+    final completedForStudentIds = progressRecords
+        .map((record) => record.hanjaId)
+        .toSet();
+    final rewardEligibleHanjaIds = items
+        .where((item) => !completedForStudentIds.contains(item.id))
+        .map((item) => item.id)
+        .toSet();
     final strokeRows = await Future.wait([
       for (final item in items) contentRepository.getStrokeAsset(item.id),
     ]);
@@ -80,6 +89,7 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
       hanjaToHunQuestions: hanjaToHunQuestions,
       hunToHanjaQuestions: hunToHanjaQuestions,
       randomWritingItems: randomWritingItems,
+      rewardEligibleHanjaIds: rewardEligibleHanjaIds,
       chapterKey: plan.chapterKey,
       chapterName: plan.chapterName,
       imageAssetPath: plan.chapterKey == null
@@ -96,7 +106,11 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
       return;
     }
     state = AsyncData(
-      current.copyWith(phase: DailySessionPhase.guidedWriting, index: 0),
+      current.copyWith(
+        phase: DailySessionPhase.guidedWriting,
+        index: 0,
+        showNavigationGuide: true,
+      ),
     );
   }
 
@@ -105,18 +119,29 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
     if (current == null) {
       return;
     }
-    if (current.index < current.items.length - 1) {
-      state = AsyncData(current.copyWith(index: current.index + 1));
+    final completed = current.markGuidedWritingComplete(
+      current.currentHanja?.id,
+    );
+    if (completed.index < completed.items.length - 1) {
+      state = AsyncData(completed.copyWith(index: completed.index + 1));
       return;
     }
     state = AsyncData(
-      current.copyWith(
+      completed.copyWith(
         guidedWritingCompleted: true,
         phase: DailySessionPhase.hanjaToHunQuiz,
         index: 0,
         selectedAnswer: null,
       ),
     );
+  }
+
+  void markGuidedWritingCompleted(String hanjaId) {
+    final current = state.value;
+    if (current == null || current.isGuidedWritingComplete(hanjaId)) {
+      return;
+    }
+    state = AsyncData(current.markGuidedWritingComplete(hanjaId));
   }
 
   void showGuidedWriting() {
@@ -129,6 +154,60 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
 
   void showRandomWriting() {
     _moveToPhase(DailySessionPhase.randomWriting);
+  }
+
+  void movePreviousInPhase() {
+    _moveWithinPhase(-1);
+  }
+
+  void moveNextInPhase() {
+    _moveWithinPhase(1);
+  }
+
+  void dismissNavigationGuide() {
+    final current = state.value;
+    if (current == null || !current.showNavigationGuide) {
+      return;
+    }
+    state = AsyncData(current.copyWith(showNavigationGuide: false));
+  }
+
+  void _moveWithinPhase(int offset) {
+    final current = state.value;
+    if (current == null) {
+      return;
+    }
+    if (current.phase == DailySessionPhase.randomWriting &&
+        offset > 0 &&
+        !current.canAdvanceCurrentRandomWriting) {
+      return;
+    }
+    final itemCount = current.currentPhaseItemCount;
+    final targetIndex = current.index + offset;
+    if (targetIndex < 0 || targetIndex >= itemCount) {
+      return;
+    }
+    state = AsyncData(
+      current.copyWith(
+        index: targetIndex,
+        selectedAnswer: _selectedAnswerForPhase(
+          current: current,
+          phase: current.phase,
+          index: targetIndex,
+        ),
+        incorrectAnswer: _incorrectAnswerForPhase(
+          current: current,
+          phase: current.phase,
+          index: targetIndex,
+        ),
+        currentQuestionHadMistake: _questionHadMistakeForPhase(
+          current: current,
+          phase: current.phase,
+          index: targetIndex,
+        ),
+        showNavigationGuide: false,
+      ),
+    );
   }
 
   void _moveToPhase(DailySessionPhase phase) {
@@ -146,8 +225,17 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
           phase: phase,
           index: targetIndex,
         ),
-        incorrectAnswer: null,
-        currentQuestionHadMistake: false,
+        incorrectAnswer: _incorrectAnswerForPhase(
+          current: current,
+          phase: phase,
+          index: targetIndex,
+        ),
+        currentQuestionHadMistake: _questionHadMistakeForPhase(
+          current: current,
+          phase: phase,
+          index: targetIndex,
+        ),
+        showNavigationGuide: false,
       ),
     );
   }
@@ -180,8 +268,16 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
                 phase: DailySessionPhase.hanjaToHunQuiz,
                 index: previousIndex,
               ),
-              incorrectAnswer: null,
-              currentQuestionHadMistake: false,
+              incorrectAnswer: _incorrectAnswerForPhase(
+                current: current,
+                phase: DailySessionPhase.hanjaToHunQuiz,
+                index: previousIndex,
+              ),
+              currentQuestionHadMistake: _questionHadMistakeForPhase(
+                current: current,
+                phase: DailySessionPhase.hanjaToHunQuiz,
+                index: previousIndex,
+              ),
             ),
           );
           return;
@@ -207,8 +303,16 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
                 phase: DailySessionPhase.hunToHanjaQuiz,
                 index: previousIndex,
               ),
-              incorrectAnswer: null,
-              currentQuestionHadMistake: false,
+              incorrectAnswer: _incorrectAnswerForPhase(
+                current: current,
+                phase: DailySessionPhase.hunToHanjaQuiz,
+                index: previousIndex,
+              ),
+              currentQuestionHadMistake: _questionHadMistakeForPhase(
+                current: current,
+                phase: DailySessionPhase.hunToHanjaQuiz,
+                index: previousIndex,
+              ),
             ),
           );
           return;
@@ -222,8 +326,16 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
               phase: DailySessionPhase.hanjaToHunQuiz,
               index: _lastIndexOf(current.hanjaToHunQuestions),
             ),
-            incorrectAnswer: null,
-            currentQuestionHadMistake: false,
+            incorrectAnswer: _incorrectAnswerForPhase(
+              current: current,
+              phase: DailySessionPhase.hanjaToHunQuiz,
+              index: _lastIndexOf(current.hanjaToHunQuestions),
+            ),
+            currentQuestionHadMistake: _questionHadMistakeForPhase(
+              current: current,
+              phase: DailySessionPhase.hanjaToHunQuiz,
+              index: _lastIndexOf(current.hanjaToHunQuestions),
+            ),
           ),
         );
         return;
@@ -241,8 +353,16 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
               phase: DailySessionPhase.hunToHanjaQuiz,
               index: _lastIndexOf(current.hunToHanjaQuestions),
             ),
-            incorrectAnswer: null,
-            currentQuestionHadMistake: false,
+            incorrectAnswer: _incorrectAnswerForPhase(
+              current: current,
+              phase: DailySessionPhase.hunToHanjaQuiz,
+              index: _lastIndexOf(current.hunToHanjaQuestions),
+            ),
+            currentQuestionHadMistake: _questionHadMistakeForPhase(
+              current: current,
+              phase: DailySessionPhase.hunToHanjaQuiz,
+              index: _lastIndexOf(current.hunToHanjaQuestions),
+            ),
           ),
         );
         return;
@@ -263,6 +383,24 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
     if (current == null || question == null || current.selectedAnswer != null) {
       return;
     }
+    final isCorrect = question.correctAnswer == answer;
+    unawaited(
+      ref
+          .read(learningDiagnosticsControllerProvider)
+          .recordAttempt(
+            hanjaId: question.item.id,
+            source: HanjaPracticeSource.dailySession,
+            activityType: question.kind == DailyQuizKind.hanjaToHun
+                ? HanjaPracticeActivityType.hanjaToHun
+                : HanjaPracticeActivityType.hunToHanja,
+            result: isCorrect
+                ? HanjaPracticeResult.correct
+                : HanjaPracticeResult.incorrect,
+            isLearned: !current.rewardEligibleHanjaIds.contains(
+              question.item.id,
+            ),
+          ),
+    );
     state = AsyncData(current.answerQuiz(answer));
   }
 
@@ -282,8 +420,16 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
             phase: current.phase,
             index: nextIndex,
           ),
-          incorrectAnswer: null,
-          currentQuestionHadMistake: false,
+          incorrectAnswer: _incorrectAnswerForPhase(
+            current: current,
+            phase: current.phase,
+            index: nextIndex,
+          ),
+          currentQuestionHadMistake: _questionHadMistakeForPhase(
+            current: current,
+            phase: current.phase,
+            index: nextIndex,
+          ),
         ),
       );
       return;
@@ -300,8 +446,16 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
             phase: DailySessionPhase.hunToHanjaQuiz,
             index: 0,
           ),
-          incorrectAnswer: null,
-          currentQuestionHadMistake: false,
+          incorrectAnswer: _incorrectAnswerForPhase(
+            current: current,
+            phase: DailySessionPhase.hunToHanjaQuiz,
+            index: 0,
+          ),
+          currentQuestionHadMistake: _questionHadMistakeForPhase(
+            current: current,
+            phase: DailySessionPhase.hunToHanjaQuiz,
+            index: 0,
+          ),
         ),
       );
       return;
@@ -321,22 +475,47 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
 
   Future<void> completeRandomWriting() async {
     final current = state.value;
-    if (current == null) {
+    if (current == null || !current.canAdvanceCurrentRandomWriting) {
       return;
     }
-    if (current.index < current.randomWritingItems.length - 1) {
-      state = AsyncData(current.copyWith(index: current.index + 1));
+    final completed = current;
+    if (completed.index < completed.randomWritingItems.length - 1) {
+      state = AsyncData(completed.copyWith(index: completed.index + 1));
       return;
     }
-    final completed = current.copyWith(randomWritingCompleted: true);
-    if (current.missedHanjaIds.isNotEmpty) {
+    final finishedRandomWriting = completed.copyWith(
+      randomWritingCompleted: true,
+    );
+    if (completed.missedHanjaIds.isNotEmpty) {
       state = AsyncData(
-        completed.copyWith(phase: DailySessionPhase.mistakeReview, index: 0),
+        finishedRandomWriting.copyWith(
+          phase: DailySessionPhase.mistakeReview,
+          index: 0,
+        ),
       );
       return;
     }
-    state = AsyncData(completed);
+    state = AsyncData(finishedRandomWriting);
     await finish();
+  }
+
+  void markRandomWritingCompleted(String hanjaId) {
+    final current = state.value;
+    if (current == null || current.isRandomWritingComplete(hanjaId)) {
+      return;
+    }
+    state = AsyncData(current.markRandomWritingComplete(hanjaId));
+  }
+
+  void saveRandomWritingStrokes({
+    required String hanjaId,
+    required List<Path> strokes,
+  }) {
+    final current = state.value;
+    if (current == null || hanjaId.trim().isEmpty) {
+      return;
+    }
+    state = AsyncData(current.saveRandomWritingStrokes(hanjaId, strokes));
   }
 
   Future<void> finish() async {
@@ -352,7 +531,11 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
     for (final item in current.items) {
       result = await ref
           .read(learningProgressControllerProvider)
-          .markHanjaCompleted(hanjaId: item.id, todayHanjaIds: todayHanjaIds);
+          .markHanjaCompleted(
+            hanjaId: item.id,
+            todayHanjaIds: todayHanjaIds,
+            rewardEligibleHanjaIds: current.rewardEligibleHanjaIds,
+          );
       earnedXp += result.earnedXp;
     }
 
@@ -430,6 +613,7 @@ class DailySessionState {
     required this.hanjaToHunQuestions,
     required this.hunToHanjaQuestions,
     required this.randomWritingItems,
+    this.rewardEligibleHanjaIds = const <String>{},
     this.imageAssetPath,
     this.chapterKey,
     this.chapterName,
@@ -440,6 +624,13 @@ class DailySessionState {
     this.currentQuestionHadMistake = false,
     this.correctCount = 0,
     this.missedHanjaIds = const <String>{},
+    this.guidedWritingCompletedHanjaIds = const <String>{},
+    this.randomWritingCompletedHanjaIds = const <String>{},
+    this.quizSelectedAnswers = const <String, String>{},
+    this.quizIncorrectAnswers = const <String, String>{},
+    this.quizMistakeQuestionKeys = const <String>{},
+    this.randomWritingStrokesByHanjaId = const <String, List<Path>>{},
+    this.showNavigationGuide = false,
     this.guidedWritingCompleted = false,
     this.hanjaToHunQuizCompleted = false,
     this.hunToHanjaQuizCompleted = false,
@@ -454,6 +645,7 @@ class DailySessionState {
   final List<DailyQuizQuestion> hanjaToHunQuestions;
   final List<DailyQuizQuestion> hunToHanjaQuestions;
   final List<HanjaCharacter> randomWritingItems;
+  final Set<String> rewardEligibleHanjaIds;
   final String? imageAssetPath;
   final String? chapterKey;
   final String? chapterName;
@@ -464,6 +656,13 @@ class DailySessionState {
   final bool currentQuestionHadMistake;
   final int correctCount;
   final Set<String> missedHanjaIds;
+  final Set<String> guidedWritingCompletedHanjaIds;
+  final Set<String> randomWritingCompletedHanjaIds;
+  final Map<String, String> quizSelectedAnswers;
+  final Map<String, String> quizIncorrectAnswers;
+  final Set<String> quizMistakeQuestionKeys;
+  final Map<String, List<Path>> randomWritingStrokesByHanjaId;
+  final bool showNavigationGuide;
   final bool guidedWritingCompleted;
   final bool hanjaToHunQuizCompleted;
   final bool hunToHanjaQuizCompleted;
@@ -476,6 +675,22 @@ class DailySessionState {
 
   int get totalQuizCount =>
       hanjaToHunQuestions.length + hunToHanjaQuestions.length;
+
+  int get currentPhaseItemCount {
+    return switch (phase) {
+      DailySessionPhase.guidedWriting => items.length,
+      DailySessionPhase.hanjaToHunQuiz => hanjaToHunQuestions.length,
+      DailySessionPhase.hunToHanjaQuiz => hunToHanjaQuestions.length,
+      DailySessionPhase.randomWriting => randomWritingItems.length,
+      DailySessionPhase.intro ||
+      DailySessionPhase.mistakeReview ||
+      DailySessionPhase.complete => items.length,
+    };
+  }
+
+  bool get canMovePreviousInPhase => index > 0;
+
+  bool get canMoveNextInPhase => index < currentPhaseItemCount - 1;
 
   double get progress {
     if (items.isEmpty) {
@@ -494,11 +709,13 @@ class DailySessionState {
   }
 
   HanjaCharacter? get currentHanja {
-    final source = switch (phase) {
-      DailySessionPhase.guidedWriting => items,
-      DailySessionPhase.randomWriting => randomWritingItems,
-      _ => items,
-    };
+    final currentQuestion = currentQuizQuestion;
+    if (currentQuestion != null) {
+      return currentQuestion.item;
+    }
+    final source = phase == DailySessionPhase.randomWriting
+        ? randomWritingItems
+        : items;
     if (source.isEmpty || index >= source.length) {
       return null;
     }
@@ -530,25 +747,90 @@ class DailySessionState {
     return items.where((item) => missedHanjaIds.contains(item.id)).toList();
   }
 
+  bool isGuidedWritingComplete(String hanjaId) {
+    return guidedWritingCompleted ||
+        guidedWritingCompletedHanjaIds.contains(hanjaId);
+  }
+
+  bool isRandomWritingComplete(String hanjaId) {
+    return randomWritingCompleted ||
+        randomWritingCompletedHanjaIds.contains(hanjaId);
+  }
+
+  bool get canAdvanceCurrentRandomWriting {
+    final item = currentHanja;
+    return item != null && isRandomWritingComplete(item.id);
+  }
+
+  DailySessionState markGuidedWritingComplete(String? hanjaId) {
+    if (hanjaId == null || guidedWritingCompletedHanjaIds.contains(hanjaId)) {
+      return this;
+    }
+    final completedIds = {...guidedWritingCompletedHanjaIds, hanjaId};
+    return copyWith(
+      guidedWritingCompletedHanjaIds: completedIds,
+      guidedWritingCompleted:
+          guidedWritingCompleted || _containsAllItemIds(completedIds, items),
+    );
+  }
+
+  DailySessionState markRandomWritingComplete(String? hanjaId) {
+    if (hanjaId == null || randomWritingCompletedHanjaIds.contains(hanjaId)) {
+      return this;
+    }
+    final completedIds = {...randomWritingCompletedHanjaIds, hanjaId};
+    return copyWith(
+      randomWritingCompletedHanjaIds: completedIds,
+      randomWritingCompleted:
+          randomWritingCompleted ||
+          _containsAllItemIds(completedIds, randomWritingItems),
+    );
+  }
+
+  DailySessionState saveRandomWritingStrokes(
+    String hanjaId,
+    List<Path> strokes,
+  ) {
+    return copyWith(
+      randomWritingStrokesByHanjaId: {
+        ...randomWritingStrokesByHanjaId,
+        hanjaId: List<Path>.unmodifiable(strokes),
+      },
+    );
+  }
+
+  List<Path> randomWritingStrokesFor(String hanjaId) {
+    return randomWritingStrokesByHanjaId[hanjaId] ?? const [];
+  }
+
   DailySessionState answerQuiz(String answer) {
     final question = currentQuizQuestion;
     if (question == null || selectedAnswer != null) {
       return this;
     }
 
+    final questionKey = _quizQuestionKey(question);
     final isCorrect = answer == question.correctAnswer;
     if (!isCorrect) {
       return copyWith(
         incorrectAnswer: answer,
         currentQuestionHadMistake: true,
         missedHanjaIds: {...missedHanjaIds, question.item.id},
+        quizIncorrectAnswers: {...quizIncorrectAnswers, questionKey: answer},
+        quizMistakeQuestionKeys: {...quizMistakeQuestionKeys, questionKey},
       );
     }
 
+    final hadMistake =
+        currentQuestionHadMistake ||
+        quizMistakeQuestionKeys.contains(questionKey);
     return copyWith(
       selectedAnswer: answer,
       incorrectAnswer: null,
-      correctCount: currentQuestionHadMistake ? correctCount : correctCount + 1,
+      correctCount: hadMistake ? correctCount : correctCount + 1,
+      quizSelectedAnswers: {...quizSelectedAnswers, questionKey: answer},
+      quizIncorrectAnswers: {...quizIncorrectAnswers}..remove(questionKey),
+      currentQuestionHadMistake: hadMistake,
     );
   }
 
@@ -560,6 +842,13 @@ class DailySessionState {
     bool? currentQuestionHadMistake,
     int? correctCount,
     Set<String>? missedHanjaIds,
+    Set<String>? guidedWritingCompletedHanjaIds,
+    Set<String>? randomWritingCompletedHanjaIds,
+    Map<String, String>? quizSelectedAnswers,
+    Map<String, String>? quizIncorrectAnswers,
+    Set<String>? quizMistakeQuestionKeys,
+    Map<String, List<Path>>? randomWritingStrokesByHanjaId,
+    bool? showNavigationGuide,
     bool? guidedWritingCompleted,
     bool? hanjaToHunQuizCompleted,
     bool? hunToHanjaQuizCompleted,
@@ -574,6 +863,7 @@ class DailySessionState {
       hanjaToHunQuestions: hanjaToHunQuestions,
       hunToHanjaQuestions: hunToHanjaQuestions,
       randomWritingItems: randomWritingItems,
+      rewardEligibleHanjaIds: rewardEligibleHanjaIds,
       imageAssetPath: imageAssetPath,
       chapterKey: chapterKey,
       chapterName: chapterName,
@@ -589,6 +879,17 @@ class DailySessionState {
           currentQuestionHadMistake ?? this.currentQuestionHadMistake,
       correctCount: correctCount ?? this.correctCount,
       missedHanjaIds: missedHanjaIds ?? this.missedHanjaIds,
+      guidedWritingCompletedHanjaIds:
+          guidedWritingCompletedHanjaIds ?? this.guidedWritingCompletedHanjaIds,
+      randomWritingCompletedHanjaIds:
+          randomWritingCompletedHanjaIds ?? this.randomWritingCompletedHanjaIds,
+      quizSelectedAnswers: quizSelectedAnswers ?? this.quizSelectedAnswers,
+      quizIncorrectAnswers: quizIncorrectAnswers ?? this.quizIncorrectAnswers,
+      quizMistakeQuestionKeys:
+          quizMistakeQuestionKeys ?? this.quizMistakeQuestionKeys,
+      randomWritingStrokesByHanjaId:
+          randomWritingStrokesByHanjaId ?? this.randomWritingStrokesByHanjaId,
+      showNavigationGuide: showNavigationGuide ?? this.showNavigationGuide,
       guidedWritingCompleted:
           guidedWritingCompleted ?? this.guidedWritingCompleted,
       hanjaToHunQuizCompleted:
@@ -629,14 +930,39 @@ int _targetIndexForPhase({
   return switch (phase) {
     DailySessionPhase.guidedWriting when current.guidedWritingCompleted =>
       _lastIndexOf(current.items),
+    DailySessionPhase.guidedWriting => _firstIncompleteItemIndex(
+      items: current.items,
+      completedIds: current.guidedWritingCompletedHanjaIds,
+    ),
     DailySessionPhase.hanjaToHunQuiz when current.hanjaToHunQuizCompleted =>
       _lastIndexOf(current.hanjaToHunQuestions),
     DailySessionPhase.hunToHanjaQuiz when current.hunToHanjaQuizCompleted =>
       _lastIndexOf(current.hunToHanjaQuestions),
     DailySessionPhase.randomWriting when current.randomWritingCompleted =>
       _lastIndexOf(current.randomWritingItems),
+    DailySessionPhase.randomWriting => _firstIncompleteItemIndex(
+      items: current.randomWritingItems,
+      completedIds: current.randomWritingCompletedHanjaIds,
+    ),
     _ => 0,
   };
+}
+
+int _firstIncompleteItemIndex({
+  required List<HanjaCharacter> items,
+  required Set<String> completedIds,
+}) {
+  for (var index = 0; index < items.length; index += 1) {
+    if (!completedIds.contains(items[index].id)) {
+      return index;
+    }
+  }
+  return _lastIndexOf(items);
+}
+
+bool _containsAllItemIds(Set<String> completedIds, List<HanjaCharacter> items) {
+  return items.isNotEmpty &&
+      items.every((item) => completedIds.contains(item.id));
 }
 
 String? _selectedAnswerForPhase({
@@ -645,13 +971,68 @@ String? _selectedAnswerForPhase({
   required int index,
 }) {
   final question = switch (phase) {
-    DailySessionPhase.hanjaToHunQuiz when current.hanjaToHunQuizCompleted =>
-      _questionAt(current.hanjaToHunQuestions, index),
-    DailySessionPhase.hunToHanjaQuiz when current.hunToHanjaQuizCompleted =>
-      _questionAt(current.hunToHanjaQuestions, index),
+    DailySessionPhase.hanjaToHunQuiz => _questionAt(
+      current.hanjaToHunQuestions,
+      index,
+    ),
+    DailySessionPhase.hunToHanjaQuiz => _questionAt(
+      current.hunToHanjaQuestions,
+      index,
+    ),
     _ => null,
   };
-  return question?.correctAnswer;
+  if (question == null) {
+    return null;
+  }
+  return current.quizSelectedAnswers[_quizQuestionKey(question)];
+}
+
+String? _incorrectAnswerForPhase({
+  required DailySessionState current,
+  required DailySessionPhase phase,
+  required int index,
+}) {
+  final question = switch (phase) {
+    DailySessionPhase.hanjaToHunQuiz => _questionAt(
+      current.hanjaToHunQuestions,
+      index,
+    ),
+    DailySessionPhase.hunToHanjaQuiz => _questionAt(
+      current.hunToHanjaQuestions,
+      index,
+    ),
+    _ => null,
+  };
+  if (question == null) {
+    return null;
+  }
+  return current.quizIncorrectAnswers[_quizQuestionKey(question)];
+}
+
+bool _questionHadMistakeForPhase({
+  required DailySessionState current,
+  required DailySessionPhase phase,
+  required int index,
+}) {
+  final question = switch (phase) {
+    DailySessionPhase.hanjaToHunQuiz => _questionAt(
+      current.hanjaToHunQuestions,
+      index,
+    ),
+    DailySessionPhase.hunToHanjaQuiz => _questionAt(
+      current.hunToHanjaQuestions,
+      index,
+    ),
+    _ => null,
+  };
+  if (question == null) {
+    return false;
+  }
+  return current.quizMistakeQuestionKeys.contains(_quizQuestionKey(question));
+}
+
+String _quizQuestionKey(DailyQuizQuestion question) {
+  return '${question.kind.name}:${question.item.id}';
 }
 
 DailyQuizQuestion? _questionAt(List<DailyQuizQuestion> questions, int index) {

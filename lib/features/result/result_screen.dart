@@ -431,7 +431,7 @@ String _challengeTitle(ChallengeMode mode) {
     ChallengeMode.quizHanjaToHun => '한자 보고 훈음',
     ChallengeMode.quizHunToHanja => '훈음 보고 한자',
     ChallengeMode.quizMixed => '혼합 퀴즈',
-    ChallengeMode.speedChoice => '스피드 한자 선택',
+    ChallengeMode.speedChoice => '스피드 퀴즈',
     ChallengeMode.flipBoard => '판뒤집기',
   };
 }

@@ -103,6 +103,8 @@ class AppShell extends ConsumerWidget {
 
   AppMusicTrack _musicTrackFor(String location) {
     if (location == RoutePaths.dailySession ||
+        location == RoutePaths.reviewSession ||
+        location == RoutePaths.weaknessSession ||
         location.startsWith('/app/learn/hanja') ||
         location.startsWith('/app/learn/writing-modes') ||
         location.startsWith('/app/learn/guided-writing') ||

@@ -16,6 +16,10 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return client;
 });
 
+final nullableSupabaseClientProvider = Provider<SupabaseClient?>((ref) {
+  return _supabaseClient;
+});
+
 SupabaseClient? _supabaseClient;
 
 Future<void> initializeSupabase() async {

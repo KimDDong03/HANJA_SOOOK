@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
@@ -12,6 +13,7 @@ import '../../domain/models/app_user_profile.dart';
 import '../../domain/models/notification_settings.dart';
 import '../../domain/models/school.dart';
 import '../auth/current_profile_controller.dart';
+import '../student_links/student_link_controller.dart';
 import 'learning_environment_controller.dart';
 import 'notification_settings_controller.dart';
 import 'profile_edit_controller.dart';
@@ -131,6 +133,14 @@ List<Widget> _sectionsForRole(BuildContext context, String role) {
         children: [
           const _SettingsInfoBox(
             text: '반 참여는 선생님이 알려준 반 코드를 입력해요. 처음 선택한 역할은 아래 역할 변경에서 바꿀 수 있어요.',
+          ),
+          const Divider(height: 1),
+          _SettingsRow(
+            icon: Icons.badge_outlined,
+            title: '내 학생 연결 코드',
+            subtitle: '보호자 연결용 코드 확인',
+            tint: AppColors.blue,
+            onTap: () => _showStudentCodeSheet(context),
           ),
           const Divider(height: 1),
           _SettingsRow(
@@ -279,6 +289,86 @@ void _showProfileEditSheet(BuildContext context, AppUserProfile profile) {
     showDragHandle: true,
     builder: (_) => _ProfileEditSheet(profile: profile),
   );
+}
+
+void _showStudentCodeSheet(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (_) => const _StudentCodeSheet(),
+  );
+}
+
+class _StudentCodeSheet extends ConsumerWidget {
+  const _StudentCodeSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(studentLinkProvider);
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: state.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (_, _) => const Text('학생 연결 코드를 불러오지 못했어요.'),
+          data: (data) {
+            final code = data.currentStudentCode;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  '내 학생 연결 코드',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '보호자에게 이 코드를 전달하면 보호자 기기에서 학생을 연결할 수 있어요.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                if (code == null)
+                  const Text('학생 정보 입력 후 연결 코드를 만들 수 있습니다.')
+                else ...[
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: SelectableText(code),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: code));
+                      _showSnack(context, '학생 연결 코드를 복사했어요.');
+                    },
+                    icon: const Icon(Icons.copy),
+                    label: const Text('코드 복사'),
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
 class _ProfileEditSheet extends ConsumerStatefulWidget {

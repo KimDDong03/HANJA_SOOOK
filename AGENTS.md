@@ -99,8 +99,17 @@ Each feature should have:
 - small widgets folder if UI becomes large
 
 ## Environment
-Supabase URL and anon key must come from `--dart-define`.
+Supabase URL and anon key must come from Dart defines.
 Do not hard-code secrets.
+When running or building the Flutter app, include the root `.env` file with
+`--dart-define-from-file=.env`. Do not run app builds with missing env defines.
+
+Examples:
+
+```txt
+flutter run -d emulator-5554 --dart-define-from-file=.env
+flutter build apk --debug --dart-define-from-file=.env
+```
 
 Expected keys:
 

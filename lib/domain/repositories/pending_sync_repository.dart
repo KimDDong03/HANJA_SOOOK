@@ -24,6 +24,7 @@ class PendingSyncTables {
   static const learningSessions = 'learning_sessions';
   static const writingAttempts = 'writing_attempts';
   static const userHanjaProgress = 'user_hanja_progress';
+  static const userHanjaWeaknesses = 'user_hanja_weaknesses';
   static const xpEvents = 'xp_events';
 }
 

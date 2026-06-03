@@ -21,6 +21,8 @@ class RoutePaths {
   static const dailySession = '/app/learn/daily-session';
   static const appChallenge = '/app/challenge';
   static const appSettings = '/app/settings';
+  static const reviewSession = '/app/learn/review-session';
+  static const weaknessSession = '/app/learn/weakness-session';
 
   static const appHanjaPattern = '/app/learn/hanja/:hanjaId';
   static const writingModesPattern = '/app/learn/writing-modes/:hanjaId';
@@ -54,6 +56,20 @@ class RoutePaths {
     return Uri(
       path: dailySession,
       queryParameters: {'chapter': chapterKey},
+    ).toString();
+  }
+
+  static String reviewSessionFor(String hanjaId) {
+    return Uri(
+      path: reviewSession,
+      queryParameters: {'hanja': hanjaId},
+    ).toString();
+  }
+
+  static String weaknessSessionFor(String hanjaId) {
+    return Uri(
+      path: weaknessSession,
+      queryParameters: {'hanja': hanjaId},
     ).toString();
   }
 

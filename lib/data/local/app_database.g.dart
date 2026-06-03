@@ -750,6 +750,1479 @@ class LocalXpEventsCompanion extends UpdateCompanion<LocalXpEvent> {
   }
 }
 
+class $LocalHanjaPracticeEventsTable extends LocalHanjaPracticeEvents
+    with TableInfo<$LocalHanjaPracticeEventsTable, LocalHanjaPracticeEvent> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalHanjaPracticeEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _studentKeyMeta = const VerificationMeta(
+    'studentKey',
+  );
+  @override
+  late final GeneratedColumn<String> studentKey = GeneratedColumn<String>(
+    'student_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _hanjaIdMeta = const VerificationMeta(
+    'hanjaId',
+  );
+  @override
+  late final GeneratedColumn<String> hanjaId = GeneratedColumn<String>(
+    'hanja_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _learningDateMeta = const VerificationMeta(
+    'learningDate',
+  );
+  @override
+  late final GeneratedColumn<String> learningDate = GeneratedColumn<String>(
+    'learning_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activityTypeMeta = const VerificationMeta(
+    'activityType',
+  );
+  @override
+  late final GeneratedColumn<String> activityType = GeneratedColumn<String>(
+    'activity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _resultMeta = const VerificationMeta('result');
+  @override
+  late final GeneratedColumn<String> result = GeneratedColumn<String>(
+    'result',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weaknessTypeMeta = const VerificationMeta(
+    'weaknessType',
+  );
+  @override
+  late final GeneratedColumn<String> weaknessType = GeneratedColumn<String>(
+    'weakness_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _scoreDeltaMeta = const VerificationMeta(
+    'scoreDelta',
+  );
+  @override
+  late final GeneratedColumn<int> scoreDelta = GeneratedColumn<int>(
+    'score_delta',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _hintLevelMeta = const VerificationMeta(
+    'hintLevel',
+  );
+  @override
+  late final GeneratedColumn<int> hintLevel = GeneratedColumn<int>(
+    'hint_level',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _elapsedMsMeta = const VerificationMeta(
+    'elapsedMs',
+  );
+  @override
+  late final GeneratedColumn<int> elapsedMs = GeneratedColumn<int>(
+    'elapsed_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _confusedWithHanjaIdMeta =
+      const VerificationMeta('confusedWithHanjaId');
+  @override
+  late final GeneratedColumn<String> confusedWithHanjaId =
+      GeneratedColumn<String>(
+        'confused_with_hanja_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    studentKey,
+    hanjaId,
+    learningDate,
+    source,
+    activityType,
+    result,
+    weaknessType,
+    scoreDelta,
+    hintLevel,
+    elapsedMs,
+    confusedWithHanjaId,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_hanja_practice_events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalHanjaPracticeEvent> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('student_key')) {
+      context.handle(
+        _studentKeyMeta,
+        studentKey.isAcceptableOrUnknown(data['student_key']!, _studentKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_studentKeyMeta);
+    }
+    if (data.containsKey('hanja_id')) {
+      context.handle(
+        _hanjaIdMeta,
+        hanjaId.isAcceptableOrUnknown(data['hanja_id']!, _hanjaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hanjaIdMeta);
+    }
+    if (data.containsKey('learning_date')) {
+      context.handle(
+        _learningDateMeta,
+        learningDate.isAcceptableOrUnknown(
+          data['learning_date']!,
+          _learningDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_learningDateMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('activity_type')) {
+      context.handle(
+        _activityTypeMeta,
+        activityType.isAcceptableOrUnknown(
+          data['activity_type']!,
+          _activityTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_activityTypeMeta);
+    }
+    if (data.containsKey('result')) {
+      context.handle(
+        _resultMeta,
+        result.isAcceptableOrUnknown(data['result']!, _resultMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_resultMeta);
+    }
+    if (data.containsKey('weakness_type')) {
+      context.handle(
+        _weaknessTypeMeta,
+        weaknessType.isAcceptableOrUnknown(
+          data['weakness_type']!,
+          _weaknessTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('score_delta')) {
+      context.handle(
+        _scoreDeltaMeta,
+        scoreDelta.isAcceptableOrUnknown(data['score_delta']!, _scoreDeltaMeta),
+      );
+    }
+    if (data.containsKey('hint_level')) {
+      context.handle(
+        _hintLevelMeta,
+        hintLevel.isAcceptableOrUnknown(data['hint_level']!, _hintLevelMeta),
+      );
+    }
+    if (data.containsKey('elapsed_ms')) {
+      context.handle(
+        _elapsedMsMeta,
+        elapsedMs.isAcceptableOrUnknown(data['elapsed_ms']!, _elapsedMsMeta),
+      );
+    }
+    if (data.containsKey('confused_with_hanja_id')) {
+      context.handle(
+        _confusedWithHanjaIdMeta,
+        confusedWithHanjaId.isAcceptableOrUnknown(
+          data['confused_with_hanja_id']!,
+          _confusedWithHanjaIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalHanjaPracticeEvent map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalHanjaPracticeEvent(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      studentKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}student_key'],
+      )!,
+      hanjaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hanja_id'],
+      )!,
+      learningDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}learning_date'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      activityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_type'],
+      )!,
+      result: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}result'],
+      )!,
+      weaknessType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}weakness_type'],
+      ),
+      scoreDelta: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}score_delta'],
+      )!,
+      hintLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hint_level'],
+      ),
+      elapsedMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}elapsed_ms'],
+      ),
+      confusedWithHanjaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}confused_with_hanja_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalHanjaPracticeEventsTable createAlias(String alias) {
+    return $LocalHanjaPracticeEventsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalHanjaPracticeEvent extends DataClass
+    implements Insertable<LocalHanjaPracticeEvent> {
+  final String id;
+  final String studentKey;
+  final String hanjaId;
+  final String learningDate;
+  final String source;
+  final String activityType;
+  final String result;
+  final String? weaknessType;
+  final int scoreDelta;
+  final int? hintLevel;
+  final int? elapsedMs;
+  final String? confusedWithHanjaId;
+  final DateTime createdAt;
+  const LocalHanjaPracticeEvent({
+    required this.id,
+    required this.studentKey,
+    required this.hanjaId,
+    required this.learningDate,
+    required this.source,
+    required this.activityType,
+    required this.result,
+    this.weaknessType,
+    required this.scoreDelta,
+    this.hintLevel,
+    this.elapsedMs,
+    this.confusedWithHanjaId,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['student_key'] = Variable<String>(studentKey);
+    map['hanja_id'] = Variable<String>(hanjaId);
+    map['learning_date'] = Variable<String>(learningDate);
+    map['source'] = Variable<String>(source);
+    map['activity_type'] = Variable<String>(activityType);
+    map['result'] = Variable<String>(result);
+    if (!nullToAbsent || weaknessType != null) {
+      map['weakness_type'] = Variable<String>(weaknessType);
+    }
+    map['score_delta'] = Variable<int>(scoreDelta);
+    if (!nullToAbsent || hintLevel != null) {
+      map['hint_level'] = Variable<int>(hintLevel);
+    }
+    if (!nullToAbsent || elapsedMs != null) {
+      map['elapsed_ms'] = Variable<int>(elapsedMs);
+    }
+    if (!nullToAbsent || confusedWithHanjaId != null) {
+      map['confused_with_hanja_id'] = Variable<String>(confusedWithHanjaId);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  LocalHanjaPracticeEventsCompanion toCompanion(bool nullToAbsent) {
+    return LocalHanjaPracticeEventsCompanion(
+      id: Value(id),
+      studentKey: Value(studentKey),
+      hanjaId: Value(hanjaId),
+      learningDate: Value(learningDate),
+      source: Value(source),
+      activityType: Value(activityType),
+      result: Value(result),
+      weaknessType: weaknessType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weaknessType),
+      scoreDelta: Value(scoreDelta),
+      hintLevel: hintLevel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hintLevel),
+      elapsedMs: elapsedMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(elapsedMs),
+      confusedWithHanjaId: confusedWithHanjaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(confusedWithHanjaId),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory LocalHanjaPracticeEvent.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalHanjaPracticeEvent(
+      id: serializer.fromJson<String>(json['id']),
+      studentKey: serializer.fromJson<String>(json['studentKey']),
+      hanjaId: serializer.fromJson<String>(json['hanjaId']),
+      learningDate: serializer.fromJson<String>(json['learningDate']),
+      source: serializer.fromJson<String>(json['source']),
+      activityType: serializer.fromJson<String>(json['activityType']),
+      result: serializer.fromJson<String>(json['result']),
+      weaknessType: serializer.fromJson<String?>(json['weaknessType']),
+      scoreDelta: serializer.fromJson<int>(json['scoreDelta']),
+      hintLevel: serializer.fromJson<int?>(json['hintLevel']),
+      elapsedMs: serializer.fromJson<int?>(json['elapsedMs']),
+      confusedWithHanjaId: serializer.fromJson<String?>(
+        json['confusedWithHanjaId'],
+      ),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'studentKey': serializer.toJson<String>(studentKey),
+      'hanjaId': serializer.toJson<String>(hanjaId),
+      'learningDate': serializer.toJson<String>(learningDate),
+      'source': serializer.toJson<String>(source),
+      'activityType': serializer.toJson<String>(activityType),
+      'result': serializer.toJson<String>(result),
+      'weaknessType': serializer.toJson<String?>(weaknessType),
+      'scoreDelta': serializer.toJson<int>(scoreDelta),
+      'hintLevel': serializer.toJson<int?>(hintLevel),
+      'elapsedMs': serializer.toJson<int?>(elapsedMs),
+      'confusedWithHanjaId': serializer.toJson<String?>(confusedWithHanjaId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  LocalHanjaPracticeEvent copyWith({
+    String? id,
+    String? studentKey,
+    String? hanjaId,
+    String? learningDate,
+    String? source,
+    String? activityType,
+    String? result,
+    Value<String?> weaknessType = const Value.absent(),
+    int? scoreDelta,
+    Value<int?> hintLevel = const Value.absent(),
+    Value<int?> elapsedMs = const Value.absent(),
+    Value<String?> confusedWithHanjaId = const Value.absent(),
+    DateTime? createdAt,
+  }) => LocalHanjaPracticeEvent(
+    id: id ?? this.id,
+    studentKey: studentKey ?? this.studentKey,
+    hanjaId: hanjaId ?? this.hanjaId,
+    learningDate: learningDate ?? this.learningDate,
+    source: source ?? this.source,
+    activityType: activityType ?? this.activityType,
+    result: result ?? this.result,
+    weaknessType: weaknessType.present ? weaknessType.value : this.weaknessType,
+    scoreDelta: scoreDelta ?? this.scoreDelta,
+    hintLevel: hintLevel.present ? hintLevel.value : this.hintLevel,
+    elapsedMs: elapsedMs.present ? elapsedMs.value : this.elapsedMs,
+    confusedWithHanjaId: confusedWithHanjaId.present
+        ? confusedWithHanjaId.value
+        : this.confusedWithHanjaId,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  LocalHanjaPracticeEvent copyWithCompanion(
+    LocalHanjaPracticeEventsCompanion data,
+  ) {
+    return LocalHanjaPracticeEvent(
+      id: data.id.present ? data.id.value : this.id,
+      studentKey: data.studentKey.present
+          ? data.studentKey.value
+          : this.studentKey,
+      hanjaId: data.hanjaId.present ? data.hanjaId.value : this.hanjaId,
+      learningDate: data.learningDate.present
+          ? data.learningDate.value
+          : this.learningDate,
+      source: data.source.present ? data.source.value : this.source,
+      activityType: data.activityType.present
+          ? data.activityType.value
+          : this.activityType,
+      result: data.result.present ? data.result.value : this.result,
+      weaknessType: data.weaknessType.present
+          ? data.weaknessType.value
+          : this.weaknessType,
+      scoreDelta: data.scoreDelta.present
+          ? data.scoreDelta.value
+          : this.scoreDelta,
+      hintLevel: data.hintLevel.present ? data.hintLevel.value : this.hintLevel,
+      elapsedMs: data.elapsedMs.present ? data.elapsedMs.value : this.elapsedMs,
+      confusedWithHanjaId: data.confusedWithHanjaId.present
+          ? data.confusedWithHanjaId.value
+          : this.confusedWithHanjaId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalHanjaPracticeEvent(')
+          ..write('id: $id, ')
+          ..write('studentKey: $studentKey, ')
+          ..write('hanjaId: $hanjaId, ')
+          ..write('learningDate: $learningDate, ')
+          ..write('source: $source, ')
+          ..write('activityType: $activityType, ')
+          ..write('result: $result, ')
+          ..write('weaknessType: $weaknessType, ')
+          ..write('scoreDelta: $scoreDelta, ')
+          ..write('hintLevel: $hintLevel, ')
+          ..write('elapsedMs: $elapsedMs, ')
+          ..write('confusedWithHanjaId: $confusedWithHanjaId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    studentKey,
+    hanjaId,
+    learningDate,
+    source,
+    activityType,
+    result,
+    weaknessType,
+    scoreDelta,
+    hintLevel,
+    elapsedMs,
+    confusedWithHanjaId,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalHanjaPracticeEvent &&
+          other.id == this.id &&
+          other.studentKey == this.studentKey &&
+          other.hanjaId == this.hanjaId &&
+          other.learningDate == this.learningDate &&
+          other.source == this.source &&
+          other.activityType == this.activityType &&
+          other.result == this.result &&
+          other.weaknessType == this.weaknessType &&
+          other.scoreDelta == this.scoreDelta &&
+          other.hintLevel == this.hintLevel &&
+          other.elapsedMs == this.elapsedMs &&
+          other.confusedWithHanjaId == this.confusedWithHanjaId &&
+          other.createdAt == this.createdAt);
+}
+
+class LocalHanjaPracticeEventsCompanion
+    extends UpdateCompanion<LocalHanjaPracticeEvent> {
+  final Value<String> id;
+  final Value<String> studentKey;
+  final Value<String> hanjaId;
+  final Value<String> learningDate;
+  final Value<String> source;
+  final Value<String> activityType;
+  final Value<String> result;
+  final Value<String?> weaknessType;
+  final Value<int> scoreDelta;
+  final Value<int?> hintLevel;
+  final Value<int?> elapsedMs;
+  final Value<String?> confusedWithHanjaId;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const LocalHanjaPracticeEventsCompanion({
+    this.id = const Value.absent(),
+    this.studentKey = const Value.absent(),
+    this.hanjaId = const Value.absent(),
+    this.learningDate = const Value.absent(),
+    this.source = const Value.absent(),
+    this.activityType = const Value.absent(),
+    this.result = const Value.absent(),
+    this.weaknessType = const Value.absent(),
+    this.scoreDelta = const Value.absent(),
+    this.hintLevel = const Value.absent(),
+    this.elapsedMs = const Value.absent(),
+    this.confusedWithHanjaId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalHanjaPracticeEventsCompanion.insert({
+    required String id,
+    required String studentKey,
+    required String hanjaId,
+    required String learningDate,
+    required String source,
+    required String activityType,
+    required String result,
+    this.weaknessType = const Value.absent(),
+    this.scoreDelta = const Value.absent(),
+    this.hintLevel = const Value.absent(),
+    this.elapsedMs = const Value.absent(),
+    this.confusedWithHanjaId = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       studentKey = Value(studentKey),
+       hanjaId = Value(hanjaId),
+       learningDate = Value(learningDate),
+       source = Value(source),
+       activityType = Value(activityType),
+       result = Value(result),
+       createdAt = Value(createdAt);
+  static Insertable<LocalHanjaPracticeEvent> custom({
+    Expression<String>? id,
+    Expression<String>? studentKey,
+    Expression<String>? hanjaId,
+    Expression<String>? learningDate,
+    Expression<String>? source,
+    Expression<String>? activityType,
+    Expression<String>? result,
+    Expression<String>? weaknessType,
+    Expression<int>? scoreDelta,
+    Expression<int>? hintLevel,
+    Expression<int>? elapsedMs,
+    Expression<String>? confusedWithHanjaId,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (studentKey != null) 'student_key': studentKey,
+      if (hanjaId != null) 'hanja_id': hanjaId,
+      if (learningDate != null) 'learning_date': learningDate,
+      if (source != null) 'source': source,
+      if (activityType != null) 'activity_type': activityType,
+      if (result != null) 'result': result,
+      if (weaknessType != null) 'weakness_type': weaknessType,
+      if (scoreDelta != null) 'score_delta': scoreDelta,
+      if (hintLevel != null) 'hint_level': hintLevel,
+      if (elapsedMs != null) 'elapsed_ms': elapsedMs,
+      if (confusedWithHanjaId != null)
+        'confused_with_hanja_id': confusedWithHanjaId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalHanjaPracticeEventsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? studentKey,
+    Value<String>? hanjaId,
+    Value<String>? learningDate,
+    Value<String>? source,
+    Value<String>? activityType,
+    Value<String>? result,
+    Value<String?>? weaknessType,
+    Value<int>? scoreDelta,
+    Value<int?>? hintLevel,
+    Value<int?>? elapsedMs,
+    Value<String?>? confusedWithHanjaId,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return LocalHanjaPracticeEventsCompanion(
+      id: id ?? this.id,
+      studentKey: studentKey ?? this.studentKey,
+      hanjaId: hanjaId ?? this.hanjaId,
+      learningDate: learningDate ?? this.learningDate,
+      source: source ?? this.source,
+      activityType: activityType ?? this.activityType,
+      result: result ?? this.result,
+      weaknessType: weaknessType ?? this.weaknessType,
+      scoreDelta: scoreDelta ?? this.scoreDelta,
+      hintLevel: hintLevel ?? this.hintLevel,
+      elapsedMs: elapsedMs ?? this.elapsedMs,
+      confusedWithHanjaId: confusedWithHanjaId ?? this.confusedWithHanjaId,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (studentKey.present) {
+      map['student_key'] = Variable<String>(studentKey.value);
+    }
+    if (hanjaId.present) {
+      map['hanja_id'] = Variable<String>(hanjaId.value);
+    }
+    if (learningDate.present) {
+      map['learning_date'] = Variable<String>(learningDate.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (activityType.present) {
+      map['activity_type'] = Variable<String>(activityType.value);
+    }
+    if (result.present) {
+      map['result'] = Variable<String>(result.value);
+    }
+    if (weaknessType.present) {
+      map['weakness_type'] = Variable<String>(weaknessType.value);
+    }
+    if (scoreDelta.present) {
+      map['score_delta'] = Variable<int>(scoreDelta.value);
+    }
+    if (hintLevel.present) {
+      map['hint_level'] = Variable<int>(hintLevel.value);
+    }
+    if (elapsedMs.present) {
+      map['elapsed_ms'] = Variable<int>(elapsedMs.value);
+    }
+    if (confusedWithHanjaId.present) {
+      map['confused_with_hanja_id'] = Variable<String>(
+        confusedWithHanjaId.value,
+      );
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalHanjaPracticeEventsCompanion(')
+          ..write('id: $id, ')
+          ..write('studentKey: $studentKey, ')
+          ..write('hanjaId: $hanjaId, ')
+          ..write('learningDate: $learningDate, ')
+          ..write('source: $source, ')
+          ..write('activityType: $activityType, ')
+          ..write('result: $result, ')
+          ..write('weaknessType: $weaknessType, ')
+          ..write('scoreDelta: $scoreDelta, ')
+          ..write('hintLevel: $hintLevel, ')
+          ..write('elapsedMs: $elapsedMs, ')
+          ..write('confusedWithHanjaId: $confusedWithHanjaId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalHanjaWeaknessesTable extends LocalHanjaWeaknesses
+    with TableInfo<$LocalHanjaWeaknessesTable, LocalHanjaWeaknessesData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalHanjaWeaknessesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _studentKeyMeta = const VerificationMeta(
+    'studentKey',
+  );
+  @override
+  late final GeneratedColumn<String> studentKey = GeneratedColumn<String>(
+    'student_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _hanjaIdMeta = const VerificationMeta(
+    'hanjaId',
+  );
+  @override
+  late final GeneratedColumn<String> hanjaId = GeneratedColumn<String>(
+    'hanja_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weaknessTypeMeta = const VerificationMeta(
+    'weaknessType',
+  );
+  @override
+  late final GeneratedColumn<String> weaknessType = GeneratedColumn<String>(
+    'weakness_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scoreMeta = const VerificationMeta('score');
+  @override
+  late final GeneratedColumn<int> score = GeneratedColumn<int>(
+    'score',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mistakeCountMeta = const VerificationMeta(
+    'mistakeCount',
+  );
+  @override
+  late final GeneratedColumn<int> mistakeCount = GeneratedColumn<int>(
+    'mistake_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _successStreakMeta = const VerificationMeta(
+    'successStreak',
+  );
+  @override
+  late final GeneratedColumn<int> successStreak = GeneratedColumn<int>(
+    'success_streak',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastEventAtMeta = const VerificationMeta(
+    'lastEventAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastEventAt = GeneratedColumn<DateTime>(
+    'last_event_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _resolvedAtMeta = const VerificationMeta(
+    'resolvedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> resolvedAt = GeneratedColumn<DateTime>(
+    'resolved_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    studentKey,
+    hanjaId,
+    weaknessType,
+    score,
+    status,
+    mistakeCount,
+    successStreak,
+    lastEventAt,
+    resolvedAt,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_hanja_weaknesses';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalHanjaWeaknessesData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('student_key')) {
+      context.handle(
+        _studentKeyMeta,
+        studentKey.isAcceptableOrUnknown(data['student_key']!, _studentKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_studentKeyMeta);
+    }
+    if (data.containsKey('hanja_id')) {
+      context.handle(
+        _hanjaIdMeta,
+        hanjaId.isAcceptableOrUnknown(data['hanja_id']!, _hanjaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hanjaIdMeta);
+    }
+    if (data.containsKey('weakness_type')) {
+      context.handle(
+        _weaknessTypeMeta,
+        weaknessType.isAcceptableOrUnknown(
+          data['weakness_type']!,
+          _weaknessTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_weaknessTypeMeta);
+    }
+    if (data.containsKey('score')) {
+      context.handle(
+        _scoreMeta,
+        score.isAcceptableOrUnknown(data['score']!, _scoreMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_scoreMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('mistake_count')) {
+      context.handle(
+        _mistakeCountMeta,
+        mistakeCount.isAcceptableOrUnknown(
+          data['mistake_count']!,
+          _mistakeCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('success_streak')) {
+      context.handle(
+        _successStreakMeta,
+        successStreak.isAcceptableOrUnknown(
+          data['success_streak']!,
+          _successStreakMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_event_at')) {
+      context.handle(
+        _lastEventAtMeta,
+        lastEventAt.isAcceptableOrUnknown(
+          data['last_event_at']!,
+          _lastEventAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastEventAtMeta);
+    }
+    if (data.containsKey('resolved_at')) {
+      context.handle(
+        _resolvedAtMeta,
+        resolvedAt.isAcceptableOrUnknown(data['resolved_at']!, _resolvedAtMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {studentKey, hanjaId, weaknessType};
+  @override
+  LocalHanjaWeaknessesData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalHanjaWeaknessesData(
+      studentKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}student_key'],
+      )!,
+      hanjaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hanja_id'],
+      )!,
+      weaknessType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}weakness_type'],
+      )!,
+      score: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}score'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      mistakeCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}mistake_count'],
+      )!,
+      successStreak: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}success_streak'],
+      )!,
+      lastEventAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_event_at'],
+      )!,
+      resolvedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}resolved_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalHanjaWeaknessesTable createAlias(String alias) {
+    return $LocalHanjaWeaknessesTable(attachedDatabase, alias);
+  }
+}
+
+class LocalHanjaWeaknessesData extends DataClass
+    implements Insertable<LocalHanjaWeaknessesData> {
+  final String studentKey;
+  final String hanjaId;
+  final String weaknessType;
+  final int score;
+  final String status;
+  final int mistakeCount;
+  final int successStreak;
+  final DateTime lastEventAt;
+  final DateTime? resolvedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const LocalHanjaWeaknessesData({
+    required this.studentKey,
+    required this.hanjaId,
+    required this.weaknessType,
+    required this.score,
+    required this.status,
+    required this.mistakeCount,
+    required this.successStreak,
+    required this.lastEventAt,
+    this.resolvedAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['student_key'] = Variable<String>(studentKey);
+    map['hanja_id'] = Variable<String>(hanjaId);
+    map['weakness_type'] = Variable<String>(weaknessType);
+    map['score'] = Variable<int>(score);
+    map['status'] = Variable<String>(status);
+    map['mistake_count'] = Variable<int>(mistakeCount);
+    map['success_streak'] = Variable<int>(successStreak);
+    map['last_event_at'] = Variable<DateTime>(lastEventAt);
+    if (!nullToAbsent || resolvedAt != null) {
+      map['resolved_at'] = Variable<DateTime>(resolvedAt);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  LocalHanjaWeaknessesCompanion toCompanion(bool nullToAbsent) {
+    return LocalHanjaWeaknessesCompanion(
+      studentKey: Value(studentKey),
+      hanjaId: Value(hanjaId),
+      weaknessType: Value(weaknessType),
+      score: Value(score),
+      status: Value(status),
+      mistakeCount: Value(mistakeCount),
+      successStreak: Value(successStreak),
+      lastEventAt: Value(lastEventAt),
+      resolvedAt: resolvedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(resolvedAt),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory LocalHanjaWeaknessesData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalHanjaWeaknessesData(
+      studentKey: serializer.fromJson<String>(json['studentKey']),
+      hanjaId: serializer.fromJson<String>(json['hanjaId']),
+      weaknessType: serializer.fromJson<String>(json['weaknessType']),
+      score: serializer.fromJson<int>(json['score']),
+      status: serializer.fromJson<String>(json['status']),
+      mistakeCount: serializer.fromJson<int>(json['mistakeCount']),
+      successStreak: serializer.fromJson<int>(json['successStreak']),
+      lastEventAt: serializer.fromJson<DateTime>(json['lastEventAt']),
+      resolvedAt: serializer.fromJson<DateTime?>(json['resolvedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'studentKey': serializer.toJson<String>(studentKey),
+      'hanjaId': serializer.toJson<String>(hanjaId),
+      'weaknessType': serializer.toJson<String>(weaknessType),
+      'score': serializer.toJson<int>(score),
+      'status': serializer.toJson<String>(status),
+      'mistakeCount': serializer.toJson<int>(mistakeCount),
+      'successStreak': serializer.toJson<int>(successStreak),
+      'lastEventAt': serializer.toJson<DateTime>(lastEventAt),
+      'resolvedAt': serializer.toJson<DateTime?>(resolvedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  LocalHanjaWeaknessesData copyWith({
+    String? studentKey,
+    String? hanjaId,
+    String? weaknessType,
+    int? score,
+    String? status,
+    int? mistakeCount,
+    int? successStreak,
+    DateTime? lastEventAt,
+    Value<DateTime?> resolvedAt = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => LocalHanjaWeaknessesData(
+    studentKey: studentKey ?? this.studentKey,
+    hanjaId: hanjaId ?? this.hanjaId,
+    weaknessType: weaknessType ?? this.weaknessType,
+    score: score ?? this.score,
+    status: status ?? this.status,
+    mistakeCount: mistakeCount ?? this.mistakeCount,
+    successStreak: successStreak ?? this.successStreak,
+    lastEventAt: lastEventAt ?? this.lastEventAt,
+    resolvedAt: resolvedAt.present ? resolvedAt.value : this.resolvedAt,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  LocalHanjaWeaknessesData copyWithCompanion(
+    LocalHanjaWeaknessesCompanion data,
+  ) {
+    return LocalHanjaWeaknessesData(
+      studentKey: data.studentKey.present
+          ? data.studentKey.value
+          : this.studentKey,
+      hanjaId: data.hanjaId.present ? data.hanjaId.value : this.hanjaId,
+      weaknessType: data.weaknessType.present
+          ? data.weaknessType.value
+          : this.weaknessType,
+      score: data.score.present ? data.score.value : this.score,
+      status: data.status.present ? data.status.value : this.status,
+      mistakeCount: data.mistakeCount.present
+          ? data.mistakeCount.value
+          : this.mistakeCount,
+      successStreak: data.successStreak.present
+          ? data.successStreak.value
+          : this.successStreak,
+      lastEventAt: data.lastEventAt.present
+          ? data.lastEventAt.value
+          : this.lastEventAt,
+      resolvedAt: data.resolvedAt.present
+          ? data.resolvedAt.value
+          : this.resolvedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalHanjaWeaknessesData(')
+          ..write('studentKey: $studentKey, ')
+          ..write('hanjaId: $hanjaId, ')
+          ..write('weaknessType: $weaknessType, ')
+          ..write('score: $score, ')
+          ..write('status: $status, ')
+          ..write('mistakeCount: $mistakeCount, ')
+          ..write('successStreak: $successStreak, ')
+          ..write('lastEventAt: $lastEventAt, ')
+          ..write('resolvedAt: $resolvedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    studentKey,
+    hanjaId,
+    weaknessType,
+    score,
+    status,
+    mistakeCount,
+    successStreak,
+    lastEventAt,
+    resolvedAt,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalHanjaWeaknessesData &&
+          other.studentKey == this.studentKey &&
+          other.hanjaId == this.hanjaId &&
+          other.weaknessType == this.weaknessType &&
+          other.score == this.score &&
+          other.status == this.status &&
+          other.mistakeCount == this.mistakeCount &&
+          other.successStreak == this.successStreak &&
+          other.lastEventAt == this.lastEventAt &&
+          other.resolvedAt == this.resolvedAt &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class LocalHanjaWeaknessesCompanion
+    extends UpdateCompanion<LocalHanjaWeaknessesData> {
+  final Value<String> studentKey;
+  final Value<String> hanjaId;
+  final Value<String> weaknessType;
+  final Value<int> score;
+  final Value<String> status;
+  final Value<int> mistakeCount;
+  final Value<int> successStreak;
+  final Value<DateTime> lastEventAt;
+  final Value<DateTime?> resolvedAt;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const LocalHanjaWeaknessesCompanion({
+    this.studentKey = const Value.absent(),
+    this.hanjaId = const Value.absent(),
+    this.weaknessType = const Value.absent(),
+    this.score = const Value.absent(),
+    this.status = const Value.absent(),
+    this.mistakeCount = const Value.absent(),
+    this.successStreak = const Value.absent(),
+    this.lastEventAt = const Value.absent(),
+    this.resolvedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalHanjaWeaknessesCompanion.insert({
+    required String studentKey,
+    required String hanjaId,
+    required String weaknessType,
+    required int score,
+    required String status,
+    this.mistakeCount = const Value.absent(),
+    this.successStreak = const Value.absent(),
+    required DateTime lastEventAt,
+    this.resolvedAt = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : studentKey = Value(studentKey),
+       hanjaId = Value(hanjaId),
+       weaknessType = Value(weaknessType),
+       score = Value(score),
+       status = Value(status),
+       lastEventAt = Value(lastEventAt),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<LocalHanjaWeaknessesData> custom({
+    Expression<String>? studentKey,
+    Expression<String>? hanjaId,
+    Expression<String>? weaknessType,
+    Expression<int>? score,
+    Expression<String>? status,
+    Expression<int>? mistakeCount,
+    Expression<int>? successStreak,
+    Expression<DateTime>? lastEventAt,
+    Expression<DateTime>? resolvedAt,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (studentKey != null) 'student_key': studentKey,
+      if (hanjaId != null) 'hanja_id': hanjaId,
+      if (weaknessType != null) 'weakness_type': weaknessType,
+      if (score != null) 'score': score,
+      if (status != null) 'status': status,
+      if (mistakeCount != null) 'mistake_count': mistakeCount,
+      if (successStreak != null) 'success_streak': successStreak,
+      if (lastEventAt != null) 'last_event_at': lastEventAt,
+      if (resolvedAt != null) 'resolved_at': resolvedAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalHanjaWeaknessesCompanion copyWith({
+    Value<String>? studentKey,
+    Value<String>? hanjaId,
+    Value<String>? weaknessType,
+    Value<int>? score,
+    Value<String>? status,
+    Value<int>? mistakeCount,
+    Value<int>? successStreak,
+    Value<DateTime>? lastEventAt,
+    Value<DateTime?>? resolvedAt,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalHanjaWeaknessesCompanion(
+      studentKey: studentKey ?? this.studentKey,
+      hanjaId: hanjaId ?? this.hanjaId,
+      weaknessType: weaknessType ?? this.weaknessType,
+      score: score ?? this.score,
+      status: status ?? this.status,
+      mistakeCount: mistakeCount ?? this.mistakeCount,
+      successStreak: successStreak ?? this.successStreak,
+      lastEventAt: lastEventAt ?? this.lastEventAt,
+      resolvedAt: resolvedAt ?? this.resolvedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (studentKey.present) {
+      map['student_key'] = Variable<String>(studentKey.value);
+    }
+    if (hanjaId.present) {
+      map['hanja_id'] = Variable<String>(hanjaId.value);
+    }
+    if (weaknessType.present) {
+      map['weakness_type'] = Variable<String>(weaknessType.value);
+    }
+    if (score.present) {
+      map['score'] = Variable<int>(score.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (mistakeCount.present) {
+      map['mistake_count'] = Variable<int>(mistakeCount.value);
+    }
+    if (successStreak.present) {
+      map['success_streak'] = Variable<int>(successStreak.value);
+    }
+    if (lastEventAt.present) {
+      map['last_event_at'] = Variable<DateTime>(lastEventAt.value);
+    }
+    if (resolvedAt.present) {
+      map['resolved_at'] = Variable<DateTime>(resolvedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalHanjaWeaknessesCompanion(')
+          ..write('studentKey: $studentKey, ')
+          ..write('hanjaId: $hanjaId, ')
+          ..write('weaknessType: $weaknessType, ')
+          ..write('score: $score, ')
+          ..write('status: $status, ')
+          ..write('mistakeCount: $mistakeCount, ')
+          ..write('successStreak: $successStreak, ')
+          ..write('lastEventAt: $lastEventAt, ')
+          ..write('resolvedAt: $resolvedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $LocalGameResultsTable extends LocalGameResults
     with TableInfo<$LocalGameResultsTable, LocalGameResult> {
   @override
@@ -5109,6 +6582,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DailyLearningProgressTable dailyLearningProgress =
       $DailyLearningProgressTable(this);
   late final $LocalXpEventsTable localXpEvents = $LocalXpEventsTable(this);
+  late final $LocalHanjaPracticeEventsTable localHanjaPracticeEvents =
+      $LocalHanjaPracticeEventsTable(this);
+  late final $LocalHanjaWeaknessesTable localHanjaWeaknesses =
+      $LocalHanjaWeaknessesTable(this);
   late final $LocalGameResultsTable localGameResults = $LocalGameResultsTable(
     this,
   );
@@ -5137,6 +6614,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     dailyLearningProgress,
     localXpEvents,
+    localHanjaPracticeEvents,
+    localHanjaWeaknesses,
     localGameResults,
     localQuizResults,
     localChallengeResults,
@@ -5574,6 +7053,731 @@ typedef $$LocalXpEventsTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $LocalXpEventsTable, LocalXpEvent>,
       ),
       LocalXpEvent,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalHanjaPracticeEventsTableCreateCompanionBuilder =
+    LocalHanjaPracticeEventsCompanion Function({
+      required String id,
+      required String studentKey,
+      required String hanjaId,
+      required String learningDate,
+      required String source,
+      required String activityType,
+      required String result,
+      Value<String?> weaknessType,
+      Value<int> scoreDelta,
+      Value<int?> hintLevel,
+      Value<int?> elapsedMs,
+      Value<String?> confusedWithHanjaId,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$LocalHanjaPracticeEventsTableUpdateCompanionBuilder =
+    LocalHanjaPracticeEventsCompanion Function({
+      Value<String> id,
+      Value<String> studentKey,
+      Value<String> hanjaId,
+      Value<String> learningDate,
+      Value<String> source,
+      Value<String> activityType,
+      Value<String> result,
+      Value<String?> weaknessType,
+      Value<int> scoreDelta,
+      Value<int?> hintLevel,
+      Value<int?> elapsedMs,
+      Value<String?> confusedWithHanjaId,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$LocalHanjaPracticeEventsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalHanjaPracticeEventsTable> {
+  $$LocalHanjaPracticeEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get studentKey => $composableBuilder(
+    column: $table.studentKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hanjaId => $composableBuilder(
+    column: $table.hanjaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get learningDate => $composableBuilder(
+    column: $table.learningDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get result => $composableBuilder(
+    column: $table.result,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get weaknessType => $composableBuilder(
+    column: $table.weaknessType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get scoreDelta => $composableBuilder(
+    column: $table.scoreDelta,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get hintLevel => $composableBuilder(
+    column: $table.hintLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get elapsedMs => $composableBuilder(
+    column: $table.elapsedMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get confusedWithHanjaId => $composableBuilder(
+    column: $table.confusedWithHanjaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalHanjaPracticeEventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalHanjaPracticeEventsTable> {
+  $$LocalHanjaPracticeEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get studentKey => $composableBuilder(
+    column: $table.studentKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hanjaId => $composableBuilder(
+    column: $table.hanjaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get learningDate => $composableBuilder(
+    column: $table.learningDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get result => $composableBuilder(
+    column: $table.result,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get weaknessType => $composableBuilder(
+    column: $table.weaknessType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get scoreDelta => $composableBuilder(
+    column: $table.scoreDelta,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get hintLevel => $composableBuilder(
+    column: $table.hintLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get elapsedMs => $composableBuilder(
+    column: $table.elapsedMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get confusedWithHanjaId => $composableBuilder(
+    column: $table.confusedWithHanjaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalHanjaPracticeEventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalHanjaPracticeEventsTable> {
+  $$LocalHanjaPracticeEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get studentKey => $composableBuilder(
+    column: $table.studentKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get hanjaId =>
+      $composableBuilder(column: $table.hanjaId, builder: (column) => column);
+
+  GeneratedColumn<String> get learningDate => $composableBuilder(
+    column: $table.learningDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get result =>
+      $composableBuilder(column: $table.result, builder: (column) => column);
+
+  GeneratedColumn<String> get weaknessType => $composableBuilder(
+    column: $table.weaknessType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get scoreDelta => $composableBuilder(
+    column: $table.scoreDelta,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get hintLevel =>
+      $composableBuilder(column: $table.hintLevel, builder: (column) => column);
+
+  GeneratedColumn<int> get elapsedMs =>
+      $composableBuilder(column: $table.elapsedMs, builder: (column) => column);
+
+  GeneratedColumn<String> get confusedWithHanjaId => $composableBuilder(
+    column: $table.confusedWithHanjaId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$LocalHanjaPracticeEventsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalHanjaPracticeEventsTable,
+          LocalHanjaPracticeEvent,
+          $$LocalHanjaPracticeEventsTableFilterComposer,
+          $$LocalHanjaPracticeEventsTableOrderingComposer,
+          $$LocalHanjaPracticeEventsTableAnnotationComposer,
+          $$LocalHanjaPracticeEventsTableCreateCompanionBuilder,
+          $$LocalHanjaPracticeEventsTableUpdateCompanionBuilder,
+          (
+            LocalHanjaPracticeEvent,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalHanjaPracticeEventsTable,
+              LocalHanjaPracticeEvent
+            >,
+          ),
+          LocalHanjaPracticeEvent,
+          PrefetchHooks Function()
+        > {
+  $$LocalHanjaPracticeEventsTableTableManager(
+    _$AppDatabase db,
+    $LocalHanjaPracticeEventsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalHanjaPracticeEventsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$LocalHanjaPracticeEventsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalHanjaPracticeEventsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> studentKey = const Value.absent(),
+                Value<String> hanjaId = const Value.absent(),
+                Value<String> learningDate = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String> activityType = const Value.absent(),
+                Value<String> result = const Value.absent(),
+                Value<String?> weaknessType = const Value.absent(),
+                Value<int> scoreDelta = const Value.absent(),
+                Value<int?> hintLevel = const Value.absent(),
+                Value<int?> elapsedMs = const Value.absent(),
+                Value<String?> confusedWithHanjaId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalHanjaPracticeEventsCompanion(
+                id: id,
+                studentKey: studentKey,
+                hanjaId: hanjaId,
+                learningDate: learningDate,
+                source: source,
+                activityType: activityType,
+                result: result,
+                weaknessType: weaknessType,
+                scoreDelta: scoreDelta,
+                hintLevel: hintLevel,
+                elapsedMs: elapsedMs,
+                confusedWithHanjaId: confusedWithHanjaId,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String studentKey,
+                required String hanjaId,
+                required String learningDate,
+                required String source,
+                required String activityType,
+                required String result,
+                Value<String?> weaknessType = const Value.absent(),
+                Value<int> scoreDelta = const Value.absent(),
+                Value<int?> hintLevel = const Value.absent(),
+                Value<int?> elapsedMs = const Value.absent(),
+                Value<String?> confusedWithHanjaId = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalHanjaPracticeEventsCompanion.insert(
+                id: id,
+                studentKey: studentKey,
+                hanjaId: hanjaId,
+                learningDate: learningDate,
+                source: source,
+                activityType: activityType,
+                result: result,
+                weaknessType: weaknessType,
+                scoreDelta: scoreDelta,
+                hintLevel: hintLevel,
+                elapsedMs: elapsedMs,
+                confusedWithHanjaId: confusedWithHanjaId,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalHanjaPracticeEventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalHanjaPracticeEventsTable,
+      LocalHanjaPracticeEvent,
+      $$LocalHanjaPracticeEventsTableFilterComposer,
+      $$LocalHanjaPracticeEventsTableOrderingComposer,
+      $$LocalHanjaPracticeEventsTableAnnotationComposer,
+      $$LocalHanjaPracticeEventsTableCreateCompanionBuilder,
+      $$LocalHanjaPracticeEventsTableUpdateCompanionBuilder,
+      (
+        LocalHanjaPracticeEvent,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalHanjaPracticeEventsTable,
+          LocalHanjaPracticeEvent
+        >,
+      ),
+      LocalHanjaPracticeEvent,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalHanjaWeaknessesTableCreateCompanionBuilder =
+    LocalHanjaWeaknessesCompanion Function({
+      required String studentKey,
+      required String hanjaId,
+      required String weaknessType,
+      required int score,
+      required String status,
+      Value<int> mistakeCount,
+      Value<int> successStreak,
+      required DateTime lastEventAt,
+      Value<DateTime?> resolvedAt,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalHanjaWeaknessesTableUpdateCompanionBuilder =
+    LocalHanjaWeaknessesCompanion Function({
+      Value<String> studentKey,
+      Value<String> hanjaId,
+      Value<String> weaknessType,
+      Value<int> score,
+      Value<String> status,
+      Value<int> mistakeCount,
+      Value<int> successStreak,
+      Value<DateTime> lastEventAt,
+      Value<DateTime?> resolvedAt,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalHanjaWeaknessesTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalHanjaWeaknessesTable> {
+  $$LocalHanjaWeaknessesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get studentKey => $composableBuilder(
+    column: $table.studentKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hanjaId => $composableBuilder(
+    column: $table.hanjaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get weaknessType => $composableBuilder(
+    column: $table.weaknessType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get score => $composableBuilder(
+    column: $table.score,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mistakeCount => $composableBuilder(
+    column: $table.mistakeCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get successStreak => $composableBuilder(
+    column: $table.successStreak,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastEventAt => $composableBuilder(
+    column: $table.lastEventAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get resolvedAt => $composableBuilder(
+    column: $table.resolvedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalHanjaWeaknessesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalHanjaWeaknessesTable> {
+  $$LocalHanjaWeaknessesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get studentKey => $composableBuilder(
+    column: $table.studentKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hanjaId => $composableBuilder(
+    column: $table.hanjaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get weaknessType => $composableBuilder(
+    column: $table.weaknessType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get score => $composableBuilder(
+    column: $table.score,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mistakeCount => $composableBuilder(
+    column: $table.mistakeCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get successStreak => $composableBuilder(
+    column: $table.successStreak,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastEventAt => $composableBuilder(
+    column: $table.lastEventAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get resolvedAt => $composableBuilder(
+    column: $table.resolvedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalHanjaWeaknessesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalHanjaWeaknessesTable> {
+  $$LocalHanjaWeaknessesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get studentKey => $composableBuilder(
+    column: $table.studentKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get hanjaId =>
+      $composableBuilder(column: $table.hanjaId, builder: (column) => column);
+
+  GeneratedColumn<String> get weaknessType => $composableBuilder(
+    column: $table.weaknessType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get score =>
+      $composableBuilder(column: $table.score, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get mistakeCount => $composableBuilder(
+    column: $table.mistakeCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get successStreak => $composableBuilder(
+    column: $table.successStreak,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastEventAt => $composableBuilder(
+    column: $table.lastEventAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get resolvedAt => $composableBuilder(
+    column: $table.resolvedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$LocalHanjaWeaknessesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalHanjaWeaknessesTable,
+          LocalHanjaWeaknessesData,
+          $$LocalHanjaWeaknessesTableFilterComposer,
+          $$LocalHanjaWeaknessesTableOrderingComposer,
+          $$LocalHanjaWeaknessesTableAnnotationComposer,
+          $$LocalHanjaWeaknessesTableCreateCompanionBuilder,
+          $$LocalHanjaWeaknessesTableUpdateCompanionBuilder,
+          (
+            LocalHanjaWeaknessesData,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalHanjaWeaknessesTable,
+              LocalHanjaWeaknessesData
+            >,
+          ),
+          LocalHanjaWeaknessesData,
+          PrefetchHooks Function()
+        > {
+  $$LocalHanjaWeaknessesTableTableManager(
+    _$AppDatabase db,
+    $LocalHanjaWeaknessesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalHanjaWeaknessesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalHanjaWeaknessesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalHanjaWeaknessesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> studentKey = const Value.absent(),
+                Value<String> hanjaId = const Value.absent(),
+                Value<String> weaknessType = const Value.absent(),
+                Value<int> score = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> mistakeCount = const Value.absent(),
+                Value<int> successStreak = const Value.absent(),
+                Value<DateTime> lastEventAt = const Value.absent(),
+                Value<DateTime?> resolvedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalHanjaWeaknessesCompanion(
+                studentKey: studentKey,
+                hanjaId: hanjaId,
+                weaknessType: weaknessType,
+                score: score,
+                status: status,
+                mistakeCount: mistakeCount,
+                successStreak: successStreak,
+                lastEventAt: lastEventAt,
+                resolvedAt: resolvedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String studentKey,
+                required String hanjaId,
+                required String weaknessType,
+                required int score,
+                required String status,
+                Value<int> mistakeCount = const Value.absent(),
+                Value<int> successStreak = const Value.absent(),
+                required DateTime lastEventAt,
+                Value<DateTime?> resolvedAt = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalHanjaWeaknessesCompanion.insert(
+                studentKey: studentKey,
+                hanjaId: hanjaId,
+                weaknessType: weaknessType,
+                score: score,
+                status: status,
+                mistakeCount: mistakeCount,
+                successStreak: successStreak,
+                lastEventAt: lastEventAt,
+                resolvedAt: resolvedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalHanjaWeaknessesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalHanjaWeaknessesTable,
+      LocalHanjaWeaknessesData,
+      $$LocalHanjaWeaknessesTableFilterComposer,
+      $$LocalHanjaWeaknessesTableOrderingComposer,
+      $$LocalHanjaWeaknessesTableAnnotationComposer,
+      $$LocalHanjaWeaknessesTableCreateCompanionBuilder,
+      $$LocalHanjaWeaknessesTableUpdateCompanionBuilder,
+      (
+        LocalHanjaWeaknessesData,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalHanjaWeaknessesTable,
+          LocalHanjaWeaknessesData
+        >,
+      ),
+      LocalHanjaWeaknessesData,
       PrefetchHooks Function()
     >;
 typedef $$LocalGameResultsTableCreateCompanionBuilder =
@@ -7908,6 +10112,13 @@ class $AppDatabaseManager {
       $$DailyLearningProgressTableTableManager(_db, _db.dailyLearningProgress);
   $$LocalXpEventsTableTableManager get localXpEvents =>
       $$LocalXpEventsTableTableManager(_db, _db.localXpEvents);
+  $$LocalHanjaPracticeEventsTableTableManager get localHanjaPracticeEvents =>
+      $$LocalHanjaPracticeEventsTableTableManager(
+        _db,
+        _db.localHanjaPracticeEvents,
+      );
+  $$LocalHanjaWeaknessesTableTableManager get localHanjaWeaknesses =>
+      $$LocalHanjaWeaknessesTableTableManager(_db, _db.localHanjaWeaknesses);
   $$LocalGameResultsTableTableManager get localGameResults =>
       $$LocalGameResultsTableTableManager(_db, _db.localGameResults);
   $$LocalQuizResultsTableTableManager get localQuizResults =>

@@ -25,6 +25,42 @@ class LocalXpEvents extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class LocalHanjaPracticeEvents extends Table {
+  TextColumn get id => text()();
+  TextColumn get studentKey => text()();
+  TextColumn get hanjaId => text()();
+  TextColumn get learningDate => text()();
+  TextColumn get source => text()();
+  TextColumn get activityType => text()();
+  TextColumn get result => text()();
+  TextColumn get weaknessType => text().nullable()();
+  IntColumn get scoreDelta => integer().withDefault(const Constant(0))();
+  IntColumn get hintLevel => integer().nullable()();
+  IntColumn get elapsedMs => integer().nullable()();
+  TextColumn get confusedWithHanjaId => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class LocalHanjaWeaknesses extends Table {
+  TextColumn get studentKey => text()();
+  TextColumn get hanjaId => text()();
+  TextColumn get weaknessType => text()();
+  IntColumn get score => integer()();
+  TextColumn get status => text()();
+  IntColumn get mistakeCount => integer().withDefault(const Constant(0))();
+  IntColumn get successStreak => integer().withDefault(const Constant(0))();
+  DateTimeColumn get lastEventAt => dateTime()();
+  DateTimeColumn get resolvedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {studentKey, hanjaId, weaknessType};
+}
+
 class LocalGameResults extends Table {
   TextColumn get id => text()();
   TextColumn get studentKey => text()();
@@ -150,6 +186,8 @@ class LocalPendingSyncOperations extends Table {
   tables: [
     DailyLearningProgress,
     LocalXpEvents,
+    LocalHanjaPracticeEvents,
+    LocalHanjaWeaknesses,
     LocalGameResults,
     LocalQuizResults,
     LocalChallengeResults,
@@ -166,7 +204,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'hanja_soook'));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -199,6 +237,10 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 10) {
         await migrator.createTable(localPendingSyncOperations);
+      }
+      if (from < 11) {
+        await migrator.createTable(localHanjaPracticeEvents);
+        await migrator.createTable(localHanjaWeaknesses);
       }
     },
   );
@@ -274,6 +316,148 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
     return true;
+  }
+
+  Future<void> saveHanjaPracticeEvent({
+    required String id,
+    required String studentKey,
+    required String hanjaId,
+    required String learningDate,
+    required String source,
+    required String activityType,
+    required String result,
+    required int scoreDelta,
+    required DateTime createdAt,
+    String? weaknessType,
+    int? hintLevel,
+    int? elapsedMs,
+    String? confusedWithHanjaId,
+  }) async {
+    await into(localHanjaPracticeEvents).insert(
+      LocalHanjaPracticeEventsCompanion.insert(
+        id: id,
+        studentKey: studentKey,
+        hanjaId: hanjaId,
+        learningDate: learningDate,
+        source: source,
+        activityType: activityType,
+        result: result,
+        weaknessType: Value(weaknessType),
+        scoreDelta: Value(scoreDelta),
+        hintLevel: Value(hintLevel),
+        elapsedMs: Value(elapsedMs),
+        confusedWithHanjaId: Value(confusedWithHanjaId),
+        createdAt: createdAt,
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
+  }
+
+  Future<List<LocalHanjaPracticeEvent>> getHanjaPracticeEventsForHanja({
+    required String studentKey,
+    required String hanjaId,
+  }) {
+    return (select(localHanjaPracticeEvents)
+          ..where((row) => row.studentKey.equals(studentKey))
+          ..where((row) => row.hanjaId.equals(hanjaId))
+          ..orderBy([
+            (row) =>
+                OrderingTerm(expression: row.createdAt, mode: OrderingMode.asc),
+          ]))
+        .get();
+  }
+
+  Future<LocalHanjaWeaknessesData?> getHanjaWeakness({
+    required String studentKey,
+    required String hanjaId,
+    required String weaknessType,
+  }) {
+    return (select(localHanjaWeaknesses)
+          ..where((row) => row.studentKey.equals(studentKey))
+          ..where((row) => row.hanjaId.equals(hanjaId))
+          ..where((row) => row.weaknessType.equals(weaknessType)))
+        .getSingleOrNull();
+  }
+
+  Future<void> upsertHanjaWeakness({
+    required String studentKey,
+    required String hanjaId,
+    required String weaknessType,
+    required int score,
+    required String status,
+    required int mistakeCount,
+    required int successStreak,
+    required DateTime lastEventAt,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    DateTime? resolvedAt,
+  }) async {
+    await into(localHanjaWeaknesses).insert(
+      LocalHanjaWeaknessesCompanion.insert(
+        studentKey: studentKey,
+        hanjaId: hanjaId,
+        weaknessType: weaknessType,
+        score: score,
+        status: status,
+        mistakeCount: Value(mistakeCount),
+        successStreak: Value(successStreak),
+        lastEventAt: lastEventAt,
+        resolvedAt: Value(resolvedAt),
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      ),
+      mode: InsertMode.insertOrReplace,
+    );
+  }
+
+  Future<List<LocalHanjaWeaknessesData>> getActiveHanjaWeaknesses({
+    required String studentKey,
+  }) {
+    return (select(localHanjaWeaknesses)
+          ..where((row) => row.studentKey.equals(studentKey))
+          ..where((row) => row.status.equals('active'))
+          ..orderBy([
+            (row) =>
+                OrderingTerm(expression: row.score, mode: OrderingMode.desc),
+            (row) => OrderingTerm(
+              expression: row.lastEventAt,
+              mode: OrderingMode.desc,
+            ),
+          ]))
+        .get();
+  }
+
+  Future<List<LocalHanjaWeaknessesData>> getHanjaWeaknessesForHanjaIds({
+    required String studentKey,
+    required Set<String> hanjaIds,
+  }) {
+    if (hanjaIds.isEmpty) {
+      return Future.value(const []);
+    }
+    return (select(localHanjaWeaknesses)
+          ..where((row) => row.studentKey.equals(studentKey))
+          ..where((row) => row.hanjaId.isIn(hanjaIds)))
+        .get();
+  }
+
+  Future<void> markHanjaWeaknessResolved({
+    required String studentKey,
+    required String hanjaId,
+    required String weaknessType,
+    required DateTime resolvedAt,
+  }) {
+    return (update(localHanjaWeaknesses)
+          ..where((row) => row.studentKey.equals(studentKey))
+          ..where((row) => row.hanjaId.equals(hanjaId))
+          ..where((row) => row.weaknessType.equals(weaknessType)))
+        .write(
+          LocalHanjaWeaknessesCompanion(
+            score: const Value(0),
+            status: const Value('resolved'),
+            resolvedAt: Value(resolvedAt),
+            updatedAt: Value(resolvedAt),
+          ),
+        );
   }
 
   Future<int> getTotalXp({required String studentKey}) async {

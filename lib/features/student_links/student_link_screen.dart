@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -118,8 +117,6 @@ class _StudentLinkScreenState extends ConsumerState<StudentLinkScreen> {
     }
 
     return [
-      _StudentCodePanel(code: data.currentStudentCode),
-      const SizedBox(height: 16),
       _ClassJoinPanel(
         data: data,
         controller: _classCodeController,
@@ -159,7 +156,7 @@ class _StudentLinkScreenState extends ConsumerState<StudentLinkScreen> {
     return switch (role) {
       'parent' => '학생 연결 코드로 아이를 연결해요',
       'teacher' => '선생님 도구에서 반 코드를 관리해요',
-      _ => '내 학생 연결 코드와 참여한 반을 관리해요',
+      _ => '선생님이 알려준 반 코드로 참여해요',
     };
   }
 }
@@ -332,42 +329,6 @@ void _showSnack(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
   );
-}
-
-class _StudentCodePanel extends StatelessWidget {
-  const _StudentCodePanel({required this.code});
-
-  final String? code;
-
-  @override
-  Widget build(BuildContext context) {
-    final code = this.code;
-    return PlayfulPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            '내 학생 연결 코드',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 12),
-          if (code == null)
-            const Text('학생 정보 입력 후 연결 코드를 만들 수 있습니다.')
-          else ...[
-            SelectableText(code),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => Clipboard.setData(ClipboardData(text: code)),
-              icon: const Icon(Icons.copy),
-              label: const Text('코드 복사'),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 }
 
 class _LinkedStudentsPanel extends StatelessWidget {

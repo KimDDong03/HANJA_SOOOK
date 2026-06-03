@@ -184,7 +184,7 @@ class ChallengeSummaryState {
       ChallengeMode.quizMixed =>
         '퀴즈 ${result.correctCount}/${result.totalCount}',
       ChallengeMode.speedChoice =>
-        '속도 ${result.correctCount}/${result.totalCount}',
+        '스피드 퀴즈 ${result.correctCount}/${result.totalCount}',
       ChallengeMode.flipBoard => '판뒤집기 ${result.flippedTileCount}판',
     };
   }

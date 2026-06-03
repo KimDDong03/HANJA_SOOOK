@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hanja_soook/data/repositories/class_room_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/school_repository_provider.dart';
+import 'package:hanja_soook/data/repositories/student_link_repository_provider.dart';
 import 'package:hanja_soook/domain/models/app_user_profile.dart';
+import 'package:hanja_soook/domain/models/class_room.dart';
 import 'package:hanja_soook/domain/models/school.dart';
+import 'package:hanja_soook/domain/models/student_link.dart';
+import 'package:hanja_soook/domain/repositories/class_room_repository.dart';
 import 'package:hanja_soook/domain/repositories/school_repository.dart';
+import 'package:hanja_soook/domain/repositories/student_link_repository.dart';
 import 'package:hanja_soook/features/auth/current_profile_controller.dart';
 import 'package:hanja_soook/features/settings/settings_screen.dart';
 
@@ -30,11 +36,50 @@ void main() {
     );
   });
 
+  testWidgets('student settings opens own student link code sheet', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          schoolRepositoryProvider.overrideWithValue(_FakeSchoolRepository()),
+          classRoomRepositoryProvider.overrideWithValue(
+            _FakeClassRoomRepository(),
+          ),
+          studentLinkRepositoryProvider.overrideWithValue(
+            _FakeStudentLinkRepository(),
+          ),
+        ],
+        child: const MaterialApp(
+          home: _SeedProfile(child: SettingsScreen(role: 'student')),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('내 학생 연결 코드'), findsOneWidget);
+
+    await tester.tap(find.text('내 학생 연결 코드'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('보호자에게 이 코드를 전달하면 보호자 기기에서 학생을 연결할 수 있어요.'),
+      findsOneWidget,
+    );
+    expect(find.text('코드 복사'), findsOneWidget);
+  });
+
   testWidgets('student can edit name grade school and avatar', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           schoolRepositoryProvider.overrideWithValue(_FakeSchoolRepository()),
+          classRoomRepositoryProvider.overrideWithValue(
+            _FakeClassRoomRepository(),
+          ),
+          studentLinkRepositoryProvider.overrideWithValue(
+            _FakeStudentLinkRepository(),
+          ),
         ],
         child: const MaterialApp(
           home: _SeedProfile(child: SettingsScreen(role: 'student')),
@@ -151,6 +196,34 @@ class _FakeSchoolRepository implements SchoolRepository {
 
   @override
   Future<void> signOut() async {}
+}
+
+class _FakeStudentLinkRepository implements StudentLinkRepository {
+  @override
+  Future<List<StudentLink>> getStudentLinks({
+    required String relationType,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<void> saveStudentLink(StudentLink link) async {}
+}
+
+class _FakeClassRoomRepository implements ClassRoomRepository {
+  @override
+  Future<List<ClassRoom>> getClasses() async => const [];
+
+  @override
+  Future<List<ClassMember>> getClassMembers({required String classId}) async {
+    return const [];
+  }
+
+  @override
+  Future<void> saveClass(ClassRoom classRoom) async {}
+
+  @override
+  Future<void> saveClassMember(ClassMember member) async {}
 }
 
 const _school = School(

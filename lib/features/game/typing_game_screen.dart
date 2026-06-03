@@ -65,7 +65,7 @@ class _ChallengeLockedView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PlayfulPage(
-      title: '스피드 한자 선택',
+      title: '스피드 퀴즈',
       subtitle: '배운 한자로 도전해요',
       children: [
         PlayfulPanel(
@@ -129,8 +129,8 @@ class _GameRoundViewState extends ConsumerState<_GameRoundView> {
       alignment: Alignment.center,
       children: [
         PlayfulPage(
-          title: '스피드 한자 선택',
-          subtitle: '라운드 ${data.currentIndex + 1}/${data.totalCount}',
+          title: '스피드 퀴즈',
+          subtitle: '문제 ${data.currentIndex + 1}/${data.totalCount}',
           children: [
             LinearProgressIndicator(
               value: (data.currentIndex + 1) / data.totalCount,
@@ -175,12 +175,15 @@ class _GameRoundViewState extends ConsumerState<_GameRoundView> {
                     round.prompt,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontFamily: round.promptUsesHanjaFont
+                          ? AppFonts.hanjaSerif
+                          : null,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '빠르게 고를수록 콤보 점수가 올라가요.',
+                    '시간 안에 많이 맞혀요. 오답은 점수가 깎여요.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
@@ -194,6 +197,7 @@ class _GameRoundViewState extends ConsumerState<_GameRoundView> {
                 isCorrect: data.isCorrectOption(option),
                 isSelected: data.isSelectedOption(option),
                 hasSelection: selectedAnswer != null,
+                useHanjaFont: round.optionsUseHanjaFont,
                 onPressed: () => _selectAnswer(option),
               ),
               const SizedBox(height: 8),
@@ -207,10 +211,12 @@ class _GameRoundViewState extends ConsumerState<_GameRoundView> {
                   context,
                 ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w900),
               ),
-            ] else if (selectedAnswer != null && data.lastEarnedScore > 0) ...[
+            ] else if (selectedAnswer != null && data.lastEarnedScore != 0) ...[
               const SizedBox(height: 8),
               Text(
-                '+${data.lastEarnedScore}점',
+                data.lastEarnedScore > 0
+                    ? '+${data.lastEarnedScore}점'
+                    : '${data.lastEarnedScore}점',
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -219,19 +225,9 @@ class _GameRoundViewState extends ConsumerState<_GameRoundView> {
             ],
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: selectedAnswer == null
-                  ? () => _showSnack(context, '답을 먼저 골라주세요.')
-                  : data.isSelectedCorrect
-                  ? null
-                  : ref.read(typingGameProvider.notifier).goNextOrSave,
+              onPressed: null,
               icon: Icon(data.isLastRound ? Icons.emoji_events : Icons.gamepad),
-              label: Text(
-                data.isSelectedCorrect
-                    ? '다음으로 이동 중'
-                    : data.isLastRound
-                    ? '결과 저장'
-                    : '다음 라운드',
-              ),
+              label: Text(selectedAnswer == null ? '빠르게 답을 골라요' : '다음으로 이동 중'),
             ),
           ],
         ),
@@ -252,23 +248,26 @@ class _GameRoundViewState extends ConsumerState<_GameRoundView> {
       _isFeedbackSuccess = isCorrect;
     });
     if (!isCorrect) {
-      Future<void>.delayed(const Duration(milliseconds: 900), () {
-        if (!mounted) {
-          return;
-        }
-        setState(() => _showFeedbackPopup = false);
-      });
+      _scheduleAutoAdvance();
       return;
     }
     if (_isAutoAdvancing) {
       return;
     }
-    setState(() => _isAutoAdvancing = true);
     ref.read(appAudioControllerProvider).playSuccess();
-    Future<void>.delayed(const Duration(milliseconds: 620), () {
+    _scheduleAutoAdvance();
+  }
+
+  void _scheduleAutoAdvance() {
+    if (_isAutoAdvancing) {
+      return;
+    }
+    setState(() => _isAutoAdvancing = true);
+    Future<void>.delayed(const Duration(milliseconds: 520), () {
       if (!mounted) {
         return;
       }
+      setState(() => _showFeedbackPopup = false);
       ref.read(typingGameProvider.notifier).goNextOrSave();
     });
   }
@@ -280,6 +279,7 @@ class _AnswerButton extends StatelessWidget {
     required this.isCorrect,
     required this.isSelected,
     required this.hasSelection,
+    required this.useHanjaFont,
     required this.onPressed,
   });
 
@@ -287,6 +287,7 @@ class _AnswerButton extends StatelessWidget {
   final bool isCorrect;
   final bool isSelected;
   final bool hasSelection;
+  final bool useHanjaFont;
   final VoidCallback onPressed;
 
   @override
@@ -300,7 +301,7 @@ class _AnswerButton extends StatelessWidget {
         minimumSize: const Size.fromHeight(72),
         backgroundColor: !hasSelection
             ? null
-            : isCorrect
+            : isSelected && isCorrect
             ? Theme.of(context).colorScheme.primaryContainer
             : isSelected
             ? Theme.of(context).colorScheme.errorContainer
@@ -308,11 +309,11 @@ class _AnswerButton extends StatelessWidget {
       ),
       child: Text(
         option,
-        style: const TextStyle(
-          fontFamily: AppFonts.hanjaSerif,
-          fontSize: 36,
+        style: TextStyle(
+          fontFamily: useHanjaFont ? AppFonts.hanjaSerif : null,
+          fontSize: useHanjaFont ? 36 : 22,
           fontWeight: FontWeight.w800,
-          color: Color(0xFF10201A),
+          color: const Color(0xFF10201A),
           height: 1,
         ),
       ),
@@ -336,7 +337,7 @@ class _GameCompleteView extends StatelessWidget {
     final result = data.savedResult!;
 
     return PlayfulPage(
-      title: '게임 완료',
+      title: '스피드 퀴즈 완료',
       subtitle: '속도 도전 보상을 확인해요',
       showMascot: true,
       children: [

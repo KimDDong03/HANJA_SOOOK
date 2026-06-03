@@ -124,11 +124,14 @@ Initialize Supabase safely.
 - `SUPABASE_URL` from `--dart-define`
 - `SUPABASE_ANON_KEY` from `--dart-define`
 - `APP_ENV` from `--dart-define`, default `demo`
+- Flutter run/build commands must pass the root `.env` file with
+  `--dart-define-from-file=.env`.
 - `SupabaseClient` exposed only through provider/data layer
 
 ### Acceptance
 
 - App gives clear error if env missing.
+- App run/build instructions include `--dart-define-from-file=.env`.
 - UI does not call Supabase directly.
 - `flutter analyze` passes.
 

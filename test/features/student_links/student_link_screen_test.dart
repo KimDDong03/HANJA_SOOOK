@@ -41,7 +41,7 @@ void main() {
       await _pumpUntilFound(tester, find.text('반 코드로 참여하기'));
 
       expect(find.text('학습 연결'), findsOneWidget);
-      expect(find.text('내 학생 연결 코드'), findsOneWidget);
+      expect(find.text('내 학생 연결 코드'), findsNothing);
       expect(find.text('반 코드로 참여하기'), findsOneWidget);
       expect(find.text('3학년 1반'), findsOneWidget);
       expect(find.text('랭킹 보기'), findsOneWidget);
@@ -49,10 +49,8 @@ void main() {
       expect(find.text('보호자 연결'), findsNothing);
       expect(find.text('연결된 학생'), findsNothing);
 
-      final studentCodeTop = tester.getTopLeft(find.text('내 학생 연결 코드')).dy;
       final classJoinTop = tester.getTopLeft(find.text('반 코드로 참여하기')).dy;
       final joinedClassTop = tester.getTopLeft(find.text('참여한 반')).dy;
-      expect(studentCodeTop, lessThan(classJoinTop));
       expect(classJoinTop, lessThan(joinedClassTop));
     },
   );

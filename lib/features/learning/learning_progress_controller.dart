@@ -22,6 +22,7 @@ class LearningProgressController {
   Future<LearningCompletionResult> markHanjaCompleted({
     required String hanjaId,
     required Set<String> todayHanjaIds,
+    Set<String>? rewardEligibleHanjaIds,
   }) async {
     final normalizedId = hanjaId.trim();
     if (normalizedId.isEmpty) {
@@ -35,6 +36,19 @@ class LearningProgressController {
     final studentKey = currentStudentKey(_ref);
     final learningDate = currentLearningDate();
     final repository = _ref.read(learningProgressRepositoryProvider);
+    final completedBeforeStudentIds = await repository
+        .getCompletedHanjaIdsForStudent(studentKey: studentKey);
+    final eligibleRewardIds =
+        (rewardEligibleHanjaIds ??
+                todayHanjaIds.where(
+                  (id) => !completedBeforeStudentIds.contains(id),
+                ))
+            .map((id) => id.trim())
+            .where((id) => id.isNotEmpty)
+            .toSet();
+    final wasAlreadyCompletedForStudent = completedBeforeStudentIds.contains(
+      normalizedId,
+    );
     final wasNewlyCompleted = await repository.markHanjaCompleted(
       studentKey: studentKey,
       learningDate: learningDate,
@@ -42,7 +56,9 @@ class LearningProgressController {
     );
 
     var earnedXp = 0;
-    if (wasNewlyCompleted) {
+    if (wasNewlyCompleted &&
+        !wasAlreadyCompletedForStudent &&
+        eligibleRewardIds.contains(normalizedId)) {
       final writingXp = _xpService.writingCompletionXp();
       final wroteWritingXp = await repository.addXpEvent(
         id: '$studentKey-$learningDate-writing-$normalizedId',
@@ -67,15 +83,17 @@ class LearningProgressController {
 
     if (totalCount > 0 && completedTodayCount >= totalCount) {
       final bonusXp = _xpService.dailyCompletionBonusXp();
-      final wroteBonus = await repository.addXpEvent(
-        id: '$studentKey-$learningDate-daily-complete',
-        studentKey: studentKey,
-        source: XpService.dailyCompletionSource,
-        amount: bonusXp,
-        refId: learningDate,
-      );
-      if (wroteBonus) {
-        earnedXp += bonusXp;
+      if (eligibleRewardIds.isNotEmpty) {
+        final wroteBonus = await repository.addXpEvent(
+          id: '$studentKey-$learningDate-daily-complete',
+          studentKey: studentKey,
+          source: XpService.dailyCompletionSource,
+          amount: bonusXp,
+          refId: learningDate,
+        );
+        if (wroteBonus) {
+          earnedXp += bonusXp;
+        }
       }
     }
 

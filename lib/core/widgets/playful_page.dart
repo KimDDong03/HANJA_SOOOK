@@ -13,6 +13,8 @@ class PlayfulPage extends StatelessWidget {
     this.trailing,
     this.showMascot = false,
     this.showHeader = true,
+    this.compactHeader = false,
+    this.scrollable = true,
     this.padding = const EdgeInsets.fromLTRB(20, 8, 20, 28),
     this.physics,
   });
@@ -24,30 +26,38 @@ class PlayfulPage extends StatelessWidget {
   final Widget? trailing;
   final bool showMascot;
   final bool showHeader;
+  final bool compactHeader;
+  final bool scrollable;
   final EdgeInsetsGeometry padding;
   final ScrollPhysics? physics;
 
   @override
   Widget build(BuildContext context) {
+    final content = [
+      if (showHeader) ...[
+        _PlayfulHeader(
+          title: title,
+          subtitle: subtitle,
+          leading: leading,
+          trailing: trailing,
+          showMascot: showMascot,
+          compact: compactHeader,
+        ),
+        SizedBox(height: compactHeader ? 10 : 18),
+      ],
+      ...children,
+    ];
     return const _PageBackground(child: SizedBox.expand()).withContent(
       SafeArea(
-        child: ListView(
-          padding: padding,
-          physics: physics,
-          children: [
-            if (showHeader) ...[
-              _PlayfulHeader(
-                title: title,
-                subtitle: subtitle,
-                leading: leading,
-                trailing: trailing,
-                showMascot: showMascot,
+        child: scrollable
+            ? ListView(padding: padding, physics: physics, children: content)
+            : Padding(
+                padding: padding,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: content,
+                ),
               ),
-              const SizedBox(height: 18),
-            ],
-            ...children,
-          ],
-        ),
       ),
     );
   }
@@ -235,6 +245,7 @@ class _PlayfulHeader extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.showMascot,
+    required this.compact,
     this.leading,
     this.trailing,
   });
@@ -244,13 +255,14 @@ class _PlayfulHeader extends StatelessWidget {
   final Widget? leading;
   final Widget? trailing;
   final bool showMascot;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final canPop = Navigator.canPop(context);
     final hasSubtitle = subtitle.trim().isNotEmpty;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(6, 18, 6, 2),
+      padding: EdgeInsets.fromLTRB(6, compact ? 8 : 18, 6, 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -267,19 +279,27 @@ class _PlayfulHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style:
+                      (compact
+                              ? Theme.of(context).textTheme.headlineSmall
+                              : Theme.of(context).textTheme.headlineMedium)
+                          ?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w900,
+                          ),
                 ),
                 if (hasSubtitle) ...[
-                  const SizedBox(height: 6),
+                  SizedBox(height: compact ? 3 : 6),
                   Text(
                     subtitle,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style:
+                        (compact
+                                ? Theme.of(context).textTheme.bodyMedium
+                                : Theme.of(context).textTheme.bodyLarge)
+                            ?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w700,
+                            ),
                   ),
                 ],
               ],
@@ -290,8 +310,8 @@ class _PlayfulHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(22),
               child: Image.asset(
                 'assets/images/hanja_mascot.png',
-                width: 86,
-                height: 86,
+                width: compact ? 68 : 86,
+                height: compact ? 68 : 86,
                 fit: BoxFit.cover,
               ),
             )

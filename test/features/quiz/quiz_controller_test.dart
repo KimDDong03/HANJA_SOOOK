@@ -17,57 +17,38 @@ import 'package:hanja_soook/features/quiz/quiz_controller.dart';
 
 void main() {
   test(
-    'QuizController builds hanja-to-sound questions from learned set',
+    'QuizController builds hanja-to-hun questions from learned set',
     () async {
       final container = _quizContainer();
       addTearDown(container.dispose);
 
       final state = await container.read(
-        quizProvider(QuizPlayMode.hanjaToSound).future,
+        quizProvider(QuizPlayMode.hanjaToHun).future,
       );
 
-      expect(state.mode, QuizPlayMode.hanjaToSound);
-      expect(state.questions, hasLength(6));
-      expect(state.questions.first.type, QuizQuestionType.soundChoice);
-      expect(state.questions.first.prompt, '山');
-      expect(state.questions.first.correctAnswer, '산');
-      expect(state.questions.first.options, contains('산'));
-    },
-  );
-
-  test(
-    'QuizController builds hanja-to-meaning questions from learned set',
-    () async {
-      final container = _quizContainer();
-      addTearDown(container.dispose);
-
-      final state = await container.read(
-        quizProvider(QuizPlayMode.hanjaToMeaning).future,
-      );
-
-      expect(state.mode, QuizPlayMode.hanjaToMeaning);
+      expect(state.mode, QuizPlayMode.hanjaToHun);
       expect(state.questions, hasLength(6));
       expect(state.questions.first.type, QuizQuestionType.meaningChoice);
       expect(state.questions.first.prompt, '山');
-      expect(state.questions.first.correctAnswer, '메');
-      expect(state.questions.first.options, contains('메'));
+      expect(state.questions.first.correctAnswer, '메 산');
+      expect(state.questions.first.options, contains('메 산'));
     },
   );
 
   test(
-    'QuizController builds meaning-to-hanja questions from learned set',
+    'QuizController builds hun-to-hanja questions from learned set',
     () async {
       final container = _quizContainer();
       addTearDown(container.dispose);
 
       final state = await container.read(
-        quizProvider(QuizPlayMode.meaningToHanja).future,
+        quizProvider(QuizPlayMode.hunToHanja).future,
       );
 
-      expect(state.mode, QuizPlayMode.meaningToHanja);
+      expect(state.mode, QuizPlayMode.hunToHanja);
       expect(state.questions, hasLength(6));
       expect(state.questions.first.type, QuizQuestionType.hanjaChoice);
-      expect(state.questions.first.prompt, '메');
+      expect(state.questions.first.prompt, '메 산');
       expect(state.questions.first.correctAnswer, '山');
       expect(state.questions.first.options, contains('山'));
     },
@@ -83,7 +64,6 @@ void main() {
     expect(
       state.questions.map((question) => question.type),
       containsAll([
-        QuizQuestionType.soundChoice,
         QuizQuestionType.meaningChoice,
         QuizQuestionType.hanjaChoice,
       ]),
@@ -99,7 +79,7 @@ void main() {
       addTearDown(container.dispose);
 
       final state = await container.read(
-        quizProvider(QuizPlayMode.hanjaToSound).future,
+        quizProvider(QuizPlayMode.hanjaToHun).future,
       );
 
       expect(state.canPlay, isTrue);
@@ -268,42 +248,42 @@ const _characters = <HanjaCharacter>[
     id: 'HJ-1',
     character: '山',
     sound: '산',
-    meaning: '메',
+    meaning: '메 산',
     grade: 3,
   ),
   HanjaCharacter(
     id: 'HJ-2',
     character: '水',
     sound: '수',
-    meaning: '물',
+    meaning: '물 수',
     grade: 3,
   ),
   HanjaCharacter(
     id: 'HJ-3',
     character: '木',
     sound: '목',
-    meaning: '나무',
+    meaning: '나무 목',
     grade: 3,
   ),
   HanjaCharacter(
     id: 'HJ-4',
     character: '火',
     sound: '화',
-    meaning: '불',
+    meaning: '불 화',
     grade: 3,
   ),
   HanjaCharacter(
     id: 'HJ-5',
     character: '土',
     sound: '토',
-    meaning: '흙',
+    meaning: '흙 토',
     grade: 3,
   ),
   HanjaCharacter(
     id: 'HJ-6',
     character: '日',
     sound: '일',
-    meaning: '날',
+    meaning: '날 일',
     grade: 3,
   ),
 ];

@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/challenge_result_repository_provider.dart';
 import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../data/repositories/quiz_result_repository_provider.dart';
 import '../../domain/models/challenge_result.dart';
+import '../../domain/models/learning_diagnostics.dart';
 import '../../domain/models/learning_result.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/models/quiz_question.dart';
@@ -11,15 +14,15 @@ import '../../domain/services/challenge_result_service.dart';
 import '../../domain/services/xp_service.dart';
 import '../challenge/challenge_result_tick.dart';
 import '../challenge/challenge_hanja_pool.dart';
+import '../learning/learning_diagnostics_controller.dart';
 import '../learning/learning_progress_controller.dart';
 
 final quizProvider = AsyncNotifierProvider.autoDispose
     .family<QuizController, QuizState, QuizPlayMode>(QuizController.new);
 
 enum QuizPlayMode {
-  hanjaToSound('hanja-to-sound', '한자 보고 음'),
-  hanjaToMeaning('hanja-to-meaning', '한자 보고 뜻'),
-  meaningToHanja('meaning-to-hanja', '뜻 보고 한자'),
+  hanjaToHun('hanja-to-hun', '한자 보고 훈음'),
+  hunToHanja('hun-to-hanja', '훈음 보고 한자'),
   mixed('mixed', '혼합 퀴즈');
 
   const QuizPlayMode(this.routeValue, this.label);
@@ -29,9 +32,10 @@ enum QuizPlayMode {
 
   static QuizPlayMode fromRouteValue(String? value) {
     return switch (value) {
-      'hanja-to-sound' || 'hanja-to-hun' => QuizPlayMode.hanjaToSound,
-      'hanja-to-meaning' => QuizPlayMode.hanjaToMeaning,
-      'meaning-to-hanja' || 'hun-to-hanja' => QuizPlayMode.meaningToHanja,
+      'hanja-to-sound' ||
+      'hanja-to-meaning' ||
+      'hanja-to-hun' => QuizPlayMode.hanjaToHun,
+      'meaning-to-hanja' || 'hun-to-hanja' => QuizPlayMode.hunToHanja,
       _ => QuizPlayMode.mixed,
     };
   }
@@ -75,6 +79,22 @@ class QuizController extends AsyncNotifier<QuizState> {
     }
 
     final isCorrect = current.currentQuestion?.correctAnswer == answer;
+    final question = current.currentQuestion;
+    if (question?.hanjaId != null) {
+      unawaited(
+        ref
+            .read(learningDiagnosticsControllerProvider)
+            .recordAttempt(
+              hanjaId: question!.hanjaId!,
+              source: HanjaPracticeSource.quiz,
+              activityType: _activityTypeFor(question.type),
+              result: isCorrect
+                  ? HanjaPracticeResult.correct
+                  : HanjaPracticeResult.incorrect,
+              isLearned: true,
+            ),
+      );
+    }
     state = AsyncData(
       current.copyWith(
         selectedAnswer: answer,
@@ -83,6 +103,15 @@ class QuizController extends AsyncNotifier<QuizState> {
             : current.correctCount,
       ),
     );
+  }
+
+  HanjaPracticeActivityType _activityTypeFor(QuizQuestionType type) {
+    return switch (type) {
+      QuizQuestionType.hanjaChoice => HanjaPracticeActivityType.hunToHanja,
+      QuizQuestionType.soundChoice ||
+      QuizQuestionType.meaningChoice => HanjaPracticeActivityType.hanjaToHun,
+      QuizQuestionType.sentenceBlank => HanjaPracticeActivityType.mixed,
+    };
   }
 
   Future<void> goNextOrSave() async {
@@ -176,22 +205,19 @@ class QuizController extends AsyncNotifier<QuizState> {
     required List<HanjaCharacter> items,
   }) {
     return switch (mode) {
-      QuizPlayMode.hanjaToSound => _buildHanjaToSoundQuestions(items),
-      QuizPlayMode.hanjaToMeaning => _buildHanjaToMeaningQuestions(items),
-      QuizPlayMode.meaningToHanja => _buildMeaningToHanjaQuestions(items),
+      QuizPlayMode.hanjaToHun => _buildHanjaToHunQuestions(items),
+      QuizPlayMode.hunToHanja => _buildHunToHanjaQuestions(items),
       QuizPlayMode.mixed => _buildMixedQuestions(items),
     };
   }
 
   List<QuizQuestion> _buildMixedQuestions(List<HanjaCharacter> items) {
-    final soundQuestions = _buildHanjaToSoundQuestions(items);
-    final meaningQuestions = _buildHanjaToMeaningQuestions(items);
-    final hanjaQuestions = _buildMeaningToHanjaQuestions(items);
+    final hanjaToHunQuestions = _buildHanjaToHunQuestions(items);
+    final hunToHanjaQuestions = _buildHunToHanjaQuestions(items);
     final mixed = <QuizQuestion>[];
     for (var index = 0; index < items.length; index += 1) {
-      mixed.add(soundQuestions[index]);
-      mixed.add(meaningQuestions[index]);
-      mixed.add(hanjaQuestions[index]);
+      mixed.add(hanjaToHunQuestions[index]);
+      mixed.add(hunToHanjaQuestions[index]);
       if (mixed.length >= 10) {
         break;
       }
@@ -199,79 +225,50 @@ class QuizController extends AsyncNotifier<QuizState> {
     return mixed.take(10).toList();
   }
 
-  List<QuizQuestion> _buildHanjaToSoundQuestions(List<HanjaCharacter> items) {
+  List<QuizQuestion> _buildHanjaToHunQuestions(List<HanjaCharacter> items) {
     return [
       for (var index = 0; index < items.length; index += 1)
         QuizQuestion(
-          id: 'generated-hanja-to-sound-${items[index].id}',
-          hanjaId: items[index].id,
-          grade: items[index].grade,
-          unitCode: items[index].unitCode,
-          type: QuizQuestionType.soundChoice,
-          prompt: items[index].character,
-          correctAnswer: _soundAnswer(items[index]),
-          options: _buildSoundOptions(items, index),
-          explanation:
-              '${items[index].character}의 음은 ${items[index].sound}입니다.',
-          difficulty: items[index].difficulty,
-        ),
-    ];
-  }
-
-  List<QuizQuestion> _buildHanjaToMeaningQuestions(List<HanjaCharacter> items) {
-    return [
-      for (var index = 0; index < items.length; index += 1)
-        QuizQuestion(
-          id: 'generated-hanja-to-meaning-${items[index].id}',
+          id: 'generated-hanja-to-hun-${items[index].id}',
           hanjaId: items[index].id,
           grade: items[index].grade,
           unitCode: items[index].unitCode,
           type: QuizQuestionType.meaningChoice,
           prompt: items[index].character,
-          correctAnswer: _meaningAnswer(items[index]),
-          options: _buildMeaningOptions(items, index),
+          correctAnswer: _hunAnswer(items[index]),
+          options: _buildHunOptions(items, index),
           explanation:
-              '${items[index].character}의 뜻은 ${items[index].meaning}입니다.',
+              '${items[index].character}의 훈음은 ${_hunAnswer(items[index])}입니다.',
           difficulty: items[index].difficulty,
         ),
     ];
   }
 
-  List<QuizQuestion> _buildMeaningToHanjaQuestions(List<HanjaCharacter> items) {
+  List<QuizQuestion> _buildHunToHanjaQuestions(List<HanjaCharacter> items) {
     return [
       for (var index = 0; index < items.length; index += 1)
         QuizQuestion(
-          id: 'generated-meaning-to-hanja-${items[index].id}',
+          id: 'generated-hun-to-hanja-${items[index].id}',
           hanjaId: items[index].id,
           grade: items[index].grade,
           unitCode: items[index].unitCode,
           type: QuizQuestionType.hanjaChoice,
-          prompt: _meaningAnswer(items[index]),
+          prompt: _hunAnswer(items[index]),
           correctAnswer: items[index].character,
           options: _buildHanjaOptions(items, index),
-          explanation: '${items[index].character}은 ${items[index].meaning}입니다.',
+          explanation:
+              '${items[index].character}의 훈음은 ${_hunAnswer(items[index])}입니다.',
           difficulty: items[index].difficulty,
         ),
     ];
   }
 
-  List<String> _buildSoundOptions(List<HanjaCharacter> items, int index) {
+  List<String> _buildHunOptions(List<HanjaCharacter> items, int index) {
     return _insertCorrect(
-      correct: _soundAnswer(items[index]),
+      correct: _hunAnswer(items[index]),
       distractors: items
           .where((item) => item.id != items[index].id)
-          .map(_soundAnswer)
-          .toList(),
-      index: index,
-    );
-  }
-
-  List<String> _buildMeaningOptions(List<HanjaCharacter> items, int index) {
-    return _insertCorrect(
-      correct: _meaningAnswer(items[index]),
-      distractors: items
-          .where((item) => item.id != items[index].id)
-          .map(_meaningAnswer)
+          .map(_hunAnswer)
           .toList(),
       index: index,
     );
@@ -301,19 +298,14 @@ class QuizController extends AsyncNotifier<QuizState> {
     return uniqueOptions;
   }
 
-  String _soundAnswer(HanjaCharacter hanja) {
-    return hanja.sound;
-  }
-
-  String _meaningAnswer(HanjaCharacter hanja) {
+  String _hunAnswer(HanjaCharacter hanja) {
     return hanja.meaning;
   }
 
   ChallengeMode _challengeModeFor(QuizPlayMode mode) {
     return switch (mode) {
-      QuizPlayMode.hanjaToSound => ChallengeMode.quizHanjaToHun,
-      QuizPlayMode.hanjaToMeaning => ChallengeMode.quizHanjaToHun,
-      QuizPlayMode.meaningToHanja => ChallengeMode.quizHunToHanja,
+      QuizPlayMode.hanjaToHun => ChallengeMode.quizHanjaToHun,
+      QuizPlayMode.hunToHanja => ChallengeMode.quizHunToHanja,
       QuizPlayMode.mixed => ChallengeMode.quizMixed,
     };
   }

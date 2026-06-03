@@ -6,21 +6,30 @@ import 'package:hanja_soook/app/router.dart';
 import 'package:hanja_soook/core/constants/route_paths.dart';
 import 'package:hanja_soook/data/repositories/challenge_result_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/class_room_repository_provider.dart';
+import 'package:hanja_soook/data/repositories/content_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/game_result_repository_provider.dart';
+import 'package:hanja_soook/data/repositories/learning_diagnostics_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/quiz_result_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/school_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/student_link_repository_provider.dart';
 import 'package:hanja_soook/domain/models/app_user_profile.dart';
 import 'package:hanja_soook/domain/models/challenge_result.dart';
 import 'package:hanja_soook/domain/models/class_room.dart';
+import 'package:hanja_soook/domain/models/hanja_character.dart';
+import 'package:hanja_soook/domain/models/hanja_example.dart';
+import 'package:hanja_soook/domain/models/learning_diagnostics.dart';
 import 'package:hanja_soook/domain/models/learning_result.dart';
 import 'package:hanja_soook/domain/models/learning_progress_record.dart';
 import 'package:hanja_soook/domain/models/learning_session.dart';
+import 'package:hanja_soook/domain/models/quiz_question.dart';
+import 'package:hanja_soook/domain/models/stroke_asset.dart';
 import 'package:hanja_soook/domain/models/student_link.dart';
 import 'package:hanja_soook/domain/repositories/game_result_repository.dart';
 import 'package:hanja_soook/domain/models/school.dart';
 import 'package:hanja_soook/domain/repositories/challenge_result_repository.dart';
 import 'package:hanja_soook/domain/repositories/class_room_repository.dart';
+import 'package:hanja_soook/domain/repositories/content_repository.dart';
+import 'package:hanja_soook/domain/repositories/learning_diagnostics_repository.dart';
 import 'package:hanja_soook/domain/repositories/learning_progress_repository.dart';
 import 'package:hanja_soook/domain/repositories/quiz_result_repository.dart';
 import 'package:hanja_soook/domain/repositories/school_repository.dart';
@@ -135,6 +144,140 @@ class _FakeLearningProgressRepository implements LearningProgressRepository {
     required String refId,
   }) async {
     return 0;
+  }
+}
+
+const _testDailyCharacters = [
+  HanjaCharacter(
+    id: 'HJ-0001',
+    character: '名',
+    sound: '명',
+    meaning: '이름',
+    strokeCount: 6,
+    grade: 3,
+    unitCode: 'G3-U1',
+    unitName: '테스트 단원',
+    sortOrder: 1,
+  ),
+  HanjaCharacter(
+    id: 'HJ-0002',
+    character: '王',
+    sound: '왕',
+    meaning: '임금',
+    strokeCount: 4,
+    grade: 3,
+    unitCode: 'G3-U1',
+    unitName: '테스트 단원',
+    sortOrder: 2,
+  ),
+  HanjaCharacter(
+    id: 'HJ-0003',
+    character: '世',
+    sound: '세',
+    meaning: '대',
+    strokeCount: 5,
+    grade: 3,
+    unitCode: 'G3-U1',
+    unitName: '테스트 단원',
+    sortOrder: 3,
+  ),
+  HanjaCharacter(
+    id: 'HJ-0004',
+    character: '上',
+    sound: '상',
+    meaning: '위',
+    strokeCount: 3,
+    grade: 3,
+    unitCode: 'G3-U1',
+    unitName: '테스트 단원',
+    sortOrder: 4,
+  ),
+  HanjaCharacter(
+    id: 'HJ-0005',
+    character: '山',
+    sound: '산',
+    meaning: '뫼',
+    strokeCount: 3,
+    grade: 3,
+    unitCode: 'G3-U1',
+    unitName: '테스트 단원',
+    sortOrder: 5,
+  ),
+  HanjaCharacter(
+    id: 'HJ-0006',
+    character: '林',
+    sound: '림',
+    meaning: '수풀',
+    strokeCount: 8,
+    grade: 3,
+    unitCode: 'G3-U1',
+    unitName: '테스트 단원',
+    sortOrder: 6,
+  ),
+];
+
+class _FakeContentRepository implements ContentRepository {
+  @override
+  Future<HanjaCharacter?> getTodayHanja({int? grade}) async =>
+      _testDailyCharacters.first;
+
+  @override
+  Future<List<HanjaCharacter>> getTodayHanjaSet({
+    int? grade,
+    int limit = 4,
+  }) async => _charactersForGrade(grade).take(limit).toList();
+
+  @override
+  Future<List<HanjaCharacter>> getHanjaList({int? grade, int? limit}) async {
+    final items = _charactersForGrade(grade);
+    return limit == null ? items : items.take(limit).toList();
+  }
+
+  @override
+  Future<HanjaCharacter?> getHanjaById(String hanjaId) async {
+    return _testDailyCharacters.where((item) => item.id == hanjaId).firstOrNull;
+  }
+
+  @override
+  Future<List<HanjaExample>> getExamples(String hanjaId) async => const [];
+
+  @override
+  Future<List<QuizQuestion>> getQuizQuestions({
+    int? grade,
+    String? unitCode,
+    int limit = 10,
+  }) async => const [];
+
+  @override
+  Future<List<QuizQuestion>> getTodayQuizQuestions({
+    int? grade,
+    int limit = 4,
+  }) async => const [];
+
+  @override
+  Future<StrokeAsset?> getStrokeAsset(String hanjaId) async {
+    final item = await getHanjaById(hanjaId);
+    if (item == null) {
+      return null;
+    }
+    return StrokeAsset(
+      id: 'stroke-$hanjaId',
+      hanjaId: hanjaId,
+      character: item.character,
+      dataFormat: StrokeDataFormat.svg,
+      strokeCount: item.strokeCount,
+      svgPaths: const ['M 10 20 L 90 20'],
+      reviewStatus: StrokeReviewStatus.available,
+    );
+  }
+
+  List<HanjaCharacter> _charactersForGrade(int? grade) {
+    if (grade == null) {
+      return _testDailyCharacters;
+    }
+    return _testDailyCharacters
+        .where((item) => item.grade == grade)
+        .toList(growable: false);
   }
 }
 
@@ -269,10 +412,47 @@ class _FakeClassRoomRepository implements ClassRoomRepository {
   Future<void> saveClassMember(ClassMember member) async {}
 }
 
+class _FakeLearningDiagnosticsRepository
+    implements LearningDiagnosticsRepository {
+  @override
+  Future<List<HanjaPracticeEvent>> getPracticeEventsForHanja({
+    required String studentKey,
+    required String hanjaId,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<List<HanjaWeaknessRecord>> getActiveWeaknesses({
+    required String studentKey,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<Map<String, List<HanjaWeaknessRecord>>> getWeaknessesByHanja({
+    required String studentKey,
+    required Set<String> hanjaIds,
+  }) async {
+    return const {};
+  }
+
+  @override
+  Future<void> markWeaknessResolved({
+    required String studentKey,
+    required String hanjaId,
+    required HanjaWeaknessType weaknessType,
+  }) async {}
+
+  @override
+  Future<void> recordPracticeEvent(HanjaPracticeEventInput input) async {}
+}
+
 Widget _testApp() {
   return ProviderScope(
     overrides: [
       schoolRepositoryProvider.overrideWithValue(_FakeSchoolRepository()),
+      contentRepositoryProvider.overrideWithValue(_FakeContentRepository()),
       learningProgressRepositoryProvider.overrideWithValue(
         _FakeLearningProgressRepository(),
       ),
@@ -289,6 +469,9 @@ Widget _testApp() {
         _FakeStudentLinkRepository(),
       ),
       classRoomRepositoryProvider.overrideWithValue(_FakeClassRoomRepository()),
+      learningDiagnosticsRepositoryProvider.overrideWithValue(
+        _FakeLearningDiagnosticsRepository(),
+      ),
     ],
     child: const HanjaSoookApp(),
   );
@@ -346,7 +529,7 @@ void main() {
       RoutePaths.appChallenge: '오늘 점수와 반 순위를 올려요',
       RoutePaths.appSettings: '학습 연결',
       RoutePaths.quiz: '퀴즈 선택',
-      RoutePaths.game: '빠르게 고를수록 콤보 점수가 올라가요.',
+      RoutePaths.game: '시간 안에 많이 맞혀요. 오답은 점수가 깎여요.',
       RoutePaths.result: '연습 완료',
       RoutePaths.growth: '성장 앨범',
       RoutePaths.studentLinks: '학습 연결',
@@ -372,6 +555,63 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('학교를 선택해주세요.'), findsOneWidget);
+  });
+
+  testWidgets('daily learning modes share compact one-screen layout', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(_testApp());
+    await tester.pump(const Duration(seconds: 1));
+    appRouter.go(RoutePaths.home);
+    await pumpUntilFound(tester, find.text('오늘 학습 시작'));
+    final dailyButton = find.text('오늘 학습 시작').last;
+    await tester.ensureVisible(dailyButton);
+    await tester.pump();
+    await tester.tap(dailyButton);
+    await pumpUntilFound(tester, find.text('오늘 학습'));
+    await pumpUntilFound(tester, find.text('시작'));
+    expect(find.text('시작'), findsWidgets);
+
+    final startButton = find.text('시작').last;
+    await tester.ensureVisible(startButton);
+    await tester.pump();
+    await tester.tap(startButton);
+    await pumpUntilFound(tester, find.text('따라쓰기'));
+
+    final guidedBackTop = tester
+        .getTopLeft(find.byIcon(Icons.arrow_back).first)
+        .dy;
+    final guidedBadgeTop = tester.getTopLeft(find.text('6자').last).dy;
+    _expectInViewport(tester, find.text('다음 한자').last);
+
+    await tester.tap(find.text('훈음 맞히기').last);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final quizBackTop = tester
+        .getTopLeft(find.byIcon(Icons.arrow_back).first)
+        .dy;
+    final quizBadgeTop = tester.getTopLeft(find.text('6자').last).dy;
+    expect((quizBackTop - guidedBackTop).abs(), lessThanOrEqualTo(2));
+    expect((quizBadgeTop - guidedBadgeTop).abs(), lessThanOrEqualTo(2));
+    _expectInViewport(tester, find.text('다음').last);
+
+    await tester.tap(find.text('랜덤쓰기').last);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final randomBackTop = tester
+        .getTopLeft(find.byIcon(Icons.arrow_back).first)
+        .dy;
+    final randomBadgeTop = tester.getTopLeft(find.text('6자').last).dy;
+    expect((randomBackTop - guidedBackTop).abs(), lessThanOrEqualTo(2));
+    expect((randomBadgeTop - guidedBadgeTop).abs(), lessThanOrEqualTo(2));
+    _expectInViewport(tester, find.text('확인하기').last);
   });
 
   testWidgets('top-level app tabs confirm before app exit', (tester) async {
@@ -402,4 +642,10 @@ void main() {
       expect(find.text(entry.value), findsOneWidget);
     }
   });
+}
+
+void _expectInViewport(WidgetTester tester, Finder finder) {
+  expect(finder, findsWidgets);
+  final bottom = tester.getBottomLeft(finder).dy;
+  expect(bottom, lessThanOrEqualTo(tester.view.physicalSize.height));
 }

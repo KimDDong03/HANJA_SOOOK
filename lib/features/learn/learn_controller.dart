@@ -2,15 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../data/repositories/content_repository_provider.dart';
+import '../../data/repositories/learning_diagnostics_repository_provider.dart';
 import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../domain/models/hanja_character.dart';
+import '../../domain/models/learning_diagnostics.dart';
 import '../../domain/services/learning_plan_service.dart';
 import '../auth/current_profile_controller.dart';
+import '../learning/learning_diagnostics_controller.dart';
 import '../learning/learning_progress_controller.dart';
 
 final learnLibraryProvider = FutureProvider<LearnLibraryState>((ref) async {
   final grade = ref.watch(currentProfileProvider)?.grade;
   ref.watch(learningProgressTickProvider);
+  ref.watch(learningDiagnosticsTickProvider);
 
   final learningDate = currentLearningDate();
   final items = await ref
@@ -30,6 +34,13 @@ final learnLibraryProvider = FutureProvider<LearnLibraryState>((ref) async {
   final completedHanjaIds = progressRecords
       .map((record) => record.hanjaId)
       .toSet();
+  final activeWeaknesses = await ref
+      .watch(learningDiagnosticsRepositoryProvider)
+      .getActiveWeaknesses(studentKey: currentStudentKey(ref));
+  final weaknessesByHanja = <String, List<HanjaWeaknessRecord>>{};
+  for (final weakness in activeWeaknesses) {
+    weaknessesByHanja.putIfAbsent(weakness.hanjaId, () => []).add(weakness);
+  }
 
   return LearnLibraryState(
     grade: grade,
@@ -37,12 +48,13 @@ final learnLibraryProvider = FutureProvider<LearnLibraryState>((ref) async {
     todayCompletedIds: plan.todayCompletedIds,
     completedHanjaIds: completedHanjaIds,
     reviewItems: plan.reviewItems,
+    weaknessesByHanja: weaknessesByHanja,
     chapters: chapters,
     activeChapterKey: plan.chapterKey,
   );
 });
 
-enum LearnItemStatus { reviewDue, learned, notLearned }
+enum LearnItemStatus { weak, reviewDue, learned, notLearned }
 
 class LearnLibraryState {
   const LearnLibraryState({
@@ -51,6 +63,7 @@ class LearnLibraryState {
     required this.todayCompletedIds,
     required this.completedHanjaIds,
     required this.reviewItems,
+    this.weaknessesByHanja = const {},
     required this.chapters,
     required this.activeChapterKey,
   });
@@ -60,6 +73,7 @@ class LearnLibraryState {
   final Set<String> todayCompletedIds;
   final Set<String> completedHanjaIds;
   final List<HanjaCharacter> reviewItems;
+  final Map<String, List<HanjaWeaknessRecord>> weaknessesByHanja;
   final List<HanjaChapter> chapters;
   final String? activeChapterKey;
 
@@ -72,7 +86,14 @@ class LearnLibraryState {
   }
 
   List<HanjaCharacter> get weakItems {
-    return reviewItems;
+    return [
+      for (final item in items)
+        if (weaknessesByHanja[item.id]?.any((weakness) {
+              return weakness.status == HanjaWeaknessStatus.active;
+            }) ??
+            false)
+          item,
+    ];
   }
 
   HanjaCharacter? get nextItem {
@@ -150,7 +171,28 @@ class LearnLibraryState {
     return reviewItems.any((item) => item.id == hanjaId);
   }
 
+  bool isWeak(String hanjaId) {
+    return weaknessesByHanja[hanjaId]?.any((weakness) {
+          return weakness.status == HanjaWeaknessStatus.active;
+        }) ??
+        false;
+  }
+
+  HanjaWeaknessRecord? primaryWeaknessFor(String hanjaId) {
+    final rows = weaknessesByHanja[hanjaId]
+        ?.where((weakness) => weakness.status == HanjaWeaknessStatus.active)
+        .toList();
+    if (rows == null || rows.isEmpty) {
+      return null;
+    }
+    rows.sort((a, b) => b.score.compareTo(a.score));
+    return rows.first;
+  }
+
   LearnItemStatus statusOf(String hanjaId) {
+    if (isWeak(hanjaId)) {
+      return LearnItemStatus.weak;
+    }
     if (isReviewDue(hanjaId)) {
       return LearnItemStatus.reviewDue;
     }
