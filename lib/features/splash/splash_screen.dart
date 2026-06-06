@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_paths.dart';
 import '../auth/current_profile_controller.dart';
 
@@ -53,6 +54,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   errorBuilder: (context, error, stackTrace) {
                     return const _SplashLogoFallback();
                   },
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '한자 쏙쏙 실력 쑥쑥',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColors.brandGreenDark,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 28),
                 SizedBox(

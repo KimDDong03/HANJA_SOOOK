@@ -16,10 +16,12 @@ import '../auth/current_profile_controller.dart';
 import '../learning/learning_diagnostics_controller.dart';
 import '../learning/learning_progress_controller.dart';
 
-final dailySessionProvider = AsyncNotifierProvider.autoDispose
-    .family<DailySessionController, DailySessionState, String?>(
-      DailySessionController.new,
-    );
+final dailySessionProvider =
+    AsyncNotifierProvider.family<
+      DailySessionController,
+      DailySessionState,
+      String?
+    >(DailySessionController.new);
 
 enum DailySessionPhase {
   intro,
@@ -518,6 +520,29 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
     state = AsyncData(current.saveRandomWritingStrokes(hanjaId, strokes));
   }
 
+  void markRandomWritingHintUsed(String hanjaId) {
+    final current = state.value;
+    if (current == null ||
+        hanjaId.trim().isEmpty ||
+        current.randomWritingHintedHanjaIds.contains(hanjaId)) {
+      return;
+    }
+    state = AsyncData(current.markRandomWritingHintUsed(hanjaId));
+    unawaited(
+      ref
+          .read(learningDiagnosticsControllerProvider)
+          .recordAttempt(
+            hanjaId: hanjaId,
+            source: HanjaPracticeSource.dailySession,
+            activityType: HanjaPracticeActivityType.hint,
+            result: HanjaPracticeResult.hinted,
+            weaknessType: HanjaWeaknessType.writing,
+            hintLevel: 2,
+            isLearned: true,
+          ),
+    );
+  }
+
   Future<void> finish() async {
     final current = state.value;
     if (current == null || current.isSaving) {
@@ -629,6 +654,7 @@ class DailySessionState {
     this.quizSelectedAnswers = const <String, String>{},
     this.quizIncorrectAnswers = const <String, String>{},
     this.quizMistakeQuestionKeys = const <String>{},
+    this.randomWritingHintedHanjaIds = const <String>{},
     this.randomWritingStrokesByHanjaId = const <String, List<Path>>{},
     this.showNavigationGuide = false,
     this.guidedWritingCompleted = false,
@@ -661,6 +687,7 @@ class DailySessionState {
   final Map<String, String> quizSelectedAnswers;
   final Map<String, String> quizIncorrectAnswers;
   final Set<String> quizMistakeQuestionKeys;
+  final Set<String> randomWritingHintedHanjaIds;
   final Map<String, List<Path>> randomWritingStrokesByHanjaId;
   final bool showNavigationGuide;
   final bool guidedWritingCompleted;
@@ -799,6 +826,16 @@ class DailySessionState {
     );
   }
 
+  DailySessionState markRandomWritingHintUsed(String? hanjaId) {
+    if (hanjaId == null || randomWritingHintedHanjaIds.contains(hanjaId)) {
+      return this;
+    }
+    return copyWith(
+      randomWritingHintedHanjaIds: {...randomWritingHintedHanjaIds, hanjaId},
+      missedHanjaIds: {...missedHanjaIds, hanjaId},
+    );
+  }
+
   List<Path> randomWritingStrokesFor(String hanjaId) {
     return randomWritingStrokesByHanjaId[hanjaId] ?? const [];
   }
@@ -847,6 +884,7 @@ class DailySessionState {
     Map<String, String>? quizSelectedAnswers,
     Map<String, String>? quizIncorrectAnswers,
     Set<String>? quizMistakeQuestionKeys,
+    Set<String>? randomWritingHintedHanjaIds,
     Map<String, List<Path>>? randomWritingStrokesByHanjaId,
     bool? showNavigationGuide,
     bool? guidedWritingCompleted,
@@ -887,6 +925,8 @@ class DailySessionState {
       quizIncorrectAnswers: quizIncorrectAnswers ?? this.quizIncorrectAnswers,
       quizMistakeQuestionKeys:
           quizMistakeQuestionKeys ?? this.quizMistakeQuestionKeys,
+      randomWritingHintedHanjaIds:
+          randomWritingHintedHanjaIds ?? this.randomWritingHintedHanjaIds,
       randomWritingStrokesByHanjaId:
           randomWritingStrokesByHanjaId ?? this.randomWritingStrokesByHanjaId,
       showNavigationGuide: showNavigationGuide ?? this.showNavigationGuide,

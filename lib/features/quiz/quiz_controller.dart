@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,9 +22,9 @@ final quizProvider = AsyncNotifierProvider.autoDispose
     .family<QuizController, QuizState, QuizPlayMode>(QuizController.new);
 
 enum QuizPlayMode {
-  hanjaToHun('hanja-to-hun', '한자 보고 훈음'),
-  hunToHanja('hun-to-hanja', '훈음 보고 한자'),
-  mixed('mixed', '혼합 퀴즈');
+  hanjaToHun('hanja-to-hun', '한자 보고 훈음 맞추기'),
+  hunToHanja('hun-to-hanja', '훈음 보고 한자 맞추기'),
+  mixed('mixed', '혼합');
 
   const QuizPlayMode(this.routeValue, this.label);
 
@@ -56,9 +57,17 @@ class QuizController extends AsyncNotifier<QuizState> {
       ref: ref,
       seedOffset: mode.index + 11,
     );
+    final seed = ref.watch(challengeHanjaPoolSeedProvider);
+    final questionRandom = seed == null
+        ? null
+        : Random(seed + 101 + mode.index * 17);
     final questions = learnedItems.length < QuizController.minChoiceHanjaCount
         ? const <QuizQuestion>[]
-        : _buildModeQuestions(mode: mode, items: learnedItems);
+        : _buildModeQuestions(
+            mode: mode,
+            items: learnedItems,
+            random: questionRandom,
+          );
     final latestResult = await ref
         .watch(quizResultRepositoryProvider)
         .getLatestQuizResult(studentKey: studentKey);
@@ -203,18 +212,41 @@ class QuizController extends AsyncNotifier<QuizState> {
   List<QuizQuestion> _buildModeQuestions({
     required QuizPlayMode mode,
     required List<HanjaCharacter> items,
+    required Random? random,
   }) {
     return switch (mode) {
-      QuizPlayMode.hanjaToHun => _buildHanjaToHunQuestions(items),
-      QuizPlayMode.hunToHanja => _buildHunToHanjaQuestions(items),
-      QuizPlayMode.mixed => _buildMixedQuestions(items),
+      QuizPlayMode.hanjaToHun => _buildHanjaToHunQuestions(
+        items,
+        random: random,
+      ),
+      QuizPlayMode.hunToHanja => _buildHunToHanjaQuestions(
+        items,
+        random: random,
+      ),
+      QuizPlayMode.mixed => _buildMixedQuestions(items, random: random),
     };
   }
 
-  List<QuizQuestion> _buildMixedQuestions(List<HanjaCharacter> items) {
-    final hanjaToHunQuestions = _buildHanjaToHunQuestions(items);
-    final hunToHanjaQuestions = _buildHunToHanjaQuestions(items);
+  List<QuizQuestion> _buildMixedQuestions(
+    List<HanjaCharacter> items, {
+    required Random? random,
+  }) {
+    final hanjaToHunQuestions = _buildHanjaToHunQuestions(
+      items,
+      random: random,
+    );
+    final hunToHanjaQuestions = _buildHunToHanjaQuestions(
+      items,
+      random: random,
+    );
     final mixed = <QuizQuestion>[];
+    if (random != null) {
+      mixed
+        ..addAll(hanjaToHunQuestions)
+        ..addAll(hunToHanjaQuestions)
+        ..shuffle(random);
+      return mixed.take(10).toList();
+    }
     for (var index = 0; index < items.length; index += 1) {
       mixed.add(hanjaToHunQuestions[index]);
       mixed.add(hunToHanjaQuestions[index]);
@@ -225,7 +257,10 @@ class QuizController extends AsyncNotifier<QuizState> {
     return mixed.take(10).toList();
   }
 
-  List<QuizQuestion> _buildHanjaToHunQuestions(List<HanjaCharacter> items) {
+  List<QuizQuestion> _buildHanjaToHunQuestions(
+    List<HanjaCharacter> items, {
+    required Random? random,
+  }) {
     return [
       for (var index = 0; index < items.length; index += 1)
         QuizQuestion(
@@ -236,7 +271,7 @@ class QuizController extends AsyncNotifier<QuizState> {
           type: QuizQuestionType.meaningChoice,
           prompt: items[index].character,
           correctAnswer: _hunAnswer(items[index]),
-          options: _buildHunOptions(items, index),
+          options: _buildHunOptions(items, index, random: random),
           explanation:
               '${items[index].character}의 훈음은 ${_hunAnswer(items[index])}입니다.',
           difficulty: items[index].difficulty,
@@ -244,7 +279,10 @@ class QuizController extends AsyncNotifier<QuizState> {
     ];
   }
 
-  List<QuizQuestion> _buildHunToHanjaQuestions(List<HanjaCharacter> items) {
+  List<QuizQuestion> _buildHunToHanjaQuestions(
+    List<HanjaCharacter> items, {
+    required Random? random,
+  }) {
     return [
       for (var index = 0; index < items.length; index += 1)
         QuizQuestion(
@@ -255,7 +293,7 @@ class QuizController extends AsyncNotifier<QuizState> {
           type: QuizQuestionType.hanjaChoice,
           prompt: _hunAnswer(items[index]),
           correctAnswer: items[index].character,
-          options: _buildHanjaOptions(items, index),
+          options: _buildHanjaOptions(items, index, random: random),
           explanation:
               '${items[index].character}의 훈음은 ${_hunAnswer(items[index])}입니다.',
           difficulty: items[index].difficulty,
@@ -263,7 +301,11 @@ class QuizController extends AsyncNotifier<QuizState> {
     ];
   }
 
-  List<String> _buildHunOptions(List<HanjaCharacter> items, int index) {
+  List<String> _buildHunOptions(
+    List<HanjaCharacter> items,
+    int index, {
+    required Random? random,
+  }) {
     return _insertCorrect(
       correct: _hunAnswer(items[index]),
       distractors: items
@@ -271,10 +313,15 @@ class QuizController extends AsyncNotifier<QuizState> {
           .map(_hunAnswer)
           .toList(),
       index: index,
+      random: random,
     );
   }
 
-  List<String> _buildHanjaOptions(List<HanjaCharacter> items, int index) {
+  List<String> _buildHanjaOptions(
+    List<HanjaCharacter> items,
+    int index, {
+    required Random? random,
+  }) {
     return _insertCorrect(
       correct: items[index].character,
       distractors: items
@@ -282,6 +329,7 @@ class QuizController extends AsyncNotifier<QuizState> {
           .map((item) => item.character)
           .toList(),
       index: index,
+      random: random,
     );
   }
 
@@ -289,10 +337,15 @@ class QuizController extends AsyncNotifier<QuizState> {
     required String correct,
     required List<String> distractors,
     required int index,
+    required Random? random,
   }) {
     final uniqueOptions = <String>[
       ...{...distractors.where((option) => option != correct)}.take(3),
     ];
+    if (random != null) {
+      final options = [correct, ...uniqueOptions]..shuffle(random);
+      return options;
+    }
     final insertIndex = index % (uniqueOptions.length + 1);
     uniqueOptions.insert(insertIndex, correct);
     return uniqueOptions;

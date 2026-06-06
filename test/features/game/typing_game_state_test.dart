@@ -16,6 +16,7 @@ import 'package:hanja_soook/domain/repositories/content_repository.dart';
 import 'package:hanja_soook/domain/repositories/game_result_repository.dart';
 import 'package:hanja_soook/domain/repositories/learning_diagnostics_repository.dart';
 import 'package:hanja_soook/domain/repositories/learning_progress_repository.dart';
+import 'package:hanja_soook/features/challenge/challenge_hanja_pool.dart';
 import 'package:hanja_soook/features/game/typing_game_controller.dart';
 
 void main() {
@@ -70,22 +71,7 @@ void main() {
   });
 
   test('TypingGameController applies wrong answer score penalty', () async {
-    final container = ProviderContainer(
-      overrides: [
-        contentRepositoryProvider.overrideWithValue(
-          const _FakeContentRepository(_characters),
-        ),
-        gameResultRepositoryProvider.overrideWithValue(
-          _FakeGameResultRepository(),
-        ),
-        learningProgressRepositoryProvider.overrideWithValue(
-          const _FakeLearningProgressRepository(_characters),
-        ),
-        learningDiagnosticsRepositoryProvider.overrideWithValue(
-          _FakeLearningDiagnosticsRepository(),
-        ),
-      ],
-    );
+    final container = _gameContainer();
     addTearDown(container.dispose);
 
     final initial = await container.read(typingGameProvider.future);
@@ -102,6 +88,52 @@ void main() {
     expect(state.score, 0);
     expect(state.lastEarnedScore, -5);
   });
+
+  test(
+    'TypingGameController varies round order with challenge pool seed',
+    () async {
+      final firstContainer = _gameContainer(poolSeed: 1);
+      final secondContainer = _gameContainer(poolSeed: 2);
+      addTearDown(firstContainer.dispose);
+      addTearDown(secondContainer.dispose);
+
+      final firstState = await firstContainer.read(typingGameProvider.future);
+      final secondState = await secondContainer.read(typingGameProvider.future);
+
+      final firstOrder = firstState.rounds
+          .map((round) => round.hanjaId)
+          .toList();
+      final secondOrder = secondState.rounds
+          .map((round) => round.hanjaId)
+          .toList();
+
+      expect(firstOrder, isNot(orderedEquals(secondOrder)));
+      expect(firstState.rounds[0].hanjaId, isNot(firstState.rounds[1].hanjaId));
+      for (final round in firstState.rounds) {
+        expect(round.options, contains(round.correctAnswer));
+      }
+    },
+  );
+}
+
+ProviderContainer _gameContainer({int? poolSeed}) {
+  return ProviderContainer(
+    overrides: [
+      challengeHanjaPoolSeedProvider.overrideWithValue(poolSeed),
+      contentRepositoryProvider.overrideWithValue(
+        const _FakeContentRepository(_characters),
+      ),
+      gameResultRepositoryProvider.overrideWithValue(
+        _FakeGameResultRepository(),
+      ),
+      learningProgressRepositoryProvider.overrideWithValue(
+        const _FakeLearningProgressRepository(_characters),
+      ),
+      learningDiagnosticsRepositoryProvider.overrideWithValue(
+        _FakeLearningDiagnosticsRepository(),
+      ),
+    ],
+  );
 }
 
 class _FakeContentRepository implements ContentRepository {

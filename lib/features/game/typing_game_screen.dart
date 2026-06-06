@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/audio/app_audio_controller.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_fonts.dart';
 import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
@@ -132,65 +133,10 @@ class _GameRoundViewState extends ConsumerState<_GameRoundView> {
           title: '스피드 퀴즈',
           subtitle: '문제 ${data.currentIndex + 1}/${data.totalCount}',
           children: [
-            LinearProgressIndicator(
-              value: (data.currentIndex + 1) / data.totalCount,
-              minHeight: 12,
-              borderRadius: BorderRadius.circular(99),
-            ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 6,
-                alignment: WrapAlignment.end,
-                children: [
-                  Text(
-                    '남은 시간 ${data.remainingSeconds}초',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  Text(
-                    '콤보 ${data.comboCount}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  Text(
-                    '점수 ${data.score}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            PlayfulPanel(
-              color: const Color(0xFFD9F99D),
-              child: Column(
-                children: [
-                  Text(
-                    round.prompt,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontFamily: round.promptUsesHanjaFont
-                          ? AppFonts.hanjaSerif
-                          : null,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '시간 안에 많이 맞혀요. 오답은 점수가 깎여요.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+            _SpeedStatusPanel(data: data),
+            const SizedBox(height: 14),
+            _SpeedPromptPanel(round: round),
+            const SizedBox(height: 14),
             for (final option in round.options) ...[
               _AnswerButton(
                 option: option,
@@ -204,31 +150,16 @@ class _GameRoundViewState extends ConsumerState<_GameRoundView> {
             ],
             if (data.timedOut) ...[
               const SizedBox(height: 8),
-              Text(
-                '시간이 끝났어요. 다음 라운드로 넘어가요.',
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w900),
-              ),
+              const _RoundFeedbackText(message: '시간이 끝났어요. 다음 라운드로 넘어가요.'),
             ] else if (selectedAnswer != null && data.lastEarnedScore != 0) ...[
               const SizedBox(height: 8),
-              Text(
-                data.lastEarnedScore > 0
+              _RoundFeedbackText(
+                message: data.lastEarnedScore > 0
                     ? '+${data.lastEarnedScore}점'
                     : '${data.lastEarnedScore}점',
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w900),
+                isPositive: data.lastEarnedScore > 0,
               ),
             ],
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: null,
-              icon: Icon(data.isLastRound ? Icons.emoji_events : Icons.gamepad),
-              label: Text(selectedAnswer == null ? '빠르게 답을 골라요' : '다음으로 이동 중'),
-            ),
           ],
         ),
         if (_showFeedbackPopup)
@@ -273,6 +204,172 @@ class _GameRoundViewState extends ConsumerState<_GameRoundView> {
   }
 }
 
+class _SpeedStatusPanel extends StatelessWidget {
+  const _SpeedStatusPanel({required this.data});
+
+  final TypingGameState data;
+
+  @override
+  Widget build(BuildContext context) {
+    final timeProgress = data.timeLimit <= 0
+        ? 0.0
+        : data.remainingSeconds / data.timeLimit;
+
+    return PlayfulPanel(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _SpeedStatTile(
+                icon: Icons.timer_outlined,
+                label: '남은 시간',
+                value: '${data.remainingSeconds}초',
+                color: AppColors.blue,
+              ),
+              const SizedBox(width: 8),
+              _SpeedStatTile(
+                icon: Icons.bolt,
+                label: '콤보',
+                value: '${data.comboCount}',
+                color: AppColors.yellow,
+              ),
+              const SizedBox(width: 8),
+              _SpeedStatTile(
+                icon: Icons.emoji_events_outlined,
+                label: '점수',
+                value: '${data.score}',
+                color: AppColors.green,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(
+              value: timeProgress.clamp(0.0, 1.0),
+              minHeight: 10,
+              color: AppColors.primary,
+              backgroundColor: AppColors.border.withValues(alpha: 0.55),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SpeedStatTile extends StatelessWidget {
+  const _SpeedStatTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Column(
+            children: [
+              Icon(icon, size: 20, color: AppColors.textPrimary),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SpeedPromptPanel extends StatelessWidget {
+  const _SpeedPromptPanel({required this.round});
+
+  final TypingGameRound round;
+
+  @override
+  Widget build(BuildContext context) {
+    return PlayfulPanel(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+      child: Column(
+        children: [
+          Text(
+            round.prompt,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: AppColors.textPrimary,
+              fontFamily: round.promptUsesHanjaFont
+                  ? AppFonts.hanjaSerif
+                  : null,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            round.optionsUseHanjaFont ? '맞는 한자를 골라요' : '맞는 훈음을 골라요',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoundFeedbackText extends StatelessWidget {
+  const _RoundFeedbackText({required this.message, this.isPositive = false});
+
+  final String message;
+  final bool isPositive;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      message,
+      textAlign: TextAlign.center,
+      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+        color: isPositive ? const Color(0xFF166534) : AppColors.primary,
+        fontWeight: FontWeight.w900,
+      ),
+    );
+  }
+}
+
 class _AnswerButton extends StatelessWidget {
   const _AnswerButton({
     required this.option,
@@ -292,30 +389,65 @@ class _AnswerButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.tonal(
+    final isSelectedCorrect = isSelected && isCorrect;
+    final backgroundColor = !hasSelection
+        ? AppColors.surface
+        : isSelectedCorrect
+        ? AppColors.green
+        : isSelected
+        ? AppColors.peach
+        : AppColors.surfaceMuted;
+    final borderColor = !hasSelection
+        ? AppColors.border
+        : isSelected
+        ? AppColors.primary.withValues(alpha: 0.45)
+        : AppColors.border;
+
+    return FilledButton(
       onPressed: hasSelection
           ? () => _showSnack(context, '이미 답을 골랐어요.')
           : onPressed,
       style: FilledButton.styleFrom(
-        foregroundColor: const Color(0xFF10201A),
-        minimumSize: const Size.fromHeight(72),
-        backgroundColor: !hasSelection
-            ? null
-            : isSelected && isCorrect
-            ? Theme.of(context).colorScheme.primaryContainer
-            : isSelected
-            ? Theme.of(context).colorScheme.errorContainer
-            : null,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        foregroundColor: AppColors.textPrimary,
+        backgroundColor: backgroundColor,
+        minimumSize: const Size.fromHeight(64),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        side: BorderSide(color: borderColor),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
-      child: Text(
-        option,
-        style: TextStyle(
-          fontFamily: useHanjaFont ? AppFonts.hanjaSerif : null,
-          fontSize: useHanjaFont ? 36 : 22,
-          fontWeight: FontWeight.w800,
-          color: const Color(0xFF10201A),
-          height: 1,
-        ),
+      child: Row(
+        children: [
+          if (hasSelection) const SizedBox(width: 24),
+          Expanded(
+            child: Text(
+              option,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: useHanjaFont ? AppFonts.hanjaSerif : null,
+                fontSize: useHanjaFont ? 30 : 20,
+                fontWeight: FontWeight.w900,
+                color: AppColors.textPrimary,
+                height: 1.1,
+              ),
+            ),
+          ),
+          if (hasSelection)
+            Icon(
+              isSelected
+                  ? isCorrect
+                        ? Icons.check_circle
+                        : Icons.cancel
+                  : Icons.circle_outlined,
+              color: isSelected
+                  ? isCorrect
+                        ? const Color(0xFF166534)
+                        : AppColors.primary
+                  : AppColors.textMuted,
+              size: 24,
+            ),
+        ],
       ),
     );
   }
@@ -339,30 +471,84 @@ class _GameCompleteView extends StatelessWidget {
     return PlayfulPage(
       title: '스피드 퀴즈 완료',
       subtitle: '속도 도전 보상을 확인해요',
-      showMascot: true,
       children: [
         PlayfulPanel(
-          color: const Color(0xFFD9F99D),
           child: Column(
             children: [
               Text(
-                '${result.correctCount}/${result.totalCount}',
-                style: Theme.of(
-                  context,
-                ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w900),
+                '스피드 퀴즈',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
-              const SizedBox(height: 8),
-              Text('점수 ${result.score}'),
-              const SizedBox(height: 8),
-              Text(
-                '정답률 ${data.accuracyPercent}% · 별 ${List.filled(data.stars, '★').join()}',
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  PlayfulStat(
+                    icon: Icons.check,
+                    label: '정답',
+                    value: '${result.correctCount}/${result.totalCount}',
+                    color: AppColors.yellow,
+                  ),
+                  const SizedBox(width: 10),
+                  PlayfulStat(
+                    icon: Icons.star,
+                    label: '점수',
+                    value: '${result.score}',
+                    color: AppColors.green,
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text('최고 콤보 ${data.bestCombo}'),
-              const SizedBox(height: 8),
-              Text('획득 XP ${data.savedChallengeResult?.earnedXp ?? 0}'),
-              const SizedBox(height: 8),
-              Text('걸린 시간 ${result.timeSec}초'),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  PlayfulStat(
+                    icon: Icons.bolt,
+                    label: '최고 콤보',
+                    value: '${data.bestCombo}',
+                    color: AppColors.blue,
+                  ),
+                  const SizedBox(width: 10),
+                  PlayfulStat(
+                    icon: Icons.timer,
+                    label: '시간',
+                    value: '${result.timeSec}초',
+                    color: AppColors.peach,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  PlayfulStat(
+                    icon: Icons.percent,
+                    label: '정답률',
+                    value: '${data.accuracyPercent}%',
+                    color: AppColors.mint,
+                  ),
+                  const SizedBox(width: 10),
+                  PlayfulStat(
+                    icon: Icons.grade,
+                    label: '별점',
+                    value: data.stars == 0
+                        ? '별 없음'
+                        : List.filled(data.stars, '★').join(),
+                    color: AppColors.lavender,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  PlayfulStat(
+                    icon: Icons.local_fire_department,
+                    label: '획득 XP',
+                    value: '${data.savedChallengeResult?.earnedXp ?? 0}',
+                    color: AppColors.orange,
+                  ),
+                ],
+              ),
             ],
           ),
         ),

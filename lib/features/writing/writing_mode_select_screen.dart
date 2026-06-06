@@ -15,7 +15,7 @@ class WritingModeSelectScreen extends StatelessWidget {
     return Scaffold(
       body: PlayfulPage(
         title: '쓰기',
-        subtitle: '연습과 채점을 바로 고를 수 있어요',
+        subtitle: '한자 쏙쏙 실력 쑥쑥',
         children: [
           PlayfulActionTile(
             icon: Icons.brush,

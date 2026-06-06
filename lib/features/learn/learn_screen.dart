@@ -278,9 +278,9 @@ class _TabState {
         items: state.items,
       ),
       _LearnTab.weak => _TabState(
-        title: '더 연습할 한자',
+        title: '집중해서 볼 한자',
         subtitle: '반복해서 헷갈린 한자를 유형별로 다시 잡아요.',
-        emptyText: '지금 더 연습할 한자가 없어요.',
+        emptyText: '지금 집중해서 볼 한자가 없어요.',
         items: state.weakItems,
       ),
     };
@@ -417,7 +417,7 @@ class _LearnModeTabs extends StatelessWidget {
             const _TabDivider(),
             _LearnModeTabButton(
               icon: Icons.flag,
-              label: '약점',
+              label: '집중',
               selected: selectedTab == _LearnTab.weak,
               onTap: () => onTabChanged(_LearnTab.weak),
             ),
@@ -914,7 +914,7 @@ class _HanjaListRow extends StatelessWidget {
                       Text(
                         weakness == null
                             ? item.unitName ?? '교과서 단원 정보 없음'
-                            : '${weakness!.typeLabel} · 약점 ${weakness!.score}점',
+                            : '${weakness!.typeLabel} · 집중 ${weakness!.score}점',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -953,7 +953,7 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
-      LearnItemStatus.weak => ('약점', AppColors.peach),
+      LearnItemStatus.weak => ('집중', AppColors.peach),
       LearnItemStatus.reviewDue => ('복습', AppColors.blue),
       LearnItemStatus.learned => ('배움', AppColors.green),
       LearnItemStatus.notLearned => ('미학습', AppColors.surfaceMuted),

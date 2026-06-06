@@ -14,6 +14,7 @@ import 'package:hanja_soook/domain/models/stroke_asset.dart';
 import 'package:hanja_soook/domain/repositories/challenge_result_repository.dart';
 import 'package:hanja_soook/domain/repositories/content_repository.dart';
 import 'package:hanja_soook/domain/repositories/learning_progress_repository.dart';
+import 'package:hanja_soook/features/challenge/challenge_hanja_pool.dart';
 import 'package:hanja_soook/features/flip_board/flip_board_controller.dart';
 
 void main() {
@@ -160,6 +161,27 @@ void main() {
     expect(state.feedbackMessage, '아쉬워요. 다시 적어봐요.');
   });
 
+  test(
+    'FlipBoardController varies initial tiles with challenge pool seed',
+    () async {
+      final firstContainer = _container(poolSeed: 1);
+      final secondContainer = _container(poolSeed: 2);
+      addTearDown(firstContainer.dispose);
+      addTearDown(secondContainer.dispose);
+
+      final provider = flipBoardProvider(
+        const FlipBoardGameConfig(mode: FlipBoardPlayMode.drawHanja),
+      );
+      final firstState = await firstContainer.read(provider.future);
+      final secondState = await secondContainer.read(provider.future);
+
+      final firstLabels = firstState.tiles.map((tile) => tile.label).toList();
+      final secondLabels = secondState.tiles.map((tile) => tile.label).toList();
+
+      expect(firstLabels, isNot(orderedEquals(secondLabels)));
+    },
+  );
+
   test('FlipBoardController saves a challenge result', () async {
     final repository = _FakeChallengeResultRepository();
     final container = _container(challengeRepository: repository);
@@ -198,9 +220,13 @@ void main() {
   });
 }
 
-ProviderContainer _container({ChallengeResultRepository? challengeRepository}) {
+ProviderContainer _container({
+  ChallengeResultRepository? challengeRepository,
+  int? poolSeed,
+}) {
   return ProviderContainer(
     overrides: [
+      challengeHanjaPoolSeedProvider.overrideWithValue(poolSeed),
       contentRepositoryProvider.overrideWithValue(_FakeContentRepository()),
       challengeResultRepositoryProvider.overrideWithValue(
         challengeRepository ?? _FakeChallengeResultRepository(),

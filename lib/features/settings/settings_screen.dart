@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/env.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_paths.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_confirm_dialog.dart';
+import '../../core/widgets/future_features_panel.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/app_user_profile.dart';
 import '../../domain/models/notification_settings.dart';
@@ -25,7 +27,12 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final normalizedRole = _normalizeRole(role);
+    final requestedRole = _normalizeRole(role);
+    final normalizedRole = AppEnv.showsPreviewFeatures
+        ? requestedRole
+        : requestedRole == 'change'
+        ? 'change'
+        : 'student';
     final profile = ref.watch(currentProfileProvider);
 
     if (normalizedRole == 'change') {
@@ -131,25 +138,34 @@ List<Widget> _sectionsForRole(BuildContext context, String role) {
       _SettingsSection(
         title: '학습 연결',
         children: [
-          const _SettingsInfoBox(
-            text: '반 참여는 선생님이 알려준 반 코드를 입력해요. 처음 선택한 역할은 아래 역할 변경에서 바꿀 수 있어요.',
-          ),
-          const Divider(height: 1),
-          _SettingsRow(
-            icon: Icons.badge_outlined,
-            title: '내 학생 연결 코드',
-            subtitle: '보호자 연결용 코드 확인',
-            tint: AppColors.blue,
-            onTap: () => _showStudentCodeSheet(context),
-          ),
-          const Divider(height: 1),
-          _SettingsRow(
-            icon: Icons.meeting_room_outlined,
-            title: '반 참여하기',
-            subtitle: '반 코드로 참여해요',
-            onTap: () => context.push(RoutePaths.studentLinksFor('student')),
-          ),
-          const Divider(height: 1),
+          if (AppEnv.showsPreviewFeatures) ...[
+            const _SettingsInfoBox(
+              text:
+                  '반 참여는 선생님이 알려준 반 코드를 입력해요. 처음 선택한 역할은 아래 역할 변경에서 바꿀 수 있어요.',
+            ),
+            const Divider(height: 1),
+            _SettingsRow(
+              icon: Icons.badge_outlined,
+              title: '내 학생 연결 코드',
+              subtitle: '보호자 연결용 코드 확인',
+              tint: AppColors.blue,
+              onTap: () => _showStudentCodeSheet(context),
+            ),
+            const Divider(height: 1),
+            _SettingsRow(
+              icon: Icons.meeting_room_outlined,
+              title: '반 참여하기',
+              subtitle: '반 코드로 참여해요',
+              onTap: () => context.push(RoutePaths.studentLinksFor('student')),
+            ),
+            const Divider(height: 1),
+          ] else ...[
+            const _SettingsInfoBox(
+              text:
+                  '현재 버전은 학생 학습 기능을 먼저 제공합니다. 보호자 연결과 반 참여 기능은 향후 업데이트에서 제공될 예정입니다.',
+            ),
+            const Divider(height: 1),
+          ],
           _SettingsRow(
             icon: Icons.tune,
             title: '학습 환경 설정',
@@ -165,6 +181,10 @@ List<Widget> _sectionsForRole(BuildContext context, String role) {
           ),
         ],
       ),
+      if (AppEnv.isProduction) ...[
+        const SizedBox(height: 18),
+        const FutureFeaturesPanel(),
+      ],
       const SizedBox(height: 18),
       _SettingsSection(
         title: '계정 및 기타',
@@ -814,20 +834,25 @@ class _RoleChangeView extends StatelessWidget {
             subtitle: '한자를 배우고\n실력을 키워요',
             onTap: () => context.go('${RoutePaths.appSettings}?role=student'),
           ),
-          const SizedBox(height: 14),
-          _RoleChoiceCard(
-            spec: _RoleSpec.parent,
-            title: '학부모',
-            subtitle: '우리 아이 학습 현황을\n확인하고 응원해요',
-            onTap: () => context.go('${RoutePaths.appSettings}?role=parent'),
-          ),
-          const SizedBox(height: 14),
-          _RoleChoiceCard(
-            spec: _RoleSpec.teacher,
-            title: '선생님',
-            subtitle: '학생 화면을 체험하고\n수업을 미리 준비해요',
-            onTap: () => context.go('${RoutePaths.appSettings}?role=teacher'),
-          ),
+          if (AppEnv.showsPreviewFeatures) ...[
+            const SizedBox(height: 14),
+            _RoleChoiceCard(
+              spec: _RoleSpec.parent,
+              title: '학부모',
+              subtitle: '우리 아이 학습 현황을\n확인하고 응원해요',
+              onTap: () => context.go('${RoutePaths.appSettings}?role=parent'),
+            ),
+            const SizedBox(height: 14),
+            _RoleChoiceCard(
+              spec: _RoleSpec.teacher,
+              title: '선생님',
+              subtitle: '학생 화면을 체험하고\n수업을 미리 준비해요',
+              onTap: () => context.go('${RoutePaths.appSettings}?role=teacher'),
+            ),
+          ] else ...[
+            const SizedBox(height: 14),
+            const FutureFeaturesPanel(),
+          ],
           const SizedBox(height: 18),
           PlayfulPanel(
             color: AppColors.surfaceMuted,
@@ -1082,7 +1107,7 @@ class _LogoutRow extends ConsumerWidget {
     final shouldLogout = await showAppConfirmDialog(
       context: context,
       title: '로그아웃할까요?',
-      message: '다시 시작하려면 학교와 학년을 선택해야 해요.',
+      message: '로그아웃 시 현재 기기의 학습 기록, 랭킹, 반 연결 정보가 모두 초기화되어 없어져요. 계속할까요?',
       confirmLabel: '로그아웃',
       icon: Icons.logout,
       isDestructive: true,

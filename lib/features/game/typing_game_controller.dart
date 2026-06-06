@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -38,6 +39,8 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
       ref: ref,
       seedOffset: 31,
     );
+    final seed = ref.watch(challengeHanjaPoolSeedProvider);
+    final roundRandom = seed == null ? null : Random(seed + 251);
     final latestResult = await resultRepository.getLatestGameResult(
       studentKey: studentKey,
     );
@@ -48,7 +51,7 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
     return TypingGameState(
       rounds: learnedItems.length < TypingGameController.minChoiceHanjaCount
           ? const []
-          : _buildRounds(learnedItems),
+          : _buildRounds(learnedItems, random: roundRandom),
       startedAt: now(),
       roundStartedAt: now(),
       remainingSeconds: _gameTimeLimitSeconds,
@@ -235,7 +238,10 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
     return result;
   }
 
-  List<TypingGameRound> _buildRounds(List<HanjaCharacter> items) {
+  List<TypingGameRound> _buildRounds(
+    List<HanjaCharacter> items, {
+    required Random? random,
+  }) {
     final activeItems = items.where((item) => item.isActive).toList();
     final rounds = <TypingGameRound>[];
     for (var index = 0; index < activeItems.length; index++) {
@@ -246,7 +252,7 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
             hanjaId: item.id,
             prompt: item.character,
             correctAnswer: _hunAnswer(item),
-            options: _buildHunOptions(activeItems, index),
+            options: _buildHunOptions(activeItems, index, random: random),
             promptUsesHanjaFont: true,
           ),
         )
@@ -255,30 +261,64 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
             hanjaId: item.id,
             prompt: _hunAnswer(item),
             correctAnswer: item.character,
-            options: _buildHanjaOptions(activeItems, index),
+            options: _buildHanjaOptions(activeItems, index, random: random),
             optionsUseHanjaFont: true,
           ),
         );
-      if (rounds.length >= AppConstants.challengeQuestionCount) {
+      if (rounds.length >= AppConstants.challengeQuestionCount &&
+          random == null) {
         break;
       }
+    }
+    if (random != null) {
+      rounds.shuffle(random);
+      _separateAdjacentSameHanjaRounds(rounds);
     }
     return rounds.take(AppConstants.challengeQuestionCount).toList();
   }
 
-  List<String> _buildHanjaOptions(List<HanjaCharacter> items, int index) {
+  void _separateAdjacentSameHanjaRounds(List<TypingGameRound> rounds) {
+    for (var index = 1; index < rounds.length; index += 1) {
+      if (rounds[index - 1].hanjaId != rounds[index].hanjaId) {
+        continue;
+      }
+      final swapIndex = rounds.indexWhere(
+        (round) => round.hanjaId != rounds[index - 1].hanjaId,
+        index + 1,
+      );
+      if (swapIndex == -1) {
+        continue;
+      }
+      final swap = rounds[index];
+      rounds[index] = rounds[swapIndex];
+      rounds[swapIndex] = swap;
+    }
+  }
+
+  List<String> _buildHanjaOptions(
+    List<HanjaCharacter> items,
+    int index, {
+    required Random? random,
+  }) {
     final correct = items[index].character;
     final options = items
         .where((item) => item.character != correct)
         .map((item) => item.character)
         .take(3)
         .toList();
+    if (random != null) {
+      return [correct, ...options]..shuffle(random);
+    }
     final insertIndex = index % (options.length + 1);
     options.insert(insertIndex, correct);
     return options;
   }
 
-  List<String> _buildHunOptions(List<HanjaCharacter> items, int index) {
+  List<String> _buildHunOptions(
+    List<HanjaCharacter> items,
+    int index, {
+    required Random? random,
+  }) {
     final correct = _hunAnswer(items[index]);
     final options = items
         .where((item) => item.id != items[index].id)
@@ -287,6 +327,9 @@ class TypingGameController extends AsyncNotifier<TypingGameState> {
         .toSet()
         .take(3)
         .toList();
+    if (random != null) {
+      return [correct, ...options]..shuffle(random);
+    }
     final insertIndex = index % (options.length + 1);
     options.insert(insertIndex, correct);
     return options;

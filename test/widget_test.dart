@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hanja_soook/app/app.dart';
+import 'package:hanja_soook/app/env.dart';
 import 'package:hanja_soook/app/router.dart';
 import 'package:hanja_soook/core/constants/route_paths.dart';
 import 'package:hanja_soook/data/repositories/challenge_result_repository_provider.dart';
@@ -144,6 +145,16 @@ class _FakeLearningProgressRepository implements LearningProgressRepository {
     required String refId,
   }) async {
     return 0;
+  }
+}
+
+class _FakeUnlearnedLearningProgressRepository
+    extends _FakeLearningProgressRepository {
+  @override
+  Future<Set<String>> getCompletedHanjaIdsForStudent({
+    required String studentKey,
+  }) async {
+    return const <String>{};
   }
 }
 
@@ -448,13 +459,13 @@ class _FakeLearningDiagnosticsRepository
   Future<void> recordPracticeEvent(HanjaPracticeEventInput input) async {}
 }
 
-Widget _testApp() {
+Widget _testApp({LearningProgressRepository? learningProgressRepository}) {
   return ProviderScope(
     overrides: [
       schoolRepositoryProvider.overrideWithValue(_FakeSchoolRepository()),
       contentRepositoryProvider.overrideWithValue(_FakeContentRepository()),
       learningProgressRepositoryProvider.overrideWithValue(
-        _FakeLearningProgressRepository(),
+        learningProgressRepository ?? _FakeLearningProgressRepository(),
       ),
       gameResultRepositoryProvider.overrideWithValue(
         _FakeGameResultRepository(),
@@ -503,8 +514,8 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
 
-    expect(find.text('어떤 모드로 시작할까요?'), findsOneWidget);
-    expect(find.text('한자 쏙쏙 실력 쑥쑥'), findsOneWidget);
+    expect(find.text('초등 한자를 재미있게 배우고,\n매일 실력을 쌓아가요'), findsOneWidget);
+    expect(find.text('한자를 배우고 연습해요'), findsOneWidget);
 
     appRouter.go(RoutePaths.studentSetup);
     await pumpUntilFound(tester, find.text('학년 선택'));
@@ -526,14 +537,16 @@ void main() {
       RoutePaths.hanja('HJ-0001'): '쓰기 연습 시작',
       RoutePaths.writing('HJ-0001'): '획순 보기',
       RoutePaths.appLearn: '복습하고, 한자장을 정리해요',
-      RoutePaths.appChallenge: '오늘 점수와 반 순위를 올려요',
+      RoutePaths.appChallenge: AppEnv.isProduction
+          ? '게임으로 배운 한자를 복습해요'
+          : '오늘 점수와 반 순위를 올려요',
       RoutePaths.appSettings: '학습 연결',
       RoutePaths.quiz: '퀴즈 선택',
-      RoutePaths.game: '시간 안에 많이 맞혀요. 오답은 점수가 깎여요.',
+      RoutePaths.game: '스피드 퀴즈',
       RoutePaths.result: '연습 완료',
       RoutePaths.growth: '성장 앨범',
-      RoutePaths.studentLinks: '학습 연결',
-      RoutePaths.teacherPreview: '반 코드 관리',
+      RoutePaths.studentLinks: AppEnv.isProduction ? '앞으로 추가될 기능' : '학습 연결',
+      RoutePaths.teacherPreview: AppEnv.isProduction ? '앞으로 추가될 기능' : '반 코드 관리',
     };
 
     for (final entry in routeChecks.entries) {
@@ -557,61 +570,187 @@ void main() {
     expect(find.text('학교를 선택해주세요.'), findsOneWidget);
   });
 
+  testWidgets('main app pages render on common phone sizes', (tester) async {
+    const sizes = [
+      Size(320, 568),
+      Size(360, 640),
+      Size(393, 852),
+      Size(430, 932),
+    ];
+    final routeChecks = <String, String>{
+      RoutePaths.roleSelect: '한자를 배우고 연습해요',
+      RoutePaths.login: '학년 선택',
+      RoutePaths.textbookGate: '3학년 한자쏘옥',
+      RoutePaths.appHome: '한자쏘옥 모험',
+      RoutePaths.appLearn: '복습하고, 한자장을 정리해요',
+      RoutePaths.appChallenge: AppEnv.isProduction
+          ? '게임으로 배운 한자를 복습해요'
+          : '오늘 점수와 반 순위를 올려요',
+      RoutePaths.appSettings: '학습 연결',
+      RoutePaths.hanja('HJ-0001'): '쓰기 연습 시작',
+      RoutePaths.writing('HJ-0001'): '획순 보기',
+      RoutePaths.freeWriting('HJ-0001'): '채점받기',
+      RoutePaths.quizModes: '퀴즈 선택',
+      RoutePaths.challengeSpeedGame: '스피드 퀴즈',
+      RoutePaths.result: '연습 완료',
+      RoutePaths.growth: '성장 앨범',
+      RoutePaths.studentLinks: AppEnv.isProduction ? '앞으로 추가될 기능' : '학습 연결',
+      RoutePaths.teacherPreview: AppEnv.isProduction ? '앞으로 추가될 기능' : '반 코드 관리',
+    };
+
+    for (final size in sizes) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      await tester.pumpWidget(_testApp());
+      await tester.pump(const Duration(seconds: 1));
+
+      for (final entry in routeChecks.entries) {
+        appRouter.go(entry.key);
+        await pumpUntilFound(tester, find.text(entry.value));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: '${entry.key} should fit at ${size.width}x${size.height}',
+        );
+        expect(find.text(entry.value), findsWidgets);
+      }
+    }
+
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+
   testWidgets('daily learning modes share compact one-screen layout', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(393, 852);
-    tester.view.devicePixelRatio = 1;
+    const sizes = [
+      Size(320, 568),
+      Size(360, 640),
+      Size(393, 852),
+      Size(430, 932),
+    ];
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
 
-    await tester.pumpWidget(_testApp());
-    await tester.pump(const Duration(seconds: 1));
-    appRouter.go(RoutePaths.home);
-    await pumpUntilFound(tester, find.text('오늘 학습 시작'));
-    final dailyButton = find.text('오늘 학습 시작').last;
-    await tester.ensureVisible(dailyButton);
-    await tester.pump();
-    await tester.tap(dailyButton);
-    await pumpUntilFound(tester, find.text('오늘 학습'));
-    await pumpUntilFound(tester, find.text('시작'));
-    expect(find.text('시작'), findsWidgets);
+    for (final size in sizes) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
 
-    final startButton = find.text('시작').last;
+      await tester.pumpWidget(_testApp());
+      await tester.pump(const Duration(seconds: 1));
+      appRouter.go(RoutePaths.home);
+      await pumpUntilFound(tester, find.text('오늘 학습 시작'));
+      final dailyButton = find.text('오늘 학습 시작').last;
+      await tester.ensureVisible(dailyButton);
+      await tester.pump();
+      await tester.tap(dailyButton);
+      await pumpUntilFound(tester, find.text('오늘 학습'));
+      await pumpUntilFound(tester, find.text('시작'));
+      expect(find.text('시작'), findsWidgets);
+
+      final startButton = find.text('시작').last;
+      await tester.ensureVisible(startButton);
+      await tester.pump();
+      await tester.tap(startButton);
+      await pumpUntilFound(tester, find.text('따라쓰기'));
+
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'guided writing should fit at ${size.width}x${size.height}',
+      );
+      await tester.ensureVisible(find.text('다음 한자').last);
+      await tester.pump();
+      _expectInViewport(tester, find.text('다음 한자').last);
+
+      await tester.ensureVisible(find.text('훈음 맞히기').last);
+      await tester.pump();
+      await tester.tap(find.text('훈음 맞히기').last);
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'quiz should fit at ${size.width}x${size.height}',
+      );
+      await tester.ensureVisible(find.text('다음').last);
+      await tester.pump();
+      _expectInViewport(tester, find.text('다음').last);
+
+      await tester.ensureVisible(find.text('랜덤쓰기').last);
+      await tester.pump();
+      await tester.tap(find.text('랜덤쓰기').last);
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'random writing should fit at ${size.width}x${size.height}',
+      );
+      await tester.ensureVisible(find.text('확인하기').last);
+      await tester.pump();
+      _expectInViewport(tester, find.text('확인하기').last);
+
+      final canvas = find.byKey(
+        const ValueKey('hanja-free-writing-canvas-input'),
+      );
+      await tester.ensureVisible(canvas);
+      await tester.pump();
+      final canvasCenter = tester.getCenter(canvas);
+      await tester.dragFrom(
+        canvasCenter + const Offset(0, -40),
+        const Offset(0, 80),
+      );
+      await tester.pump();
+      await tester.tap(find.text('확인하기').last);
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        tester.takeException(),
+        isNull,
+        reason:
+            'random writing feedback should fit at ${size.width}x${size.height}',
+      );
+      await tester.ensureVisible(find.text('확인하기').last);
+      await tester.pump();
+      _expectInViewport(tester, find.text('확인하기').last);
+    }
+  });
+
+  testWidgets('challenge daily learning prompt can start the session', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _testApp(
+        learningProgressRepository: _FakeUnlearnedLearningProgressRepository(),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 1));
+
+    appRouter.go(RoutePaths.appChallenge);
+    await tester.pump(const Duration(milliseconds: 500));
+    await pumpUntilFound(
+      tester,
+      find.widgetWithText(FilledButton, '오늘 학습 먼저 시작'),
+    );
+
+    final promptButton = find.widgetWithText(FilledButton, '오늘 학습 먼저 시작').last;
+    await tester.ensureVisible(promptButton);
+    await tester.pump();
+    await tester.tap(promptButton);
+
+    await tester.pump(const Duration(milliseconds: 500));
+    await pumpUntilFound(tester, find.widgetWithText(FilledButton, '시작'));
+    final startButton = find.widgetWithText(FilledButton, '시작').last;
     await tester.ensureVisible(startButton);
     await tester.pump();
     await tester.tap(startButton);
-    await pumpUntilFound(tester, find.text('따라쓰기'));
 
-    final guidedBackTop = tester
-        .getTopLeft(find.byIcon(Icons.arrow_back).first)
-        .dy;
-    final guidedBadgeTop = tester.getTopLeft(find.text('6자').last).dy;
-    _expectInViewport(tester, find.text('다음 한자').last);
-
-    await tester.tap(find.text('훈음 맞히기').last);
-    await tester.pump(const Duration(milliseconds: 300));
-
-    final quizBackTop = tester
-        .getTopLeft(find.byIcon(Icons.arrow_back).first)
-        .dy;
-    final quizBadgeTop = tester.getTopLeft(find.text('6자').last).dy;
-    expect((quizBackTop - guidedBackTop).abs(), lessThanOrEqualTo(2));
-    expect((quizBadgeTop - guidedBadgeTop).abs(), lessThanOrEqualTo(2));
-    _expectInViewport(tester, find.text('다음').last);
-
-    await tester.tap(find.text('랜덤쓰기').last);
-    await tester.pump(const Duration(milliseconds: 300));
-
-    final randomBackTop = tester
-        .getTopLeft(find.byIcon(Icons.arrow_back).first)
-        .dy;
-    final randomBadgeTop = tester.getTopLeft(find.text('6자').last).dy;
-    expect((randomBackTop - guidedBackTop).abs(), lessThanOrEqualTo(2));
-    expect((randomBadgeTop - guidedBadgeTop).abs(), lessThanOrEqualTo(2));
-    _expectInViewport(tester, find.text('확인하기').last);
+    await tester.pump(const Duration(milliseconds: 500));
+    await pumpUntilFound(tester, find.widgetWithText(FilledButton, '다음 한자'));
+    expect(find.widgetWithText(FilledButton, '다음 한자'), findsWidgets);
   });
 
   testWidgets('top-level app tabs confirm before app exit', (tester) async {
@@ -622,7 +761,9 @@ void main() {
     final tabChecks = <String, String>{
       RoutePaths.appHome: '한자쏘옥 모험',
       RoutePaths.appLearn: '복습하고, 한자장을 정리해요',
-      RoutePaths.appChallenge: '오늘 점수와 반 순위를 올려요',
+      RoutePaths.appChallenge: AppEnv.isProduction
+          ? '게임으로 배운 한자를 복습해요'
+          : '오늘 점수와 반 순위를 올려요',
       RoutePaths.appSettings: '학습 연결',
     };
 

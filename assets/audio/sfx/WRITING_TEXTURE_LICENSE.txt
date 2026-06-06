@@ -1,10 +1,15 @@
 Derived assets:
 - stroke_texture_pencil_fast.mp3
+- brush_01_b.mp3
 
 Sources:
 - Fast Pencil Writing: https://unstuntedsfx.net/audio/Fast_Pencil_Writing_135000.mp3
+- Interface Sounds confirmation_001.ogg: https://opengameart.org/content/interface-sounds
 
-Downloaded: 2026-06-01
+Downloaded:
+- Fast Pencil Writing: 2026-06-01
+- Kenney Interface Sounds: 2026-06-05
 
 License note:
 UnstuntedSFX describes its free sound effects as royalty-free for commercial and personal use with no attribution required.
+Kenney Interface Sounds is distributed under Creative Commons Zero (CC0).

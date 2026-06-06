@@ -17,7 +17,7 @@ class QuizModesScreen extends StatelessWidget {
         children: [
           PlayfulActionTile(
             icon: Icons.translate,
-            title: '한자 보고 훈음',
+            title: '한자 보고 훈음 맞추기',
             subtitle: '한자를 보고 훈음을 맞혀요',
             color: AppColors.surface,
             onTap: () => context.push(RoutePaths.quizPlayFor('hanja-to-hun')),
@@ -25,7 +25,7 @@ class QuizModesScreen extends StatelessWidget {
           const SizedBox(height: 12),
           PlayfulActionTile(
             icon: Icons.menu_book,
-            title: '훈음 보고 한자',
+            title: '훈음 보고 한자 맞추기',
             subtitle: '훈음을 보고 한자를 맞혀요',
             color: AppColors.surface,
             onTap: () => context.push(RoutePaths.quizPlayFor('hun-to-hanja')),
@@ -33,7 +33,7 @@ class QuizModesScreen extends StatelessWidget {
           const SizedBox(height: 12),
           PlayfulActionTile(
             icon: Icons.shuffle,
-            title: '혼합 퀴즈',
+            title: '혼합',
             subtitle: '여러 유형을 섞어 도전해요',
             color: AppColors.surface,
             onTap: () => context.push(RoutePaths.quizPlayFor('mixed')),

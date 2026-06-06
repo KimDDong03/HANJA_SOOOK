@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/env.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/widgets/future_features_panel.dart';
 import '../../core/widgets/playful_page.dart';
 import '../auth/current_profile_controller.dart';
 import 'home_controller.dart';
@@ -24,6 +26,8 @@ class HomeScreen extends ConsumerWidget {
             ? '오늘의 한자를 모아 별을 채워요'
             : '${profile.schoolName ?? '학교 미설정'} · ${profile.grade ?? '-'}학년',
         children: [
+          const _HomeSloganBanner(),
+          const SizedBox(height: 16),
           unitCarousel.when(
             data: (state) => _UnitSlideCarousel(state: state),
             loading: () => const PlayfulPanel(
@@ -68,7 +72,48 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           ),
+          if (AppEnv.isProduction) ...[
+            const SizedBox(height: 16),
+            const FutureFeaturesPanel(),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _HomeSloganBanner extends StatelessWidget {
+  const _HomeSloganBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.brandGreen.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.brandGreen.withValues(alpha: 0.32)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.eco, color: AppColors.brandGreenDark, size: 20),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                '한자 쏙쏙 실력 쑥쑥',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppColors.brandGreenDark,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -101,7 +146,8 @@ class _UnitSlideCarouselState extends State<_UnitSlideCarousel> {
   void didUpdateWidget(covariant _UnitSlideCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.state.grade == widget.state.grade &&
-        oldWidget.state.slides.length == widget.state.slides.length) {
+        oldWidget.state.activeSlideIndex == widget.state.activeSlideIndex &&
+        _sameSlideKeys(oldWidget.state.slides, widget.state.slides)) {
       return;
     }
     final nextIndex = widget.state.activeSlideIndex;
@@ -174,6 +220,18 @@ class _UnitSlideCarouselState extends State<_UnitSlideCarousel> {
       ),
     );
   }
+}
+
+bool _sameSlideKeys(List<HomeUnitSlide> a, List<HomeUnitSlide> b) {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (var index = 0; index < a.length; index += 1) {
+    if (a[index].chapterKey != b[index].chapterKey) {
+      return false;
+    }
+  }
+  return true;
 }
 
 class _HomeUnitPanel extends StatelessWidget {
@@ -322,6 +380,12 @@ class _UnitStartButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FilledButton.icon(
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.brandGreen,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: AppColors.border,
+        disabledForegroundColor: AppColors.textMuted,
+      ),
       onPressed: slide.isUnlocked
           ? () => context.push(
               RoutePaths.dailySessionForChapter(slide.chapterKey),
@@ -615,12 +679,12 @@ class _GrowthSummaryPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: AppColors.brandGreen,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.primaryDark),
+        border: Border.all(color: AppColors.brandGreenDark),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.18),
+            color: AppColors.brandGreen.withValues(alpha: 0.20),
             blurRadius: 22,
             offset: const Offset(0, 12),
           ),
@@ -653,7 +717,7 @@ class _GrowthSummaryPanel extends StatelessWidget {
                         padding: EdgeInsets.all(12),
                         child: Icon(
                           Icons.military_tech,
-                          color: AppColors.primary,
+                          color: AppColors.brandGreen,
                           size: 34,
                         ),
                       ),
@@ -689,25 +753,40 @@ class _GrowthSummaryPanel extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      '${state.totalXp}',
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 7),
-                      child: Text(
-                        'XP',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontWeight: FontWeight.w900,
+                    Expanded(
+                      child: FittedBox(
+                        alignment: Alignment.centerLeft,
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${state.totalXp}',
+                              style: Theme.of(context).textTheme.displaySmall
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                            ),
+                            const SizedBox(width: 6),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 7),
+                              child: Text(
+                                'XP',
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 8),
                     DecoratedBox(
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.18),

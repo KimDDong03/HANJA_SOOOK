@@ -200,6 +200,7 @@ class _WritingContentState extends ConsumerState<_WritingContent> {
                       canvasExtent: 344,
                       autoPlayOnStart: _roundIndex == 0,
                       onStrokeTexture: _playStrokeTexture,
+                      onStrokeTextureStop: _stopStrokeTexture,
                       onCompleted: _handleRoundCompleted,
                     ),
                   ],
@@ -290,6 +291,10 @@ class _WritingContentState extends ConsumerState<_WritingContent> {
 
   void _playStrokeTexture() {
     ref.read(appAudioControllerProvider).playStrokeTexture();
+  }
+
+  void _stopStrokeTexture() {
+    ref.read(appAudioControllerProvider).stopStrokeTexture();
   }
 }
 
@@ -418,6 +423,9 @@ class _FreeWritingFallback extends ConsumerWidget {
             canvasExtent: 172,
             onStrokeTexture: () {
               ref.read(appAudioControllerProvider).playStrokeTexture();
+            },
+            onStrokeTextureStop: () {
+              ref.read(appAudioControllerProvider).stopStrokeTexture();
             },
           ),
         ),

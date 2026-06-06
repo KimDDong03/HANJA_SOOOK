@@ -28,6 +28,7 @@ class MainActivity : FlutterActivity() {
     private val soundIds = mutableMapOf<String, Int>()
     private val loadedSoundIds = mutableSetOf<Int>()
     private val pendingSoundVolumes = mutableMapOf<Int, Float>()
+    private var strokeStreamId: Int? = null
     private var musicPlayer: MediaPlayer? = null
     private var currentMusicAsset: String? = null
     private var pendingNotificationResult: MethodChannel.Result? = null
@@ -75,6 +76,19 @@ class MainActivity : FlutterActivity() {
                         result.error("missing_asset", "Audio asset is required.", null)
                     } else {
                         playSfx(asset, volume)
+                        result.success(null)
+                    }
+                }
+                "stopStrokeSfx" -> {
+                    stopStrokeSfx()
+                    result.success(null)
+                }
+                "preloadSfx" -> {
+                    val asset = call.argument<String>("asset")
+                    if (asset == null) {
+                        result.error("missing_asset", "Audio asset is required.", null)
+                    } else {
+                        preloadSfx(asset)
                         result.success(null)
                     }
                 }
@@ -127,6 +141,12 @@ class MainActivity : FlutterActivity() {
             )
         }
         result.success(granted)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopStrokeSfx()
+        stopMusic()
     }
 
     private fun scheduleDailyReminderWithPermission(
@@ -189,6 +209,10 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun playSfx(asset: String, volume: Float) {
+        if (isStrokeSfx(asset)) {
+            playStrokeSfx(asset, volume)
+            return
+        }
         val soundId = soundIds[asset]
         if (soundId != null) {
             if (loadedSoundIds.contains(soundId)) {
@@ -206,7 +230,49 @@ class MainActivity : FlutterActivity() {
         pendingSoundVolumes[newSoundId] = volume
     }
 
+    private fun preloadSfx(asset: String) {
+        if (soundIds.containsKey(asset)) {
+            return
+        }
+
+        val assetFileDescriptor = assets.openFd(assetKey(asset))
+        val newSoundId = soundPool.load(assetFileDescriptor, 1)
+        assetFileDescriptor.close()
+        soundIds[asset] = newSoundId
+    }
+
+    private fun playStrokeSfx(asset: String, volume: Float) {
+        stopStrokeSfx()
+        val soundId = soundIds[asset]
+        if (soundId != null) {
+            if (loadedSoundIds.contains(soundId)) {
+                strokeStreamId = soundPool.play(soundId, volume, volume, 1, 0, 1f)
+            }
+            return
+        }
+
+        val assetFileDescriptor = assets.openFd(assetKey(asset))
+        val newSoundId = soundPool.load(assetFileDescriptor, 1)
+        assetFileDescriptor.close()
+        soundIds[asset] = newSoundId
+    }
+
+    private fun stopStrokeSfx() {
+        val streamId = strokeStreamId
+        if (streamId != null) {
+            soundPool.stop(streamId)
+        }
+        strokeStreamId = null
+    }
+
+    private fun isStrokeSfx(asset: String): Boolean {
+        return asset.contains("brush_01_b") ||
+            asset.contains("writing_sound_effect") ||
+            asset.contains("stroke_texture")
+    }
+
     private fun disposeAudio() {
+        stopStrokeSfx()
         stopMusic()
         soundPool.release()
     }

@@ -20,6 +20,7 @@ class HanjaWritingPracticeCanvas extends StatefulWidget {
     this.canvasTrailing,
     this.onCompleted,
     this.onStrokeTexture,
+    this.onStrokeTextureStop,
     this.viewBox = defaultHanjaViewBox,
   });
 
@@ -32,6 +33,7 @@ class HanjaWritingPracticeCanvas extends StatefulWidget {
   final Widget? canvasTrailing;
   final VoidCallback? onCompleted;
   final VoidCallback? onStrokeTexture;
+  final VoidCallback? onStrokeTextureStop;
   final Rect viewBox;
 
   @override
@@ -57,9 +59,6 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
   Path? _errorUserPath;
   int? _activePointer;
   int _paintRevision = 0;
-  DateTime? _lastStrokeTextureAt;
-
-  static const _strokeTextureInterval = Duration(milliseconds: 120);
 
   @override
   void initState() {
@@ -212,7 +211,6 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
       _currentUserPath = Path()..moveTo(source.dx, source.dy);
       _paintRevision += 1;
     });
-    _playStrokeTexture();
   }
 
   void _updateStroke(Offset localPosition, Size canvasSize) {
@@ -228,7 +226,6 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
       path.lineTo(source.dx, source.dy);
       _paintRevision += 1;
     });
-    _playStrokeTexture();
   }
 
   void _endStroke() {
@@ -252,6 +249,7 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
         _acceptedToPath = expectedPath;
       });
       _acceptedController.forward(from: 0);
+      _playStrokeTexture();
       return;
     }
 
@@ -271,13 +269,6 @@ class _HanjaWritingPracticeCanvasState extends State<HanjaWritingPracticeCanvas>
   }
 
   void _playStrokeTexture() {
-    final now = DateTime.now();
-    final lastPlayedAt = _lastStrokeTextureAt;
-    if (lastPlayedAt != null &&
-        now.difference(lastPlayedAt) < _strokeTextureInterval) {
-      return;
-    }
-    _lastStrokeTextureAt = now;
     widget.onStrokeTexture?.call();
   }
 

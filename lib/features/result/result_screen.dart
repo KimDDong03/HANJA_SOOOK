@@ -428,9 +428,9 @@ class _ResultLoadError extends StatelessWidget {
 
 String _challengeTitle(ChallengeMode mode) {
   return switch (mode) {
-    ChallengeMode.quizHanjaToHun => '한자 보고 훈음',
-    ChallengeMode.quizHunToHanja => '훈음 보고 한자',
-    ChallengeMode.quizMixed => '혼합 퀴즈',
+    ChallengeMode.quizHanjaToHun => '한자 보고 훈음 맞추기',
+    ChallengeMode.quizHunToHanja => '훈음 보고 한자 맞추기',
+    ChallengeMode.quizMixed => '혼합',
     ChallengeMode.speedChoice => '스피드 퀴즈',
     ChallengeMode.flipBoard => '판뒤집기',
   };

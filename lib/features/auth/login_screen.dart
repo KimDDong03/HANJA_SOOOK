@@ -182,6 +182,8 @@ class _GradeOptions extends StatelessWidget {
   final int? selectedGrade;
   final ValueChanged<int> onSelected;
 
+  static const _visibleGrades = [1, 2, ...AppConstants.supportedGrades];
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -191,12 +193,13 @@ class _GradeOptions extends StatelessWidget {
           spacing: 12,
           runSpacing: 12,
           children: [
-            for (final grade in AppConstants.supportedGrades)
+            for (final grade in _visibleGrades)
               SizedBox(
                 width: itemWidth,
                 child: _GradeTile(
                   grade: grade,
                   selected: selectedGrade == grade,
+                  enabled: AppConstants.supportedGrades.contains(grade),
                   onTap: () => onSelected(grade),
                 ),
               ),
@@ -211,11 +214,13 @@ class _GradeTile extends StatelessWidget {
   const _GradeTile({
     required this.grade,
     required this.selected,
+    required this.enabled,
     required this.onTap,
   });
 
   final int grade;
   final bool selected;
+  final bool enabled;
   final VoidCallback onTap;
 
   @override
@@ -230,22 +235,40 @@ class _GradeTile extends StatelessWidget {
         ),
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(14),
         child: SizedBox(
           height: 78,
           child: Stack(
             children: [
               Center(
-                child: Text(
-                  '$grade학년',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w900,
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$grade학년',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: enabled
+                            ? AppColors.textPrimary
+                            : AppColors.textMuted,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    if (!enabled) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        '준비 중',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w900,
+                            ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              if (selected)
+              if (selected && enabled)
                 const Positioned(
                   right: 12,
                   bottom: 10,
@@ -263,6 +286,9 @@ class _GradeTile extends StatelessWidget {
   }
 
   Color _gradeColor(int grade) {
+    if (!enabled) {
+      return AppColors.surfaceMuted;
+    }
     return switch (grade) {
       3 => AppColors.yellow,
       4 => AppColors.green,

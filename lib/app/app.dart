@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/audio/button_tap_sound_layer.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -13,6 +14,9 @@ class HanjaSoookApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       routerConfig: appRouter,
+      builder: (context, child) {
+        return AppButtonTapSoundLayer(child: child ?? const SizedBox.shrink());
+      },
     );
   }
 }

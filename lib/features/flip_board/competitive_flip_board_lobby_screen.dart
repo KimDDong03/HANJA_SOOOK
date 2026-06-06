@@ -5,9 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/env.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/widgets/future_features_panel.dart';
 import '../../core/widgets/playful_page.dart';
 import '../student_links/student_link_controller.dart';
 import 'flip_board_time_limit_picker.dart';
@@ -35,6 +37,15 @@ class _CompetitiveFlipBoardLobbyScreenState
 
   @override
   Widget build(BuildContext context) {
+    if (AppEnv.isProduction) {
+      return const Scaffold(
+        body: FutureFeaturesPage(
+          title: '친구와 함께하는 대결',
+          subtitle: '경쟁 판뒤집기는 향후 업데이트에서 제공될 예정입니다',
+        ),
+      );
+    }
+
     final asyncState = ref.watch(studentLinkProvider);
 
     return Scaffold(

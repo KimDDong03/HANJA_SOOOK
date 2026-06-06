@@ -68,49 +68,14 @@ final homeUnitCarouselProvider = FutureProvider<HomeUnitCarouselState>((
     newItemLimit: AppConstants.dailyHanjaCount,
     reviewItemLimit: AppConstants.dailyReviewCount,
   );
-  final completedHanjaIds = progressRecords
-      .map((record) => record.hanjaId)
-      .toSet();
   final chapters = const LearningPlanService().buildChapters(allItems);
-  final thinkingImageService = const ThinkingUnitImageService();
-  final activeMajorUnitKey = plan.chapterKey == null
-      ? null
-      : thinkingImageService.majorUnitKeyForChapterKey(plan.chapterKey!);
-  final fallbackMajorUnitKey = chapters.isEmpty
-      ? null
-      : thinkingImageService.majorUnitKeyForChapterKey(chapters.first.key);
-  final majorUnitKey = activeMajorUnitKey ?? fallbackMajorUnitKey;
-  final visibleChapters = majorUnitKey == null
-      ? chapters
-      : chapters
-            .where(
-              (chapter) =>
-                  thinkingImageService.majorUnitKeyForChapterKey(chapter.key) ==
-                  majorUnitKey,
-            )
-            .toList();
-  final slides = [
-    for (var index = 0; index < visibleChapters.length; index += 1)
-      HomeUnitSlide.fromChapter(
-        chapter: visibleChapters[index],
-        learningDate: learningDate,
-        progressRecords: progressRecords,
-        completedHanjaIds: completedHanjaIds,
-        isUnlocked: _isChapterUnlocked(
-          chapters: visibleChapters,
-          index: index,
-          completedHanjaIds: completedHanjaIds,
-        ),
-      ),
-  ];
-  final activeSlideIndex = slides.indexWhere(
-    (slide) => slide.chapterKey == plan.chapterKey,
-  );
 
-  return HomeUnitCarouselState(
+  return HomeUnitCarouselState.fromChapters(
     grade: grade,
-    slides: slides,
-    activeSlideIndex: activeSlideIndex < 0 ? 0 : activeSlideIndex,
+    chapters: chapters,
+    learningDate: learningDate,
+    progressRecords: progressRecords,
+    plannedChapterKey: plan.chapterKey,
   );
 });
 
@@ -186,6 +151,65 @@ class HomeUnitCarouselState {
     required this.slides,
     required this.activeSlideIndex,
   });
+
+  factory HomeUnitCarouselState.fromChapters({
+    required int grade,
+    required List<HanjaChapter> chapters,
+    required String learningDate,
+    required List<LearningProgressRecord> progressRecords,
+    String? plannedChapterKey,
+  }) {
+    final completedHanjaIds = progressRecords
+        .map((record) => record.hanjaId)
+        .toSet();
+    const thinkingImageService = ThinkingUnitImageService();
+    final activeChapterKey = _activeHomeChapterKey(
+      chapters: chapters,
+      completedHanjaIds: completedHanjaIds,
+      fallbackChapterKey: plannedChapterKey,
+    );
+    final activeMajorUnitKey = activeChapterKey == null
+        ? null
+        : thinkingImageService.majorUnitKeyForChapterKey(activeChapterKey);
+    final fallbackMajorUnitKey = chapters.isEmpty
+        ? null
+        : thinkingImageService.majorUnitKeyForChapterKey(chapters.first.key);
+    final majorUnitKey = activeMajorUnitKey ?? fallbackMajorUnitKey;
+    final visibleChapters = majorUnitKey == null
+        ? chapters
+        : chapters
+              .where(
+                (chapter) =>
+                    thinkingImageService.majorUnitKeyForChapterKey(
+                      chapter.key,
+                    ) ==
+                    majorUnitKey,
+              )
+              .toList();
+    final slides = [
+      for (var index = 0; index < visibleChapters.length; index += 1)
+        HomeUnitSlide.fromChapter(
+          chapter: visibleChapters[index],
+          learningDate: learningDate,
+          progressRecords: progressRecords,
+          completedHanjaIds: completedHanjaIds,
+          isUnlocked: _isChapterUnlocked(
+            chapters: visibleChapters,
+            index: index,
+            completedHanjaIds: completedHanjaIds,
+          ),
+        ),
+    ];
+    final activeSlideIndex = slides.indexWhere(
+      (slide) => slide.chapterKey == activeChapterKey,
+    );
+
+    return HomeUnitCarouselState(
+      grade: grade,
+      slides: slides,
+      activeSlideIndex: activeSlideIndex < 0 ? 0 : activeSlideIndex,
+    );
+  }
 
   final int grade;
   final List<HomeUnitSlide> slides;
@@ -270,6 +294,29 @@ bool _isChapterUnlocked({
 bool _isChapterComplete(HanjaChapter chapter, Set<String> completedHanjaIds) {
   return chapter.items.isNotEmpty &&
       chapter.items.every((item) => completedHanjaIds.contains(item.id));
+}
+
+String? _activeHomeChapterKey({
+  required List<HanjaChapter> chapters,
+  required Set<String> completedHanjaIds,
+  required String? fallbackChapterKey,
+}) {
+  for (final chapter in chapters) {
+    if (!_isChapterComplete(chapter, completedHanjaIds)) {
+      return chapter.key;
+    }
+  }
+
+  final normalizedFallback = fallbackChapterKey?.trim();
+  if (normalizedFallback != null && normalizedFallback.isNotEmpty) {
+    for (final chapter in chapters) {
+      if (chapter.key == normalizedFallback) {
+        return normalizedFallback;
+      }
+    }
+  }
+
+  return chapters.isEmpty ? null : chapters.first.key;
 }
 
 class TodayLearningState {

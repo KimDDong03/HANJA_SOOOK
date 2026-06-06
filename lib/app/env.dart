@@ -14,6 +14,13 @@ class AppEnv {
 
   static bool get isDemo => normalizedAppEnv == 'demo';
 
+  static bool get isProduction =>
+      normalizedAppEnv == 'prod' ||
+      normalizedAppEnv == 'production' ||
+      normalizedAppEnv == 'release';
+
+  static bool get showsPreviewFeatures => !isProduction;
+
   static bool get hasSupabaseConfig =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 

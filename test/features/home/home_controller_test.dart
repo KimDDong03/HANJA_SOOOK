@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hanja_soook/domain/models/hanja_character.dart';
+import 'package:hanja_soook/domain/models/learning_progress_record.dart';
 import 'package:hanja_soook/domain/services/learning_plan_service.dart';
 import 'package:hanja_soook/domain/services/thinking_unit_image_service.dart';
 import 'package:hanja_soook/features/growth/growth_controller.dart';
@@ -112,4 +113,91 @@ void main() {
     );
     expect(service.majorUnitKeyForChapterKey('bad-key'), isNull);
   });
+
+  test(
+    'HomeUnitCarouselState advances after completing a major unit today',
+    () {
+      final state = HomeUnitCarouselState.fromChapters(
+        grade: 3,
+        chapters: _majorUnitChapters,
+        learningDate: '20260605',
+        progressRecords: [
+          _progressFor('HJ-U01-L01'),
+          _progressFor('HJ-U01-L02'),
+        ],
+        plannedChapterKey: 'G3-U01-L01',
+      );
+
+      expect(state.slides.map((slide) => slide.chapterKey), [
+        'G3-U02-L01',
+        'G3-U02-L02',
+      ]);
+      expect(state.activeSlideIndex, 0);
+      expect(state.slides.first.isUnlocked, isTrue);
+    },
+  );
 }
+
+LearningProgressRecord _progressFor(String hanjaId) {
+  return LearningProgressRecord(
+    studentKey: 'student-1',
+    learningDate: '20260605',
+    hanjaId: hanjaId,
+    completedAt: DateTime(2026, 6, 5),
+  );
+}
+
+const _majorUnitChapters = [
+  HanjaChapter(
+    key: 'G3-U01-L01',
+    name: '초3 1단원 1',
+    items: [
+      HanjaCharacter(
+        id: 'HJ-U01-L01',
+        character: '一',
+        sound: '일',
+        meaning: '한 일',
+        grade: 3,
+      ),
+    ],
+  ),
+  HanjaChapter(
+    key: 'G3-U01-L02',
+    name: '초3 1단원 2',
+    items: [
+      HanjaCharacter(
+        id: 'HJ-U01-L02',
+        character: '二',
+        sound: '이',
+        meaning: '두 이',
+        grade: 3,
+      ),
+    ],
+  ),
+  HanjaChapter(
+    key: 'G3-U02-L01',
+    name: '초3 2단원 1',
+    items: [
+      HanjaCharacter(
+        id: 'HJ-U02-L01',
+        character: '三',
+        sound: '삼',
+        meaning: '석 삼',
+        grade: 3,
+      ),
+    ],
+  ),
+  HanjaChapter(
+    key: 'G3-U02-L02',
+    name: '초3 2단원 2',
+    items: [
+      HanjaCharacter(
+        id: 'HJ-U02-L02',
+        character: '四',
+        sound: '사',
+        meaning: '넉 사',
+        grade: 3,
+      ),
+    ],
+  ),
+];

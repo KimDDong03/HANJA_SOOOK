@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/env.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/widgets/future_features_panel.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/class_room.dart';
 import 'student_link_controller.dart';
@@ -36,6 +38,15 @@ class _StudentLinkScreenState extends ConsumerState<StudentLinkScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (AppEnv.isProduction) {
+      return const Scaffold(
+        body: FutureFeaturesPage(
+          title: '학습 연결',
+          subtitle: '보호자 연결과 반 참여 기능은 향후 업데이트에서 제공될 예정입니다',
+        ),
+      );
+    }
+
     final state = ref.watch(studentLinkProvider);
     final role = _normalizeRole(widget.role);
 

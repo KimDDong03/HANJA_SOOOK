@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/audio/app_audio_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_fonts.dart';
@@ -173,6 +174,12 @@ class _FlipBoardScreenState extends ConsumerState<FlipBoardScreen> {
                             expectedStrokeCount: null,
                             canvasExtent: 260,
                             showTitle: false,
+                            onStrokeTexture: () => ref
+                                .read(appAudioControllerProvider)
+                                .playStrokeTexture(),
+                            onStrokeTextureStop: () => ref
+                                .read(appAudioControllerProvider)
+                                .stopStrokeTexture(),
                             onStrokesChanged: (strokes) {
                               setState(() => _strokes = strokes);
                             },

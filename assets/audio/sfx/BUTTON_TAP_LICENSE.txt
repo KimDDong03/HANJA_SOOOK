@@ -1,8 +1,4 @@
-button_tap.wav
+button_tap.ogg
 
-Source: https://opengameart.org/content/click
-Author: qubodup
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-
-Original file: click.wav
+Source: User-provided Naver MYBOX shared file
+Original file: drop_003.ogg

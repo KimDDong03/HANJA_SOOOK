@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/env.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/widgets/future_features_panel.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/class_ranking.dart';
 import '../flip_board/flip_board_controller.dart';
@@ -20,7 +22,7 @@ class ChallengeScreen extends ConsumerWidget {
     return Scaffold(
       body: PlayfulPage(
         title: '도전',
-        subtitle: '오늘 점수와 반 순위를 올려요',
+        subtitle: AppEnv.isProduction ? '게임으로 배운 한자를 복습해요' : '오늘 점수와 반 순위를 올려요',
         children: [
           summary.when(
             data: (data) => _ChallengeContent(data: data),
@@ -46,11 +48,13 @@ class _ChallengeContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (data.hasJoinedClass)
-          _ChallengeSummaryPanel(data: data)
-        else
-          const _JoinClassPrompt(),
-        const SizedBox(height: 18),
+        if (AppEnv.showsPreviewFeatures) ...[
+          if (data.hasJoinedClass)
+            _ChallengeSummaryPanel(data: data)
+          else
+            const _JoinClassPrompt(),
+          const SizedBox(height: 18),
+        ],
         Text(
           '도전 모드',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -60,6 +64,10 @@ class _ChallengeContent extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         _ChallengeModeGrid(data: data),
+        if (AppEnv.isProduction) ...[
+          const SizedBox(height: 18),
+          const FutureFeaturesPanel(),
+        ],
         if (!data.canPlayChallengeGames) ...[
           const SizedBox(height: 12),
           FilledButton.icon(
@@ -396,14 +404,15 @@ class _ChallengeModeGrid extends StatelessWidget {
             );
           },
         ),
-        _ChallengeModeCard(
-          icon: Icons.leaderboard,
-          title: '반 랭킹',
-          subtitle: '순위 확인',
-          color: AppColors.yellow,
-          isEnabled: true,
-          onTap: () => context.push(RoutePaths.classRanking),
-        ),
+        if (AppEnv.showsPreviewFeatures)
+          _ChallengeModeCard(
+            icon: Icons.leaderboard,
+            title: '반 랭킹',
+            subtitle: '순위 확인',
+            color: AppColors.yellow,
+            isEnabled: true,
+            onTap: () => context.push(RoutePaths.classRanking),
+          ),
       ],
     );
   }
@@ -428,67 +437,80 @@ class _ChallengeModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isEnabled ? color : AppColors.surfaceMuted,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: AppColors.border),
-      ),
-      child: InkWell(
-        onTap: isEnabled ? onTap : null,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    icon,
-                    size: 30,
-                    color: isEnabled
-                        ? AppColors.textPrimary
-                        : AppColors.textMuted,
-                  ),
-                  const Spacer(),
-                  Icon(
-                    isEnabled ? Icons.chevron_right : Icons.lock,
-                    size: 22,
-                    color: AppColors.textSecondary,
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final veryCompact = constraints.maxHeight < 90;
+        final compact = constraints.maxHeight < 104;
+        return Material(
+          color: isEnabled ? color : AppColors.surfaceMuted,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppColors.border),
           ),
-        ),
-      ),
+          child: InkWell(
+            onTap: isEnabled ? onTap : null,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: EdgeInsets.all(compact ? 8 : 12),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        icon,
+                        size: compact ? 22 : 30,
+                        color: isEnabled
+                            ? AppColors.textPrimary
+                            : AppColors.textMuted,
+                      ),
+                      const Spacer(),
+                      Icon(
+                        isEnabled ? Icons.chevron_right : Icons.lock,
+                        size: compact ? 18 : 22,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            (compact
+                                    ? Theme.of(context).textTheme.bodyMedium
+                                    : Theme.of(context).textTheme.titleMedium)
+                                ?.copyWith(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                      ),
+                      if (!veryCompact) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -260,4 +260,30 @@ void main() {
 
     expect(afterPass.canAdvanceCurrentRandomWriting, isTrue);
   });
+
+  test('random writing hint marks the hanja for mistake review', () {
+    const item = HanjaCharacter(
+      id: 'HJ-0001',
+      character: '一',
+      sound: '일',
+      meaning: '하나',
+      strokeCount: 1,
+      grade: 3,
+    );
+    const state = DailySessionState(
+      items: [item],
+      strokeAssets: {},
+      hanjaToHunQuestions: [],
+      hunToHanjaQuestions: [],
+      randomWritingItems: [item],
+      phase: DailySessionPhase.randomWriting,
+    );
+
+    final afterHint = state.markRandomWritingHintUsed(item.id);
+    final afterDuplicateHint = afterHint.markRandomWritingHintUsed(item.id);
+
+    expect(afterHint.randomWritingHintedHanjaIds, contains(item.id));
+    expect(afterHint.missedHanjaIds, contains(item.id));
+    expect(afterDuplicateHint.randomWritingHintedHanjaIds, hasLength(1));
+  });
 }

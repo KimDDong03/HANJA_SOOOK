@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/audio/app_audio_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_fonts.dart';
 import '../../core/constants/route_paths.dart';
@@ -212,6 +213,10 @@ class _WritingStep extends ConsumerWidget {
             canvasExtent: 286,
             showTitle: false,
             initialStrokes: state.writingStrokesFor(item.id),
+            onStrokeTexture: () =>
+                ref.read(appAudioControllerProvider).playStrokeTexture(),
+            onStrokeTextureStop: () =>
+                ref.read(appAudioControllerProvider).stopStrokeTexture(),
             onStrokesChanged: (strokes) {
               ref
                   .read(provider.notifier)

@@ -29,6 +29,7 @@ import 'package:hanja_soook/domain/repositories/learning_diagnostics_repository.
 import 'package:hanja_soook/domain/repositories/learning_progress_repository.dart';
 import 'package:hanja_soook/domain/repositories/quiz_result_repository.dart';
 import 'package:hanja_soook/domain/repositories/school_repository.dart';
+import 'package:hanja_soook/features/challenge/challenge_hanja_pool.dart';
 
 void main() {
   testWidgets('student setup can reach home and start today session', (
@@ -45,7 +46,10 @@ void main() {
     await _pumpUntilFound(tester, find.text('서울새솔초등학교'));
     await tester.tap(find.text('서울새솔초등학교'));
     await tester.enterText(find.widgetWithText(TextField, '이름'), '김하준');
-    await tester.tap(find.text('3학년'));
+    final grade = find.text('3학년');
+    await tester.ensureVisible(grade);
+    await tester.pumpAndSettle();
+    await tester.tap(grade);
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -300));
     await tester.pumpAndSettle();
     await tester.tap(find.text('시작하기').last);
@@ -75,7 +79,7 @@ void main() {
     await _settleStartup(tester);
 
     appRouter.go(RoutePaths.quizPlayFor('mixed'));
-    await _pumpUntilFound(tester, find.text('혼합 퀴즈'));
+    await _pumpUntilFound(tester, find.text('혼합'));
 
     final answers = <String>[
       _characters[0].meaning,
@@ -99,7 +103,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
 
-    await _pumpUntilFound(tester, find.text('혼합 퀴즈 완료'));
+    await _pumpUntilFound(tester, find.text('혼합 완료'));
     expect(
       challengeRepository.savedResults.single.mode,
       ChallengeMode.quizMixed,
@@ -195,6 +199,7 @@ Widget _demoApp({
   appRouter.go(RoutePaths.splash);
   return ProviderScope(
     overrides: [
+      challengeHanjaPoolSeedProvider.overrideWithValue(null),
       schoolRepositoryProvider.overrideWithValue(_FakeSchoolRepository()),
       contentRepositoryProvider.overrideWithValue(_FakeContentRepository()),
       learningProgressRepositoryProvider.overrideWithValue(

@@ -16,9 +16,11 @@ class HanjaFreeWritingCanvas extends StatefulWidget {
     this.toolbarLeading,
     this.showTitle = true,
     this.onStrokeTexture,
+    this.onStrokeTextureStop,
     this.viewBox = defaultHanjaViewBox,
     this.failedStrokeIndex,
     this.expectedHintPath,
+    this.expectedHintPaths = const [],
   });
 
   final int? expectedStrokeCount;
@@ -30,9 +32,11 @@ class HanjaFreeWritingCanvas extends StatefulWidget {
   final Widget? toolbarLeading;
   final bool showTitle;
   final VoidCallback? onStrokeTexture;
+  final VoidCallback? onStrokeTextureStop;
   final Rect viewBox;
   final int? failedStrokeIndex;
   final Path? expectedHintPath;
+  final List<Path> expectedHintPaths;
 
   @override
   State<HanjaFreeWritingCanvas> createState() => _HanjaFreeWritingCanvasState();
@@ -43,9 +47,6 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
   Path? _currentPath;
   int? _activePointer;
   int _paintRevision = 0;
-  DateTime? _lastStrokeTextureAt;
-
-  static const _strokeTextureInterval = Duration(milliseconds: 120);
 
   @override
   void initState() {
@@ -73,7 +74,6 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
       _currentPath = Path()..moveTo(source.dx, source.dy);
       _paintRevision += 1;
     });
-    _playStrokeTexture();
   }
 
   void _updateStroke(Offset localPosition, Size canvasSize) {
@@ -86,7 +86,6 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
       path.lineTo(source.dx, source.dy);
       _paintRevision += 1;
     });
-    _playStrokeTexture();
   }
 
   void _endStroke() {
@@ -100,6 +99,7 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
       _paintRevision += 1;
     });
     _notifyStrokesChanged();
+    _playStrokeTexture();
   }
 
   void _undoStroke() {
@@ -138,13 +138,6 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
   }
 
   void _playStrokeTexture() {
-    final now = DateTime.now();
-    final lastPlayedAt = _lastStrokeTextureAt;
-    if (lastPlayedAt != null &&
-        now.difference(lastPlayedAt) < _strokeTextureInterval) {
-      return;
-    }
-    _lastStrokeTextureAt = now;
     widget.onStrokeTexture?.call();
   }
 
@@ -301,9 +294,12 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
                                   hintStrokeColor: colorScheme.error.withValues(
                                     alpha: 0.28,
                                   ),
+                                  guideStrokeColor: colorScheme.onSurface
+                                      .withValues(alpha: 0.13),
                                   gridColor: colorScheme.outlineVariant,
                                   failedStrokeIndex: widget.failedStrokeIndex,
                                   expectedHintPath: widget.expectedHintPath,
+                                  expectedHintPaths: widget.expectedHintPaths,
                                 ),
                               ),
                             ),
@@ -365,9 +361,11 @@ class _FreeWritingPainter extends CustomPainter {
     required this.viewBox,
     required this.failedStrokeColor,
     required this.hintStrokeColor,
+    required this.guideStrokeColor,
     required this.gridColor,
     required this.failedStrokeIndex,
     required this.expectedHintPath,
+    required this.expectedHintPaths,
   });
 
   final List<Path> strokes;
@@ -376,9 +374,11 @@ class _FreeWritingPainter extends CustomPainter {
   final Rect viewBox;
   final Color failedStrokeColor;
   final Color hintStrokeColor;
+  final Color guideStrokeColor;
   final Color gridColor;
   final int? failedStrokeIndex;
   final Path? expectedHintPath;
+  final List<Path> expectedHintPaths;
 
   static const _hintStrokeWidth = 8.0;
   static const _failedStrokeWidth = 7.0;
@@ -391,6 +391,18 @@ class _FreeWritingPainter extends CustomPainter {
     final transform = HanjaCanvasTransform(size: size, viewBox: viewBox);
     canvas.save();
     transform.apply(canvas);
+
+    if (expectedHintPaths.isNotEmpty) {
+      final guidePaint = Paint()
+        ..color = guideStrokeColor
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = _hintStrokeWidth;
+      for (final path in expectedHintPaths) {
+        canvas.drawPath(path, guidePaint);
+      }
+    }
 
     final hintPath = expectedHintPath;
     if (hintPath != null) {
@@ -463,8 +475,10 @@ class _FreeWritingPainter extends CustomPainter {
         oldDelegate.viewBox != viewBox ||
         oldDelegate.failedStrokeColor != failedStrokeColor ||
         oldDelegate.hintStrokeColor != hintStrokeColor ||
+        oldDelegate.guideStrokeColor != guideStrokeColor ||
         oldDelegate.gridColor != gridColor ||
         oldDelegate.failedStrokeIndex != failedStrokeIndex ||
-        oldDelegate.expectedHintPath != expectedHintPath;
+        oldDelegate.expectedHintPath != expectedHintPath ||
+        oldDelegate.expectedHintPaths != expectedHintPaths;
   }
 }

@@ -13,6 +13,7 @@ import 'package:hanja_soook/domain/models/stroke_asset.dart';
 import 'package:hanja_soook/domain/repositories/content_repository.dart';
 import 'package:hanja_soook/domain/repositories/learning_progress_repository.dart';
 import 'package:hanja_soook/domain/repositories/quiz_result_repository.dart';
+import 'package:hanja_soook/features/challenge/challenge_hanja_pool.dart';
 import 'package:hanja_soook/features/quiz/quiz_controller.dart';
 
 void main() {
@@ -71,6 +72,53 @@ void main() {
   });
 
   test(
+    'QuizController varies question order with challenge pool seed',
+    () async {
+      final firstContainer = _quizContainer(poolSeed: 1);
+      final secondContainer = _quizContainer(poolSeed: 2);
+      addTearDown(firstContainer.dispose);
+      addTearDown(secondContainer.dispose);
+
+      final firstState = await firstContainer.read(
+        quizProvider(QuizPlayMode.hanjaToHun).future,
+      );
+      final secondState = await secondContainer.read(
+        quizProvider(QuizPlayMode.hanjaToHun).future,
+      );
+
+      final firstOrder = firstState.questions
+          .map((question) => question.hanjaId)
+          .toList();
+      final secondOrder = secondState.questions
+          .map((question) => question.hanjaId)
+          .toList();
+
+      expect(firstOrder, isNot(orderedEquals(secondOrder)));
+    },
+  );
+
+  test(
+    'QuizController randomizes answer positions with challenge pool seed',
+    () async {
+      final container = _quizContainer(poolSeed: 7);
+      addTearDown(container.dispose);
+
+      final state = await container.read(
+        quizProvider(QuizPlayMode.hanjaToHun).future,
+      );
+
+      final correctPositions = [
+        for (final question in state.questions)
+          question.options.indexOf(question.correctAnswer),
+      ];
+      expect(correctPositions, isNot(orderedEquals([0, 1, 2, 3, 0, 1])));
+      for (final question in state.questions) {
+        expect(question.options, contains(question.correctAnswer));
+      }
+    },
+  );
+
+  test(
     'QuizController unlocks choice quizzes with five learned Hanja',
     () async {
       final container = _quizContainer(
@@ -90,9 +138,11 @@ void main() {
 
 ProviderContainer _quizContainer({
   List<HanjaCharacter> characters = _characters,
+  int? poolSeed,
 }) {
   return ProviderContainer(
     overrides: [
+      challengeHanjaPoolSeedProvider.overrideWithValue(poolSeed),
       contentRepositoryProvider.overrideWithValue(
         _FakeContentRepository(characters),
       ),

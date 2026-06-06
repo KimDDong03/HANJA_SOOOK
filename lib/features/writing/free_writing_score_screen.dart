@@ -108,6 +108,7 @@ class _FreeWritingScoreScreenState
                   failedStrokeIndex: _failedStrokeIndex,
                   expectedHintPath: _expectedHintPath,
                   onStrokeTexture: _playStrokeTexture,
+                  onStrokeTextureStop: _stopStrokeTexture,
                   onStrokesChanged: (strokes) {
                     setState(() {
                       _strokes = strokes;
@@ -219,6 +220,10 @@ class _FreeWritingScoreScreenState
 
   void _playStrokeTexture() {
     ref.read(appAudioControllerProvider).playStrokeTexture();
+  }
+
+  void _stopStrokeTexture() {
+    ref.read(appAudioControllerProvider).stopStrokeTexture();
   }
 }
 

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/env.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/widgets/future_features_panel.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/class_ranking.dart';
 import 'class_ranking_controller.dart';
@@ -13,6 +15,15 @@ class ClassRankingScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (AppEnv.isProduction) {
+      return const Scaffold(
+        body: FutureFeaturesPage(
+          title: '반 랭킹',
+          subtitle: '친구들과 함께하는 랭킹은 향후 업데이트에서 제공될 예정입니다',
+        ),
+      );
+    }
+
     final state = ref.watch(classRankingProvider);
 
     return Scaffold(

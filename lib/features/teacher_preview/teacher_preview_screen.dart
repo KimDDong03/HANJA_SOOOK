@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/env.dart';
 import '../../core/constants/app_fonts.dart';
+import '../../core/widgets/future_features_panel.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/class_room.dart';
 import '../../domain/models/hanja_character.dart';
@@ -33,6 +35,15 @@ class _TeacherPreviewScreenState extends ConsumerState<TeacherPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (AppEnv.isProduction) {
+      return const Scaffold(
+        body: FutureFeaturesPage(
+          title: '선생님 반 관리',
+          subtitle: '선생님용 반 관리 도구는 향후 업데이트에서 제공될 예정입니다',
+        ),
+      );
+    }
+
     final state = ref.watch(teacherPreviewProvider);
 
     return Scaffold(

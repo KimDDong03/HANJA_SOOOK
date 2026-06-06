@@ -32,6 +32,11 @@ class DailySessionScreen extends ConsumerWidget {
     return Scaffold(
       body: session.when(
         data: (state) {
+          if (chapterKey == null && state.chapterKey != null) {
+            _replaceWithResolvedChapterRoute(context, state.chapterKey!);
+            return const Center(child: CircularProgressIndicator());
+          }
+
           if (state.items.isEmpty) {
             return PlayfulPage(
               title: '오늘 학습',
@@ -49,7 +54,9 @@ class DailySessionScreen extends ConsumerWidget {
           }
 
           final compactLayout = _usesCompactLearningLayout(state);
-          final fixedLearningLayout = _usesFixedLearningLayout(state);
+          final fixedLearningLayout =
+              _usesFixedLearningLayout(state) &&
+              MediaQuery.sizeOf(context).height >= 700;
           return PopScope<Object?>(
             canPop: !_handlesBackWithinSession(state),
             onPopInvokedWithResult: (didPop, _) {
@@ -65,12 +72,6 @@ class DailySessionScreen extends ConsumerWidget {
               subtitle: state.phase == DailySessionPhase.intro
                   ? ''
                   : _subtitleFor(state),
-              trailing: state.phase == DailySessionPhase.intro
-                  ? null
-                  : _SessionCountBadge(
-                      count: state.items.length,
-                      compact: compactLayout,
-                    ),
               compactHeader: compactLayout,
               scrollable: !fixedLearningLayout,
               padding: state.phase == DailySessionPhase.intro
@@ -103,6 +104,18 @@ class DailySessionScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _replaceWithResolvedChapterRoute(
+    BuildContext context,
+    String resolvedChapterKey,
+  ) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) {
+        return;
+      }
+      context.replace(RoutePaths.dailySessionForChapter(resolvedChapterKey));
+    });
   }
 
   String _titleFor(DailySessionPhase phase) {
@@ -474,6 +487,7 @@ double _adaptiveCanvasExtent(
   BoxConstraints constraints, {
   required double reservedHeight,
   required double fallback,
+  double minExtent = 80,
   double reservedWidth = 0,
 }) {
   final height = constraints.maxHeight;
@@ -487,7 +501,7 @@ double _adaptiveCanvasExtent(
   final widthBound = width.isFinite && width > 0
       ? width - reservedWidth
       : fallback;
-  return math.min(heightBound, widthBound).clamp(120.0, 560.0).toDouble();
+  return math.min(heightBound, widthBound).clamp(minExtent, 560.0).toDouble();
 }
 
 class _GuidedWritingStep extends ConsumerStatefulWidget {
@@ -529,7 +543,7 @@ class _GuidedWritingStepState extends ConsumerState<_GuidedWritingStep> {
       builder: (context, constraints) {
         final canvasExtent = _adaptiveCanvasExtent(
           constraints,
-          reservedHeight: paths.isEmpty ? 190 : 150,
+          reservedHeight: paths.isEmpty ? 212 : 188,
           reservedWidth: 128,
           fallback: 304,
         );
@@ -555,6 +569,12 @@ class _GuidedWritingStepState extends ConsumerState<_GuidedWritingStep> {
                           key: ValueKey('guided-free-${item.id}'),
                           expectedStrokeCount: item.strokeCount,
                           canvasExtent: canvasExtent,
+                          onStrokeTexture: () => ref
+                              .read(appAudioControllerProvider)
+                              .playStrokeTexture(),
+                          onStrokeTextureStop: () => ref
+                              .read(appAudioControllerProvider)
+                              .stopStrokeTexture(),
                           canvasLeading: _StepNavigationArrow(
                             icon: Icons.chevron_left,
                             tooltip: '이전 한자',
@@ -578,6 +598,12 @@ class _GuidedWritingStepState extends ConsumerState<_GuidedWritingStep> {
                       key: ValueKey('guided-${item.id}'),
                       svgPaths: paths,
                       canvasExtent: canvasExtent,
+                      onStrokeTexture: () => ref
+                          .read(appAudioControllerProvider)
+                          .playStrokeTexture(),
+                      onStrokeTextureStop: () => ref
+                          .read(appAudioControllerProvider)
+                          .stopStrokeTexture(),
                       completedStrokeCount:
                           state.isGuidedWritingComplete(item.id)
                           ? paths.length
@@ -707,7 +733,7 @@ class _QuizStepState extends ConsumerState<_QuizStep> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
-                  childAspectRatio: 2.45,
+                  childAspectRatio: 3.1,
                 ),
                 itemBuilder: (context, index) {
                   final option = question.options[index];
@@ -780,7 +806,7 @@ class _RandomWritingStep extends ConsumerStatefulWidget {
 class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
   bool _hasStrokes = false;
   bool _showCharacterHint = false;
-  bool _showFirstStrokeHint = false;
+  bool _showStrokeGuideHint = false;
   bool _showSuccessPopup = false;
   List<Path> _strokes = const [];
   FreeWritingScoreResult? _scoreResult;
@@ -798,7 +824,7 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
         oldWidget.state.index != widget.state.index) {
       _hasStrokes = false;
       _showCharacterHint = false;
-      _showFirstStrokeHint = false;
+      _showStrokeGuideHint = false;
       _showSuccessPopup = false;
       _scoreResult = null;
       _restoreSavedStrokes();
@@ -826,9 +852,9 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
         isComplete ||
         widget.state.randomWritingCompleted ||
         scoreResult?.passed == true;
-    final firstHintPath = _showFirstStrokeHint
-        ? _firstExpectedHintPath(widget.state.svgPathsFor(item.id))
-        : null;
+    final expectedHintPaths = _showStrokeGuideHint
+        ? _expectedHintPaths(widget.state.svgPathsFor(item.id))
+        : const <Path>[];
     final hasStrokeHint = widget.state.svgPathsFor(item.id).isNotEmpty;
 
     return LayoutBuilder(
@@ -836,9 +862,9 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
         final showsFailure = scoreResult != null && !scoreResult.passed;
         final canvasExtent = _adaptiveCanvasExtent(
           constraints,
-          reservedHeight: showsFailure ? 242 : 198,
+          reservedHeight: showsFailure ? 300 : 228,
           reservedWidth: 128,
-          fallback: 260,
+          fallback: 316,
         );
         return Stack(
           alignment: Alignment.center,
@@ -861,6 +887,12 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
                       item.id,
                     ),
                     canvasExtent: canvasExtent,
+                    onStrokeTexture: () => ref
+                        .read(appAudioControllerProvider)
+                        .playStrokeTexture(),
+                    onStrokeTextureStop: () => ref
+                        .read(appAudioControllerProvider)
+                        .stopStrokeTexture(),
                     canvasLeading: _StepNavigationArrow(
                       icon: Icons.chevron_left,
                       tooltip: '이전 한자',
@@ -879,23 +911,25 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
                     ),
                     toolbarLeading: _RandomWritingHintTools(
                       showCharacterHint: _showCharacterHint,
-                      showFirstStrokeHint: _showFirstStrokeHint,
+                      showStrokeGuideHint: _showStrokeGuideHint,
                       hasStrokeHint: hasStrokeHint,
                       onToggleCharacterHint: () {
                         setState(
                           () => _showCharacterHint = !_showCharacterHint,
                         );
                       },
-                      onToggleFirstStrokeHint: () {
-                        setState(
-                          () => _showFirstStrokeHint = !_showFirstStrokeHint,
-                        );
+                      onToggleStrokeGuideHint: () {
+                        final nextValue = !_showStrokeGuideHint;
+                        setState(() => _showStrokeGuideHint = nextValue);
+                        if (nextValue) {
+                          controller.markRandomWritingHintUsed(item.id);
+                        }
                       },
                     ),
                     showTitle: false,
                     failedStrokeIndex: scoreResult?.failedStrokeIndex,
-                    expectedHintPath:
-                        scoreResult?.expectedHintPath ?? firstHintPath,
+                    expectedHintPath: scoreResult?.expectedHintPath,
+                    expectedHintPaths: expectedHintPaths,
                     onStrokesChanged: (strokes) {
                       ref
                           .read(
@@ -983,28 +1017,32 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
     });
   }
 
-  Path? _firstExpectedHintPath(List<String> svgPaths) {
-    if (svgPaths.isEmpty) {
-      return null;
+  List<Path> _expectedHintPaths(List<String> svgPaths) {
+    final paths = <Path>[];
+    for (final pathData in svgPaths) {
+      final path = SvgPathParser.tryParse(pathData);
+      if (path != null) {
+        paths.add(path);
+      }
     }
-    return SvgPathParser.tryParse(svgPaths.first);
+    return paths;
   }
 }
 
 class _RandomWritingHintTools extends StatelessWidget {
   const _RandomWritingHintTools({
     required this.showCharacterHint,
-    required this.showFirstStrokeHint,
+    required this.showStrokeGuideHint,
     required this.hasStrokeHint,
     required this.onToggleCharacterHint,
-    required this.onToggleFirstStrokeHint,
+    required this.onToggleStrokeGuideHint,
   });
 
   final bool showCharacterHint;
-  final bool showFirstStrokeHint;
+  final bool showStrokeGuideHint;
   final bool hasStrokeHint;
   final VoidCallback onToggleCharacterHint;
-  final VoidCallback onToggleFirstStrokeHint;
+  final VoidCallback onToggleStrokeGuideHint;
 
   @override
   Widget build(BuildContext context) {
@@ -1019,10 +1057,10 @@ class _RandomWritingHintTools extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         _RandomWritingToolButton(
-          selected: showFirstStrokeHint,
-          onPressed: hasStrokeHint ? onToggleFirstStrokeHint : null,
-          icon: showFirstStrokeHint ? Icons.layers_clear : Icons.gesture,
-          tooltip: showFirstStrokeHint ? '첫 획 힌트 끄기' : '첫 획 힌트',
+          selected: showStrokeGuideHint,
+          onPressed: hasStrokeHint ? onToggleStrokeGuideHint : null,
+          icon: showStrokeGuideHint ? Icons.layers_clear : Icons.gesture,
+          tooltip: showStrokeGuideHint ? '획 힌트 끄기' : '획 힌트',
         ),
       ],
     );
@@ -1460,7 +1498,7 @@ class _QuizPrompt extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Padding(
-        padding: EdgeInsets.all(compact ? 12 : 18),
+        padding: EdgeInsets.all(compact ? 8 : 18),
         child: Text(
           question.prompt,
           maxLines: compact ? 2 : null,
@@ -1468,14 +1506,14 @@ class _QuizPrompt extends StatelessWidget {
           textAlign: TextAlign.center,
           style: isHanjaPrompt
               ? (compact
-                        ? Theme.of(context).textTheme.displaySmall
+                        ? Theme.of(context).textTheme.headlineSmall
                         : Theme.of(context).textTheme.displayLarge)
                     ?.copyWith(
                       fontFamily: AppFonts.hanjaSerif,
                       fontWeight: FontWeight.w900,
                     )
               : (compact
-                        ? Theme.of(context).textTheme.titleLarge
+                        ? Theme.of(context).textTheme.titleMedium
                         : Theme.of(context).textTheme.headlineSmall)
                     ?.copyWith(
                       color: AppColors.textPrimary,
@@ -1525,7 +1563,7 @@ class _AnswerButton extends StatelessWidget {
           horizontal: compact ? 8 : 14,
           vertical: compact ? 8 : 14,
         ),
-        minimumSize: Size(0, compact ? 44 : 48),
+        minimumSize: Size(0, compact ? 38 : 48),
         textStyle:
             (compact
                     ? Theme.of(context).textTheme.titleSmall
@@ -1642,25 +1680,25 @@ class _IntroHanjaCard extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               item.character,
               maxLines: 1,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontFamily: AppFonts.hanjaSerif,
                 fontWeight: FontWeight.w900,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 1),
             Text(
               item.meaning,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w800,
               ),
@@ -1707,41 +1745,6 @@ class _MistakeRow extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SessionCountBadge extends StatelessWidget {
-  const _SessionCountBadge({required this.count, required this.compact});
-
-  final int count;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: compact ? 10 : 12,
-          vertical: compact ? 7 : 9,
-        ),
-        child: Text(
-          '$count자',
-          style:
-              (compact
-                      ? Theme.of(context).textTheme.titleSmall
-                      : Theme.of(context).textTheme.titleMedium)
-                  ?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w900,
-                  ),
         ),
       ),
     );
