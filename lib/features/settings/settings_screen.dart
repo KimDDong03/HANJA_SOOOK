@@ -1175,9 +1175,9 @@ class _AppInfoRow extends StatelessWidget {
     return _SettingsRow(
       icon: Icons.info_outline,
       title: '앱 정보',
-      subtitle: '한자쏘옥 데모',
+      subtitle: '한자쏘옥',
       trailingText: '버전 1.0.0',
-      onTap: () => _showSnack(context, '한자쏘옥 데모 버전 1.0.0입니다.'),
+      onTap: () => _showSnack(context, '한자쏘옥 버전 1.0.0입니다.'),
     );
   }
 }

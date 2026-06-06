@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../app/env.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/errors/app_exception.dart';
 import '../../domain/models/app_user_profile.dart';
@@ -161,7 +162,7 @@ class SchoolRepositoryImpl implements SchoolRepository {
             'school_name': school.schoolName,
             'grade': grade,
             'avatar_key': 'explorer',
-            'is_demo': true,
+            'is_demo': AppEnv.isDemo,
           })
           .select()
           .single();
