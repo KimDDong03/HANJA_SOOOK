@@ -7,6 +7,7 @@ import '../../app/env.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/platform/app_link_launcher.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_confirm_dialog.dart';
 import '../../core/widgets/future_features_panel.dart';
@@ -128,6 +129,8 @@ List<Widget> _sectionsForRole(BuildContext context, String role) {
         children: [
           _RoleChangeRow(),
           const Divider(height: 1),
+          _LegalLinksRows(),
+          const Divider(height: 1),
           _LogoutRow(),
           const Divider(height: 1),
           _AppInfoRow(),
@@ -190,6 +193,8 @@ List<Widget> _sectionsForRole(BuildContext context, String role) {
         title: '계정 및 기타',
         children: [
           _RoleChangeRow(),
+          const Divider(height: 1),
+          _LegalLinksRows(),
           const Divider(height: 1),
           _LogoutRow(),
           const Divider(height: 1),
@@ -810,6 +815,8 @@ class _CommonSettingsSection extends StatelessWidget {
         const Divider(height: 1),
         _RoleChangeRow(),
         const Divider(height: 1),
+        _LegalLinksRows(),
+        const Divider(height: 1),
         _LogoutRow(),
         const Divider(height: 1),
         _AppInfoRow(),
@@ -1131,6 +1138,37 @@ class _LogoutRow extends ConsumerWidget {
   }
 }
 
+class _LegalLinksRows extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _SettingsRow(
+          icon: Icons.description_outlined,
+          title: '이용약관',
+          subtitle: '서비스 이용 기준 확인',
+          onTap: () => _openPolicyLink(context, _termsUrl),
+        ),
+        const Divider(height: 1),
+        _SettingsRow(
+          icon: Icons.privacy_tip_outlined,
+          title: '개인정보처리방침',
+          subtitle: '개인정보와 학습 데이터 처리 기준',
+          onTap: () => _openPolicyLink(context, _privacyPolicyUrl),
+        ),
+        const Divider(height: 1),
+        _SettingsRow(
+          icon: Icons.delete_outline,
+          title: '계정 및 데이터 삭제 요청',
+          subtitle: '계정과 학습 데이터 삭제 방법',
+          tint: AppColors.primary,
+          onTap: () => _openPolicyLink(context, _accountDeletionUrl),
+        ),
+      ],
+    );
+  }
+}
+
 class _AppInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1143,6 +1181,25 @@ class _AppInfoRow extends StatelessWidget {
     );
   }
 }
+
+Future<void> _openPolicyLink(BuildContext context, String url) async {
+  try {
+    final opened = await AppLinkLauncher.openExternalUrl(url);
+    if (!opened && context.mounted) {
+      _showSnack(context, '링크를 열 수 없어요. 잠시 후 다시 시도해주세요.');
+    }
+  } on PlatformException {
+    if (context.mounted) {
+      _showSnack(context, '링크를 열 수 없어요. 잠시 후 다시 시도해주세요.');
+    }
+  }
+}
+
+const _termsUrl = 'https://naver.me/FYrtnUQr';
+const _privacyPolicyUrl =
+    'https://github.com/KimDDong03/HANJA_SOOOK/blob/master/docs/legal/privacy_policy.md';
+const _accountDeletionUrl =
+    'https://github.com/KimDDong03/HANJA_SOOOK/blob/master/docs/legal/account_deletion.md';
 
 void _showLearningEnvironmentSheet(BuildContext context) {
   showModalBottomSheet<void>(

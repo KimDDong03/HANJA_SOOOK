@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hanja_soook/data/repositories/class_room_repository_provider.dart';
@@ -15,6 +16,49 @@ import 'package:hanja_soook/features/auth/current_profile_controller.dart';
 import 'package:hanja_soook/features/settings/settings_screen.dart';
 
 void main() {
+  const linkChannel = MethodChannel('hanjasoook/links');
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(linkChannel, null);
+  });
+
+  testWidgets('settings exposes Play review legal links', (tester) async {
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(linkChannel, (call) async {
+          calls.add(call);
+          return true;
+        });
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: SettingsScreen(role: 'student')),
+      ),
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('이용약관'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('이용약관'), findsOneWidget);
+    expect(find.text('개인정보처리방침'), findsOneWidget);
+    expect(find.text('계정 및 데이터 삭제 요청'), findsOneWidget);
+
+    await tester.tap(find.text('개인정보처리방침'));
+    await tester.pump();
+
+    expect(calls.single.method, 'openExternalUrl');
+    expect(
+      calls.single.arguments,
+      containsPair(
+        'url',
+        contains('docs/legal/privacy_policy.md'),
+      ),
+    );
+  });
+
   testWidgets('teacher settings explains local demo storage accurately', (
     tester,
   ) async {

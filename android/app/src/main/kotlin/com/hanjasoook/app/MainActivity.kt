@@ -1,10 +1,13 @@
 package com.hanjasoook.app
 
 import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.SoundPool
+import android.net.Uri
 import android.os.Build
 import io.flutter.FlutterInjector
 import io.flutter.embedding.android.FlutterActivity
@@ -14,6 +17,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private val audioChannelName = "hanjasoook/audio"
     private val notificationChannelName = "hanjasoook/notifications"
+    private val linkChannelName = "hanjasoook/links"
     private val notificationPermissionRequestCode = 4301
     private val soundPool =
         SoundPool.Builder()
@@ -113,6 +117,23 @@ class MainActivity : FlutterActivity() {
                 "cancelDailyReminder" -> {
                     DailyReminderScheduler.cancel(this)
                     result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            linkChannelName
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "openExternalUrl" -> {
+                    val url = call.argument<String>("url")
+                    if (url == null) {
+                        result.error("missing_url", "URL is required.", null)
+                    } else {
+                        result.success(openExternalUrl(url))
+                    }
                 }
                 else -> result.notImplemented()
             }
@@ -275,6 +296,16 @@ class MainActivity : FlutterActivity() {
         stopStrokeSfx()
         stopMusic()
         soundPool.release()
+    }
+
+    private fun openExternalUrl(url: String): Boolean {
+        return try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            startActivity(intent)
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        }
     }
 
     private fun assetKey(asset: String): String {
