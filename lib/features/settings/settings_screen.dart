@@ -1195,11 +1195,12 @@ Future<void> _openPolicyLink(BuildContext context, String url) async {
   }
 }
 
-const _termsUrl = 'https://naver.me/FYrtnUQr';
+const _termsUrl =
+    'https://kimddong03.github.io/HANJA_SOOOK/docs/legal/terms-of-service.html';
 const _privacyPolicyUrl =
-    'https://github.com/KimDDong03/HANJA_SOOOK/blob/master/docs/legal/privacy_policy.md';
+    'https://kimddong03.github.io/HANJA_SOOOK/docs/legal/privacy-policy.html';
 const _accountDeletionUrl =
-    'https://github.com/KimDDong03/HANJA_SOOOK/blob/master/docs/legal/account_deletion.md';
+    'https://kimddong03.github.io/HANJA_SOOOK/docs/legal/account-deletion.html';
 
 void _showLearningEnvironmentSheet(BuildContext context) {
   showModalBottomSheet<void>(

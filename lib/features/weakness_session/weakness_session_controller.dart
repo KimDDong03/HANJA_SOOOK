@@ -7,6 +7,7 @@ import '../../data/repositories/content_repository_provider.dart';
 import '../../data/repositories/learning_diagnostics_repository_provider.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/models/learning_diagnostics.dart';
+import '../../domain/models/stroke_asset.dart';
 import '../auth/current_profile_controller.dart';
 import '../learning/learning_diagnostics_controller.dart';
 import '../learning/learning_progress_controller.dart';
@@ -45,7 +46,17 @@ class WeaknessSessionController extends AsyncNotifier<WeaknessSessionState> {
         _tasksFor(item: item, weakness: weakness, allItems: allItems),
       );
     }
-    return WeaknessSessionState(tasks: tasks);
+    final uniqueItems = {
+      for (final task in tasks) task.item.id: task.item,
+    }.values.toList();
+    final strokeRows = await Future.wait([
+      for (final item in uniqueItems) contentRepository.getStrokeAsset(item.id),
+    ]);
+    final strokeAssets = <String, StrokeAsset?>{
+      for (var index = 0; index < uniqueItems.length; index += 1)
+        uniqueItems[index].id: strokeRows[index],
+    };
+    return WeaknessSessionState(tasks: tasks, strokeAssets: strokeAssets);
   }
 
   Future<void> selectAnswer(String answer) async {
@@ -212,6 +223,7 @@ class WeaknessSessionController extends AsyncNotifier<WeaknessSessionState> {
 class WeaknessSessionState {
   const WeaknessSessionState({
     required this.tasks,
+    required this.strokeAssets,
     this.index = 0,
     this.selectedAnswer,
     this.passedTaskKeys = const <String>{},
@@ -222,6 +234,7 @@ class WeaknessSessionState {
   });
 
   final List<WeaknessTask> tasks;
+  final Map<String, StrokeAsset?> strokeAssets;
   final int index;
   final String? selectedAnswer;
   final Set<String> passedTaskKeys;
@@ -241,6 +254,11 @@ class WeaknessSessionState {
 
   List<Path> writingStrokesFor(String hanjaId) {
     return writingStrokesByHanjaId[hanjaId] ?? const [];
+  }
+
+  List<String> svgPathsFor(String hanjaId) {
+    return strokeAssets[hanjaId]?.svgPaths?.whereType<String>().toList() ??
+        const [];
   }
 
   int get hanjaCount => tasks.map((task) => task.item.id).toSet().length;
@@ -264,6 +282,7 @@ class WeaknessSessionState {
   }) {
     return WeaknessSessionState(
       tasks: tasks,
+      strokeAssets: strokeAssets,
       index: index ?? this.index,
       selectedAnswer: identical(selectedAnswer, _sentinel)
           ? this.selectedAnswer

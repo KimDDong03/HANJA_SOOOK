@@ -54,7 +54,10 @@ void main() {
       calls.single.arguments,
       containsPair(
         'url',
-        contains('docs/legal/privacy_policy.md'),
+        allOf(
+          contains('kimddong03.github.io/HANJA_SOOOK'),
+          contains('docs/legal/privacy-policy.html'),
+        ),
       ),
     );
   });

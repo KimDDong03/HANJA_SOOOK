@@ -162,39 +162,20 @@ class HomeUnitCarouselState {
     final completedHanjaIds = progressRecords
         .map((record) => record.hanjaId)
         .toSet();
-    const thinkingImageService = ThinkingUnitImageService();
     final activeChapterKey = _activeHomeChapterKey(
       chapters: chapters,
       completedHanjaIds: completedHanjaIds,
       fallbackChapterKey: plannedChapterKey,
     );
-    final activeMajorUnitKey = activeChapterKey == null
-        ? null
-        : thinkingImageService.majorUnitKeyForChapterKey(activeChapterKey);
-    final fallbackMajorUnitKey = chapters.isEmpty
-        ? null
-        : thinkingImageService.majorUnitKeyForChapterKey(chapters.first.key);
-    final majorUnitKey = activeMajorUnitKey ?? fallbackMajorUnitKey;
-    final visibleChapters = majorUnitKey == null
-        ? chapters
-        : chapters
-              .where(
-                (chapter) =>
-                    thinkingImageService.majorUnitKeyForChapterKey(
-                      chapter.key,
-                    ) ==
-                    majorUnitKey,
-              )
-              .toList();
     final slides = [
-      for (var index = 0; index < visibleChapters.length; index += 1)
+      for (var index = 0; index < chapters.length; index += 1)
         HomeUnitSlide.fromChapter(
-          chapter: visibleChapters[index],
+          chapter: chapters[index],
           learningDate: learningDate,
           progressRecords: progressRecords,
           completedHanjaIds: completedHanjaIds,
           isUnlocked: _isChapterUnlocked(
-            chapters: visibleChapters,
+            chapters: chapters,
             index: index,
             completedHanjaIds: completedHanjaIds,
           ),

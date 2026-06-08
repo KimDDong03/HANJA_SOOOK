@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_fonts.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/widgets/app_slogan_banner.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/models/learning_diagnostics.dart';
@@ -41,6 +42,8 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
         title: '학습',
         subtitle: '복습하고, 한자장을 정리해요',
         children: [
+          const AppSloganBanner(),
+          const SizedBox(height: 16),
           library.when(
             data: (state) {
               if (state.items.isEmpty) {

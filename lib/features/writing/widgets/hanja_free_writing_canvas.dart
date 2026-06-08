@@ -21,6 +21,10 @@ class HanjaFreeWritingCanvas extends StatefulWidget {
     this.failedStrokeIndex,
     this.expectedHintPath,
     this.expectedHintPaths = const [],
+    this.showStrokeOrderButton = false,
+    this.strokeOrderPreviewPaths = const [],
+    this.strokeOrderPreviewRequest = 0,
+    this.onStrokeOrderPreviewed,
   });
 
   final int? expectedStrokeCount;
@@ -37,21 +41,45 @@ class HanjaFreeWritingCanvas extends StatefulWidget {
   final int? failedStrokeIndex;
   final Path? expectedHintPath;
   final List<Path> expectedHintPaths;
+  final bool showStrokeOrderButton;
+  final List<Path> strokeOrderPreviewPaths;
+  final int strokeOrderPreviewRequest;
+  final VoidCallback? onStrokeOrderPreviewed;
 
   @override
   State<HanjaFreeWritingCanvas> createState() => _HanjaFreeWritingCanvasState();
 }
 
-class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
+class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas>
+    with SingleTickerProviderStateMixin {
   final List<Path> _strokes = [];
   Path? _currentPath;
   int? _activePointer;
   int _paintRevision = 0;
+  late final AnimationController _strokeOrderController;
 
   @override
   void initState() {
     super.initState();
     _strokes.addAll(widget.initialStrokes);
+    _strokeOrderController =
+        AnimationController(
+          vsync: this,
+          duration: Duration(milliseconds: _strokeOrderDurationMillis),
+        )..addStatusListener((status) {
+          if (mounted &&
+              (status == AnimationStatus.completed ||
+                  status == AnimationStatus.dismissed)) {
+            setState(() {});
+          }
+        });
+    if (widget.strokeOrderPreviewRequest > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _playStrokeOrder();
+        }
+      });
+    }
   }
 
   @override
@@ -66,9 +94,64 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
         _paintRevision += 1;
       });
     }
+    if (oldWidget.strokeOrderPreviewPaths != widget.strokeOrderPreviewPaths) {
+      _strokeOrderController.duration = Duration(
+        milliseconds: _strokeOrderDurationMillis,
+      );
+    }
+    if (oldWidget.strokeOrderPreviewRequest !=
+            widget.strokeOrderPreviewRequest &&
+        widget.strokeOrderPreviewRequest > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _playStrokeOrder();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _strokeOrderController.dispose();
+    super.dispose();
+  }
+
+  int get _strokeOrderDurationMillis {
+    return (widget.strokeOrderPreviewPaths.length * 650)
+        .clamp(1200, 12000)
+        .toInt();
+  }
+
+  void _playStrokeOrder() {
+    if (widget.strokeOrderPreviewPaths.isEmpty) {
+      return;
+    }
+    setState(() {
+      _activePointer = null;
+      _currentPath = null;
+      _paintRevision += 1;
+    });
+    _strokeOrderController.duration = Duration(
+      milliseconds: _strokeOrderDurationMillis,
+    );
+    _strokeOrderController.forward(from: 0);
+    setState(() {});
+    widget.onStrokeOrderPreviewed?.call();
+  }
+
+  void _toggleStrokeOrder() {
+    if (_strokeOrderController.isAnimating) {
+      _strokeOrderController.stop();
+      setState(() {});
+      return;
+    }
+    _playStrokeOrder();
   }
 
   void _startStroke(Offset localPosition, Size canvasSize) {
+    if (_strokeOrderController.isAnimating) {
+      return;
+    }
     final source = _sourcePoint(localPosition, canvasSize);
     setState(() {
       _currentPath = Path()..moveTo(source.dx, source.dy);
@@ -78,7 +161,7 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
 
   void _updateStroke(Offset localPosition, Size canvasSize) {
     final path = _currentPath;
-    if (path == null) {
+    if (path == null || _strokeOrderController.isAnimating) {
       return;
     }
     final source = _sourcePoint(localPosition, canvasSize);
@@ -165,30 +248,62 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
               Expanded(
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: toolbarLeading,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: toolbarLeading,
+                  ),
                 ),
               )
             else
               const Spacer(),
-            Text(
-              countLabel,
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(width: 6),
-            _CanvasToolButton(
-              onPressed: _strokes.isEmpty ? null : _undoStroke,
-              icon: const Icon(Icons.undo),
-              tooltip: '한 획 지우기',
-            ),
-            const SizedBox(width: 6),
-            _CanvasToolButton(
-              onPressed: _strokes.isEmpty && _currentPath == null
-                  ? null
-                  : _clearStrokes,
-              icon: const Icon(Icons.delete_outline),
-              tooltip: '모두 지우기',
+            Flexible(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        countLabel,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      _CanvasToolButton(
+                        onPressed: _strokes.isEmpty ? null : _undoStroke,
+                        icon: const Icon(Icons.undo),
+                        tooltip: '한 획 지우기',
+                      ),
+                      const SizedBox(width: 6),
+                      if (widget.showStrokeOrderButton) ...[
+                        _CanvasToolButton(
+                          onPressed: widget.strokeOrderPreviewPaths.isEmpty
+                              ? null
+                              : _toggleStrokeOrder,
+                          icon: Icon(
+                            _strokeOrderController.isAnimating
+                                ? Icons.stop
+                                : Icons.play_arrow,
+                          ),
+                          tooltip: _strokeOrderController.isAnimating
+                              ? '획순 보기 정지'
+                              : '획순 보기',
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      _CanvasToolButton(
+                        onPressed: _strokes.isEmpty && _currentPath == null
+                            ? null
+                            : _clearStrokes,
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: '모두 지우기',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -284,23 +399,35 @@ class _HanjaFreeWritingCanvasState extends State<HanjaFreeWritingCanvas> {
                                   color: colorScheme.outlineVariant,
                                 ),
                               ),
-                              child: CustomPaint(
-                                painter: _FreeWritingPainter(
-                                  strokes: List<Path>.of(_strokes),
-                                  currentPath: _currentPath,
-                                  paintRevision: _paintRevision,
-                                  viewBox: widget.viewBox,
-                                  failedStrokeColor: colorScheme.error,
-                                  hintStrokeColor: colorScheme.error.withValues(
-                                    alpha: 0.28,
-                                  ),
-                                  guideStrokeColor: colorScheme.onSurface
-                                      .withValues(alpha: 0.13),
-                                  gridColor: colorScheme.outlineVariant,
-                                  failedStrokeIndex: widget.failedStrokeIndex,
-                                  expectedHintPath: widget.expectedHintPath,
-                                  expectedHintPaths: widget.expectedHintPaths,
-                                ),
+                              child: AnimatedBuilder(
+                                animation: _strokeOrderController,
+                                builder: (context, _) {
+                                  return CustomPaint(
+                                    painter: _FreeWritingPainter(
+                                      strokes: List<Path>.of(_strokes),
+                                      currentPath: _currentPath,
+                                      paintRevision: _paintRevision,
+                                      viewBox: widget.viewBox,
+                                      failedStrokeColor: colorScheme.error,
+                                      hintStrokeColor: colorScheme.error
+                                          .withValues(alpha: 0.28),
+                                      guideStrokeColor: colorScheme.onSurface
+                                          .withValues(alpha: 0.13),
+                                      gridColor: colorScheme.outlineVariant,
+                                      failedStrokeIndex:
+                                          widget.failedStrokeIndex,
+                                      expectedHintPath: widget.expectedHintPath,
+                                      expectedHintPaths:
+                                          widget.expectedHintPaths,
+                                      strokeOrderPreviewPaths:
+                                          widget.strokeOrderPreviewPaths,
+                                      strokeOrderProgress:
+                                          _strokeOrderController.isAnimating
+                                          ? _strokeOrderController.value
+                                          : null,
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -366,6 +493,8 @@ class _FreeWritingPainter extends CustomPainter {
     required this.failedStrokeIndex,
     required this.expectedHintPath,
     required this.expectedHintPaths,
+    required this.strokeOrderPreviewPaths,
+    required this.strokeOrderProgress,
   });
 
   final List<Path> strokes;
@@ -379,6 +508,8 @@ class _FreeWritingPainter extends CustomPainter {
   final int? failedStrokeIndex;
   final Path? expectedHintPath;
   final List<Path> expectedHintPaths;
+  final List<Path> strokeOrderPreviewPaths;
+  final double? strokeOrderProgress;
 
   static const _hintStrokeWidth = 8.0;
   static const _failedStrokeWidth = 7.0;
@@ -391,6 +522,13 @@ class _FreeWritingPainter extends CustomPainter {
     final transform = HanjaCanvasTransform(size: size, viewBox: viewBox);
     canvas.save();
     transform.apply(canvas);
+
+    final strokeOrderProgress = this.strokeOrderProgress;
+    if (strokeOrderProgress != null && strokeOrderPreviewPaths.isNotEmpty) {
+      _drawAnimatedStrokeOrder(canvas, strokeOrderProgress);
+      canvas.restore();
+      return;
+    }
 
     if (expectedHintPaths.isNotEmpty) {
       final guidePaint = Paint()
@@ -449,6 +587,36 @@ class _FreeWritingPainter extends CustomPainter {
     canvas.restore();
   }
 
+  void _drawAnimatedStrokeOrder(Canvas canvas, double progress) {
+    final activeProgress =
+        progress.clamp(0.0, 1.0) * strokeOrderPreviewPaths.length;
+    final completedCount = activeProgress
+        .floor()
+        .clamp(0, strokeOrderPreviewPaths.length)
+        .toInt();
+    final currentProgress = activeProgress - completedCount;
+
+    for (var index = 0; index < completedCount; index += 1) {
+      canvas.drawPath(
+        strokeOrderPreviewPaths[index],
+        _strokePaint(
+          HanjaStrokeColorPalette.colorFor(index).withValues(alpha: 0.88),
+          width: _userStrokeWidth,
+        ),
+      );
+    }
+    if (completedCount < strokeOrderPreviewPaths.length &&
+        currentProgress > 0) {
+      canvas.drawPath(
+        _extractPath(strokeOrderPreviewPaths[completedCount], currentProgress),
+        _strokePaint(
+          HanjaStrokeColorPalette.colorFor(completedCount),
+          width: _userStrokeWidth,
+        ),
+      );
+    }
+  }
+
   Paint _strokePaint(Color color, {required double width}) {
     return Paint()
       ..color = color
@@ -467,6 +635,17 @@ class _FreeWritingPainter extends CustomPainter {
     );
   }
 
+  Path _extractPath(Path path, double progress) {
+    final output = Path();
+    for (final metric in path.computeMetrics()) {
+      output.addPath(
+        metric.extractPath(0, metric.length * progress.clamp(0.0, 1.0)),
+        Offset.zero,
+      );
+    }
+    return output;
+  }
+
   @override
   bool shouldRepaint(covariant _FreeWritingPainter oldDelegate) {
     return oldDelegate.strokes != strokes ||
@@ -479,6 +658,8 @@ class _FreeWritingPainter extends CustomPainter {
         oldDelegate.gridColor != gridColor ||
         oldDelegate.failedStrokeIndex != failedStrokeIndex ||
         oldDelegate.expectedHintPath != expectedHintPath ||
-        oldDelegate.expectedHintPaths != expectedHintPaths;
+        oldDelegate.expectedHintPaths != expectedHintPaths ||
+        oldDelegate.strokeOrderPreviewPaths != strokeOrderPreviewPaths ||
+        oldDelegate.strokeOrderProgress != strokeOrderProgress;
   }
 }

@@ -8,6 +8,7 @@ import '../../core/constants/app_fonts.dart';
 import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/hanja_character.dart';
+import '../writing/svg_path_parser.dart';
 import '../writing/widgets/hanja_free_writing_canvas.dart';
 import 'weakness_session_controller.dart';
 
@@ -24,7 +25,7 @@ class WeaknessSessionScreen extends ConsumerWidget {
         data: (state) {
           if (state.tasks.isEmpty) {
             return PlayfulPage(
-              title: '약점',
+              title: '집중',
               subtitle: '지금 더 연습할 한자가 없어요',
               children: [
                 PlayfulPanel(
@@ -42,7 +43,7 @@ class WeaknessSessionScreen extends ConsumerWidget {
           }
           final task = state.currentTask!;
           return PlayfulPage(
-            title: '약점',
+            title: '집중',
             subtitle:
                 '${state.index + 1}/${state.tasks.length} · ${task.weakness.typeLabel}',
             trailing: _ScoreBadge(score: task.weakness.score),
@@ -59,7 +60,7 @@ class WeaknessSessionScreen extends ConsumerWidget {
             onPressed: () =>
                 ref.invalidate(weaknessSessionProvider(focusHanjaId)),
             icon: const Icon(Icons.refresh),
-            label: const Text('약점 다시 불러오기'),
+            label: const Text('집중 다시 불러오기'),
           ),
         ),
       ),
@@ -137,6 +138,7 @@ class _WritingTask extends ConsumerWidget {
     final hintLevel = state.hintLevelFor(item.id);
     final provider = weaknessSessionProvider(focusHanjaId);
     final isPassed = state.passedTaskKeys.contains(task.key);
+    final strokeOrderPaths = _expectedPaths(state.svgPathsFor(item.id));
     return PlayfulPanel(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       child: Column(
@@ -150,6 +152,11 @@ class _WritingTask extends ConsumerWidget {
             canvasExtent: 286,
             showTitle: false,
             initialStrokes: state.writingStrokesFor(item.id),
+            expectedHintPath: hintLevel == 1
+                ? _firstHintPath(strokeOrderPaths)
+                : null,
+            strokeOrderPreviewPaths: strokeOrderPaths,
+            strokeOrderPreviewRequest: hintLevel >= 2 ? hintLevel : 0,
             onStrokeTexture: () =>
                 ref.read(appAudioControllerProvider).playStrokeTexture(),
             onStrokeTextureStop: () =>
@@ -201,11 +208,26 @@ class _WritingTask extends ConsumerWidget {
   String _hintTextFor(int hintLevel, HanjaCharacter item) {
     return switch (hintLevel) {
       0 => '${item.meaning}을 보고 기억나는 대로 써요.',
-      1 => '첫 획부터 떠올려요.',
-      2 => '${item.character}의 큰 모양을 떠올려요.',
+      1 => '표시된 첫 획부터 천천히 시작해요.',
+      2 => '획순을 보고 빈칸에 다시 써요.',
       _ => '${item.character} · ${item.meaning}',
     };
   }
+}
+
+Path? _firstHintPath(List<Path> paths) {
+  return paths.isEmpty ? null : paths.first;
+}
+
+List<Path> _expectedPaths(List<String> svgPaths) {
+  final paths = <Path>[];
+  for (final pathData in svgPaths) {
+    final path = SvgPathParser.tryParse(pathData);
+    if (path != null) {
+      paths.add(path);
+    }
+  }
+  return paths;
 }
 
 class _CompleteView extends ConsumerWidget {
@@ -217,8 +239,8 @@ class _CompleteView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return PlayfulPage(
-      title: '약점 완료',
-      subtitle: '연속 성공하면 약점이 해제돼요',
+      title: '집중 완료',
+      subtitle: '연속 성공하면 집중 항목이 줄어들어요',
       children: [
         PlayfulPanel(
           child: Column(

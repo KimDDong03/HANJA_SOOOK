@@ -40,4 +40,38 @@ void main() {
     expect(find.text('0 / 10'), findsOneWidget);
     expect(changedStrokeCount, 0);
   });
+
+  testWidgets('free writing canvas can expose stroke order preview control', (
+    tester,
+  ) async {
+    var previewCount = 0;
+    final strokePath = Path()
+      ..moveTo(10, 10)
+      ..lineTo(90, 10);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 260,
+            child: HanjaFreeWritingCanvas(
+              expectedStrokeCount: 1,
+              showStrokeOrderButton: true,
+              strokeOrderPreviewPaths: [strokePath],
+              onStrokeOrderPreviewed: () => previewCount += 1,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byTooltip('한 획 지우기'), findsOneWidget);
+    expect(find.byTooltip('획순 보기'), findsOneWidget);
+    expect(find.byTooltip('모두 지우기'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('획순 보기'));
+    await tester.pump();
+
+    expect(previewCount, 1);
+  });
 }

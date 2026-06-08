@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/env.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/widgets/app_slogan_banner.dart';
 import '../../core/widgets/future_features_panel.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/class_ranking.dart';
@@ -24,6 +25,8 @@ class ChallengeScreen extends ConsumerWidget {
         title: '도전',
         subtitle: AppEnv.isProduction ? '게임으로 배운 한자를 복습해요' : '오늘 점수와 반 순위를 올려요',
         children: [
+          const AppSloganBanner(),
+          const SizedBox(height: 16),
           summary.when(
             data: (data) => _ChallengeContent(data: data),
             loading: () => const PlayfulPanel(

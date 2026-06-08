@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/env.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_paths.dart';
+import '../../core/widgets/app_slogan_banner.dart';
 import '../../core/widgets/future_features_panel.dart';
 import '../../core/widgets/playful_page.dart';
 import '../auth/current_profile_controller.dart';
@@ -26,7 +27,7 @@ class HomeScreen extends ConsumerWidget {
             ? '오늘의 한자를 모아 별을 채워요'
             : '${profile.schoolName ?? '학교 미설정'} · ${profile.grade ?? '-'}학년',
         children: [
-          const _HomeSloganBanner(),
+          const AppSloganBanner(),
           const SizedBox(height: 16),
           unitCarousel.when(
             data: (state) => _UnitSlideCarousel(state: state),
@@ -77,43 +78,6 @@ class HomeScreen extends ConsumerWidget {
             const FutureFeaturesPanel(),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _HomeSloganBanner extends StatelessWidget {
-  const _HomeSloganBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.brandGreen.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.brandGreen.withValues(alpha: 0.32)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.eco, color: AppColors.brandGreenDark, size: 20),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                '한자 쏙쏙 실력 쑥쑥',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppColors.brandGreenDark,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

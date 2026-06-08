@@ -115,7 +115,7 @@ void main() {
   });
 
   test(
-    'HomeUnitCarouselState advances after completing a major unit today',
+    'HomeUnitCarouselState keeps learned major units available to revisit',
     () {
       final state = HomeUnitCarouselState.fromChapters(
         grade: 3,
@@ -129,11 +129,15 @@ void main() {
       );
 
       expect(state.slides.map((slide) => slide.chapterKey), [
+        'G3-U01-L01',
+        'G3-U01-L02',
         'G3-U02-L01',
         'G3-U02-L02',
       ]);
-      expect(state.activeSlideIndex, 0);
-      expect(state.slides.first.isUnlocked, isTrue);
+      expect(state.activeSlideIndex, 2);
+      expect(state.slides[0].isComplete, isTrue);
+      expect(state.slides[1].isComplete, isTrue);
+      expect(state.slides[2].isUnlocked, isTrue);
     },
   );
 }

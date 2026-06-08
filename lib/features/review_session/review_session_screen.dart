@@ -8,6 +8,7 @@ import '../../core/constants/app_fonts.dart';
 import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../domain/models/hanja_character.dart';
+import '../writing/svg_path_parser.dart';
 import '../writing/widgets/hanja_free_writing_canvas.dart';
 import 'review_session_controller.dart';
 
@@ -200,6 +201,8 @@ class _WritingStep extends ConsumerWidget {
     final item = state.currentWritingItem!;
     final hintLevel = state.hintLevelFor(item.id);
     final provider = reviewSessionProvider(focusHanjaId);
+    final svgPaths = state.svgPathsFor(item.id);
+    final strokeOrderPaths = _expectedPaths(svgPaths);
     return PlayfulPanel(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       child: Column(
@@ -213,6 +216,11 @@ class _WritingStep extends ConsumerWidget {
             canvasExtent: 286,
             showTitle: false,
             initialStrokes: state.writingStrokesFor(item.id),
+            expectedHintPath: hintLevel == 1
+                ? _firstHintPath(strokeOrderPaths)
+                : null,
+            strokeOrderPreviewPaths: strokeOrderPaths,
+            strokeOrderPreviewRequest: hintLevel >= 2 ? hintLevel : 0,
             onStrokeTexture: () =>
                 ref.read(appAudioControllerProvider).playStrokeTexture(),
             onStrokeTextureStop: () =>
@@ -262,11 +270,26 @@ class _WritingStep extends ConsumerWidget {
   String _hintTextFor(int hintLevel, HanjaCharacter item) {
     return switch (hintLevel) {
       0 => '기억나는 대로 먼저 써봐요.',
-      1 => '첫 획부터 천천히 떠올려요.',
-      2 => '${item.character} 모양을 떠올리며 빈칸에 써요.',
+      1 => '표시된 첫 획부터 천천히 시작해요.',
+      2 => '획순을 보고 빈칸에 다시 써요.',
       _ => '${item.character} · ${item.meaning}',
     };
   }
+}
+
+Path? _firstHintPath(List<Path> paths) {
+  return paths.isEmpty ? null : paths.first;
+}
+
+List<Path> _expectedPaths(List<String> svgPaths) {
+  final paths = <Path>[];
+  for (final pathData in svgPaths) {
+    final path = SvgPathParser.tryParse(pathData);
+    if (path != null) {
+      paths.add(path);
+    }
+  }
+  return paths;
 }
 
 class _CorrectionStep extends ConsumerWidget {

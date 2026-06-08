@@ -8,15 +8,18 @@ import '../../data/repositories/content_repository_provider.dart';
 import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/models/learning_diagnostics.dart';
+import '../../domain/models/stroke_asset.dart';
 import '../../domain/services/learning_plan_service.dart';
 import '../auth/current_profile_controller.dart';
 import '../learning/learning_diagnostics_controller.dart';
 import '../learning/learning_progress_controller.dart';
 
-final reviewSessionProvider = AsyncNotifierProvider.autoDispose
-    .family<ReviewSessionController, ReviewSessionState, String?>(
-      ReviewSessionController.new,
-    );
+final reviewSessionProvider =
+    AsyncNotifierProvider.family<
+      ReviewSessionController,
+      ReviewSessionState,
+      String?
+    >(ReviewSessionController.new);
 
 enum ReviewSessionPhase {
   hanjaToHun,
@@ -51,18 +54,28 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
       reviewItemLimit: AppConstants.dailyReviewCount,
     );
     final items = _prioritizeFocus(plan.reviewItems, focusHanjaId);
+    final strokeRows = await Future.wait([
+      for (final item in items) contentRepository.getStrokeAsset(item.id),
+    ]);
+    final strokeAssets = <String, StrokeAsset?>{
+      for (var index = 0; index < items.length; index += 1)
+        items[index].id: strokeRows[index],
+    };
     final random = Random(int.tryParse(learningDate) ?? items.length);
     return ReviewSessionState(
       items: items,
+      strokeAssets: strokeAssets,
       hanjaToHunQuestions: _buildQuestions(
         activityType: HanjaPracticeActivityType.hanjaToHun,
         items: items,
         random: random,
+        focusHanjaId: focusHanjaId,
       ),
       hunToHanjaQuestions: _buildQuestions(
         activityType: HanjaPracticeActivityType.hunToHanja,
         items: items,
         random: random,
+        focusHanjaId: focusHanjaId,
       ),
     );
   }
@@ -280,6 +293,7 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
 class ReviewSessionState {
   const ReviewSessionState({
     required this.items,
+    required this.strokeAssets,
     required this.hanjaToHunQuestions,
     required this.hunToHanjaQuestions,
     this.phase = ReviewSessionPhase.hanjaToHun,
@@ -293,6 +307,7 @@ class ReviewSessionState {
   });
 
   final List<HanjaCharacter> items;
+  final Map<String, StrokeAsset?> strokeAssets;
   final List<ReviewQuestion> hanjaToHunQuestions;
   final List<ReviewQuestion> hunToHanjaQuestions;
   final ReviewSessionPhase phase;
@@ -353,6 +368,11 @@ class ReviewSessionState {
     return writingStrokesByHanjaId[hanjaId] ?? const [];
   }
 
+  List<String> svgPathsFor(String hanjaId) {
+    return strokeAssets[hanjaId]?.svgPaths?.whereType<String>().toList() ??
+        const [];
+  }
+
   ReviewSessionState copyWith({
     ReviewSessionPhase? phase,
     int? index,
@@ -365,6 +385,7 @@ class ReviewSessionState {
   }) {
     return ReviewSessionState(
       items: items,
+      strokeAssets: strokeAssets,
       hanjaToHunQuestions: hanjaToHunQuestions,
       hunToHanjaQuestions: hunToHanjaQuestions,
       phase: phase ?? this.phase,
@@ -419,8 +440,13 @@ List<ReviewQuestion> _buildQuestions({
   required HanjaPracticeActivityType activityType,
   required List<HanjaCharacter> items,
   required Random random,
+  String? focusHanjaId,
 }) {
-  final shuffled = [...items]..shuffle(random);
+  final shuffled = _questionOrder(
+    items: items,
+    random: random,
+    focusHanjaId: focusHanjaId,
+  );
   return [
     for (var index = 0; index < shuffled.length; index += 1)
       ReviewQuestion(
@@ -445,6 +471,26 @@ List<ReviewQuestion> _buildQuestions({
               ),
       ),
   ];
+}
+
+List<HanjaCharacter> _questionOrder({
+  required List<HanjaCharacter> items,
+  required Random random,
+  String? focusHanjaId,
+}) {
+  final focus = focusHanjaId?.trim();
+  if (focus == null || focus.isEmpty) {
+    return [...items]..shuffle(random);
+  }
+  final focusedIndex = items.indexWhere((item) => item.id == focus);
+  if (focusedIndex < 0) {
+    return [...items]..shuffle(random);
+  }
+  final rest = [
+    for (final item in items)
+      if (item.id != focus) item,
+  ]..shuffle(random);
+  return [items[focusedIndex], ...rest];
 }
 
 List<String> _optionsFor({

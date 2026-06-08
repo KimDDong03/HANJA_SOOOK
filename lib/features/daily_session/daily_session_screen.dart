@@ -852,10 +852,13 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
         isComplete ||
         widget.state.randomWritingCompleted ||
         scoreResult?.passed == true;
+    final strokeOrderPaths = _expectedHintPaths(
+      widget.state.svgPathsFor(item.id),
+    );
     final expectedHintPaths = _showStrokeGuideHint
-        ? _expectedHintPaths(widget.state.svgPathsFor(item.id))
+        ? strokeOrderPaths
         : const <Path>[];
-    final hasStrokeHint = widget.state.svgPathsFor(item.id).isNotEmpty;
+    final hasStrokeHint = strokeOrderPaths.isNotEmpty;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -930,6 +933,8 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
                     failedStrokeIndex: scoreResult?.failedStrokeIndex,
                     expectedHintPath: scoreResult?.expectedHintPath,
                     expectedHintPaths: expectedHintPaths,
+                    showStrokeOrderButton: true,
+                    strokeOrderPreviewPaths: strokeOrderPaths,
                     onStrokesChanged: (strokes) {
                       ref
                           .read(
