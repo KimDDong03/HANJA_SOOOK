@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hanja_soook/features/writing/svg_path_parser.dart';
+import 'package:hanja_soook/domain/services/svg_path_parser.dart';
 
 void main() {
   group('SvgPathParser', () {

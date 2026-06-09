@@ -1,6 +1,6 @@
 # 03. Supabase DB Schema Specification
 
-This specification is implemented by `supabase/migrations/0001_initial_schema.sql`.
+This specification is implemented by `supabase/migrations/20260527070530_initial_schema.sql` and later dated migrations in `supabase/migrations/`.
 
 ## MVP Tables
 

@@ -1,20 +1,12 @@
-# 한자쏘옥 Codex Starter
+# 한자쏘옥
 
-이 폴더는 **Codex가 판단하지 않고 구현만 하도록** 만들기 위한 프로젝트 시작 패키지입니다.
-Flutter 앱 코드는 아직 구현하지 않고, 구현 기준/폴더 구조/DB 스키마/작업 티켓/AGENTS 지침을 먼저 고정합니다.
+초등학생용 한자 학습 Flutter 앱입니다. Supabase 기반 로그인/콘텐츠, Riverpod 상태관리, go_router 라우팅, Drift 로컬 캐시 구조로 MVP 학습 플로우를 구현합니다.
 
-## 사용 방법
+## 개발 기준
 
-1. 이 폴더를 새 Git 저장소 루트로 둡니다.
-2. Codex를 열고 루트의 `AGENTS.md`를 읽게 합니다.
-3. Codex에게 아래 한 줄만 입력합니다.
-
-```txt
-구현 시작해
-```
-
-4. Codex는 `docs/06_CODEX_TASKS.md`의 Ticket 00부터 순서대로 구현해야 합니다.
-5. 각 Ticket은 `flutter analyze`와 필요한 테스트를 통과하기 전까지 완료로 간주하지 않습니다.
+- 구현 범위와 제품 정책은 `docs/02_PRODUCT_SPEC.md`, `docs/06_CODEX_TASKS.md`, `AGENTS.md`를 따릅니다.
+- 화면은 Supabase나 점수 계산을 직접 처리하지 않고 controller/service/repository 계층을 통해 동작합니다.
+- 티켓 완료 기준은 `flutter analyze`, 관련 테스트, 도달 가능한 라우트, 빈/로딩/오류 상태 처리입니다.
 
 ## 앱 실행/빌드
 

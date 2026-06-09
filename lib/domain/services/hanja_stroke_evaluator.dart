@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
-import 'hanja_canvas_geometry.dart';
+import 'hanja_stroke_geometry.dart';
 
 class HanjaStrokeEvaluator {
   const HanjaStrokeEvaluator({

@@ -326,22 +326,26 @@ class _PlayfulHeader extends StatelessWidget {
 class _BackBubble extends StatelessWidget {
   const _BackBubble({required this.onTap});
 
+  static const _label = '뒤로가기';
+
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.border),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: const SizedBox.square(
-          dimension: 48,
-          child: Icon(Icons.arrow_back, size: 28, color: AppColors.textPrimary),
+    return SizedBox.square(
+      dimension: 48,
+      child: IconButton(
+        onPressed: onTap,
+        tooltip: _label,
+        icon: const Icon(Icons.arrow_back, size: 28),
+        style: IconButton.styleFrom(
+          backgroundColor: AppColors.surface,
+          foregroundColor: AppColors.textPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: AppColors.border),
+          ),
+          padding: EdgeInsets.zero,
         ),
       ),
     );

@@ -1,11 +1,11 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hanja_soook/features/writing/free_writing_score_controller.dart';
+import 'package:hanja_soook/domain/services/free_writing_score_service.dart';
 
 void main() {
-  group('FreeWritingScoreController', () {
-    const controller = FreeWritingScoreController();
+  group('FreeWritingScoreService', () {
+    const controller = FreeWritingScoreService();
 
     test('scores similar free writing strokes with stars', () {
       final userStroke = Path()

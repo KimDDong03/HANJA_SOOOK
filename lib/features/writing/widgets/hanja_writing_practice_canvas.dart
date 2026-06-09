@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../../domain/services/svg_path_parser.dart';
 import '../hanja_canvas_geometry.dart';
 import '../hanja_guide_grid.dart';
 import '../path_morph.dart';
 import '../stroke_color_palette.dart';
-import '../svg_path_parser.dart';
 import '../writing_practice_controller.dart';
 
 class HanjaWritingPracticeCanvas extends StatefulWidget {

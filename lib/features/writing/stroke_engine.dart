@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'stroke_evaluator.dart';
+import '../../domain/services/hanja_stroke_evaluator.dart';
 
 abstract class StrokeEngine {
   const StrokeEngine();

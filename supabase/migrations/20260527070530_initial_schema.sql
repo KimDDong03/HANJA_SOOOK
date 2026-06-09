@@ -459,7 +459,7 @@ insert into public.app_configs (key, value, description) values
   ('daily_hanja_count', '5', 'Number of daily Hanja cards'),
   ('quiz_question_count', '10', 'Number of quiz questions'),
   ('game_question_count', '10', 'Number of game questions'),
-  ('game_time_limit_sec', '20', 'Seconds per game question'),
+  ('game_time_limit_sec', '60', 'Total seconds per speed quiz game'),
   ('writing_pass_score', '65', 'Writing pass score'),
   ('writing_star_3_score', '85', '3-star threshold'),
   ('writing_star_2_score', '65', '2-star threshold'),

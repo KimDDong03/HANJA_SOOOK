@@ -9,9 +9,9 @@ import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../core/widgets/success_feedback_popup.dart';
 import '../../domain/models/hanja_character.dart';
+import '../../domain/services/free_writing_score_service.dart';
+import '../../domain/services/svg_path_parser.dart';
 import '../learning/session_reward_panel.dart';
-import '../writing/free_writing_score_controller.dart';
-import '../writing/svg_path_parser.dart';
 import '../writing/widgets/hanja_free_writing_canvas.dart';
 import 'weakness_session_controller.dart';
 
@@ -322,7 +322,7 @@ class _WritingTaskState extends ConsumerState<_WritingTask> {
     final task = widget.state.currentTask!;
     final item = task.item;
     final result = ref
-        .read(freeWritingScoreControllerProvider)
+        .read(freeWritingScoreServiceProvider)
         .score(
           userStrokes: _strokes,
           expectedSvgPaths: widget.state.svgPathsFor(item.id),

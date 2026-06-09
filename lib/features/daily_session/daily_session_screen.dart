@@ -11,10 +11,10 @@ import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../core/widgets/success_feedback_popup.dart';
 import '../../domain/models/hanja_character.dart';
+import '../../domain/services/free_writing_score_service.dart';
+import '../../domain/services/svg_path_parser.dart';
 import '../../domain/services/thinking_unit_image_service.dart';
 import '../learning/session_reward_panel.dart';
-import '../writing/free_writing_score_controller.dart';
-import '../writing/svg_path_parser.dart';
 import '../writing/widgets/hanja_free_writing_canvas.dart';
 import '../writing/widgets/hanja_writing_practice_canvas.dart';
 import 'daily_session_controller.dart';
@@ -996,7 +996,7 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
   void _checkWriting() {
     final item = widget.state.currentHanja!;
     final result = ref
-        .read(freeWritingScoreControllerProvider)
+        .read(freeWritingScoreServiceProvider)
         .score(
           userStrokes: _strokes,
           expectedSvgPaths: widget.state.svgPathsFor(item.id),

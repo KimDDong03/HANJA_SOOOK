@@ -11,11 +11,11 @@ import '../../domain/models/challenge_result.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/models/stroke_asset.dart';
 import '../../domain/services/challenge_result_service.dart';
+import '../../domain/services/free_writing_score_service.dart';
 import '../../domain/services/xp_service.dart';
 import '../challenge/challenge_result_tick.dart';
 import '../challenge/challenge_hanja_pool.dart';
 import '../learning/learning_progress_controller.dart';
-import '../writing/free_writing_score_controller.dart';
 
 final flipBoardProvider = AsyncNotifierProvider.autoDispose
     .family<FlipBoardController, FlipBoardState, FlipBoardGameConfig>(
@@ -304,7 +304,7 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
     required FlipBoardTile tile,
     required List<Path> strokes,
   }) {
-    final scorer = ref.read(freeWritingScoreControllerProvider);
+    final scorer = ref.read(freeWritingScoreServiceProvider);
     return scorer
         .score(
           userStrokes: strokes,

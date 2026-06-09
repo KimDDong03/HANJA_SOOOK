@@ -2,15 +2,15 @@ import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'stroke_evaluator.dart';
+import 'hanja_stroke_evaluator.dart';
 import 'svg_path_parser.dart';
 
-final freeWritingScoreControllerProvider = Provider<FreeWritingScoreController>(
-  (ref) => const FreeWritingScoreController(),
+final freeWritingScoreServiceProvider = Provider<FreeWritingScoreService>(
+  (ref) => const FreeWritingScoreService(),
 );
 
-class FreeWritingScoreController {
-  const FreeWritingScoreController({
+class FreeWritingScoreService {
+  const FreeWritingScoreService({
     this.evaluator = const HanjaStrokeEvaluator(minLengthRatio: 0.5),
   });
 

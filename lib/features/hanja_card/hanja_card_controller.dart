@@ -4,7 +4,7 @@ import '../../data/repositories/content_repository_provider.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/models/hanja_example.dart';
 import '../../domain/models/stroke_asset.dart';
-import '../writing/svg_path_parser.dart';
+import '../../domain/services/svg_path_parser.dart';
 
 final hanjaCardProvider = FutureProvider.family<HanjaCardState, String>((
   ref,

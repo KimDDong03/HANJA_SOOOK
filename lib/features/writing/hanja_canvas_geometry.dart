@@ -1,13 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
-const double hanjaSourceSize = 109;
-const Rect defaultHanjaViewBox = Rect.fromLTWH(
-  0,
-  0,
-  hanjaSourceSize,
-  hanjaSourceSize,
-);
+export '../../domain/services/hanja_stroke_geometry.dart';
 
 class HanjaCanvasTransform {
   HanjaCanvasTransform({

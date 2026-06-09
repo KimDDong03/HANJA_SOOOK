@@ -2,10 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../domain/services/svg_path_parser.dart';
 import '../hanja_canvas_geometry.dart';
 import '../hanja_guide_grid.dart';
 import '../stroke_color_palette.dart';
-import '../svg_path_parser.dart';
 
 class AnimatedHanjaStrokePreview extends StatefulWidget {
   const AnimatedHanjaStrokePreview({

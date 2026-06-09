@@ -171,7 +171,7 @@ Build a script that converts the provided school CSV into Supabase seed CSV.
 ## Ticket 05. Supabase Schema Migration
 
 ### Goal
-Apply `supabase/migrations/0001_initial_schema.sql` or generate an equivalent migration.
+Apply `supabase/migrations/20260527070530_initial_schema.sql` or generate an equivalent migration.
 
 ### Requirements
 

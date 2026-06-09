@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hanja_soook/features/writing/stroke_evaluator.dart';
+import 'package:hanja_soook/domain/services/hanja_stroke_evaluator.dart';
 
 void main() {
   group('HanjaStrokeEvaluator', () {

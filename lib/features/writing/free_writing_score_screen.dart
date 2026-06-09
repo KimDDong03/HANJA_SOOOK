@@ -9,7 +9,7 @@ import '../../core/constants/route_paths.dart';
 import '../../core/widgets/app_error_view.dart';
 import '../../core/widgets/app_loading.dart';
 import '../../core/widgets/playful_page.dart';
-import 'free_writing_score_controller.dart';
+import '../../domain/services/free_writing_score_service.dart';
 import 'widgets/hanja_free_writing_canvas.dart';
 import 'writing_controller.dart';
 
@@ -183,7 +183,7 @@ class _FreeWritingScoreScreenState
       }
       setState(() => _isSaving = true);
       final scoreResult = ref
-          .read(freeWritingScoreControllerProvider)
+          .read(freeWritingScoreServiceProvider)
           .score(
             userStrokes: _strokes,
             expectedSvgPaths: expectedSvgPaths,

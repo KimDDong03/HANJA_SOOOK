@@ -9,9 +9,9 @@ import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 import '../../core/widgets/success_feedback_popup.dart';
 import '../../domain/models/hanja_character.dart';
+import '../../domain/services/free_writing_score_service.dart';
+import '../../domain/services/svg_path_parser.dart';
 import '../learning/session_reward_panel.dart';
-import '../writing/svg_path_parser.dart';
-import '../writing/free_writing_score_controller.dart';
 import '../writing/widgets/hanja_free_writing_canvas.dart';
 import 'review_session_controller.dart';
 
@@ -462,7 +462,7 @@ class _WritingStepState extends ConsumerState<_WritingStep> {
   Future<void> _checkWriting() async {
     final item = widget.state.currentWritingItem!;
     final result = ref
-        .read(freeWritingScoreControllerProvider)
+        .read(freeWritingScoreServiceProvider)
         .score(
           userStrokes: _strokes,
           expectedSvgPaths: widget.state.svgPathsFor(item.id),

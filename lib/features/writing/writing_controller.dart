@@ -7,9 +7,9 @@ import '../../domain/models/hanja_character.dart';
 import '../../domain/models/hanja_example.dart';
 import '../../domain/models/stroke_asset.dart';
 import '../../domain/services/learning_plan_service.dart';
+import '../../domain/services/svg_path_parser.dart';
 import '../auth/current_profile_controller.dart';
 import '../learning/learning_progress_controller.dart';
-import 'svg_path_parser.dart';
 
 final writingProvider = FutureProvider.family<WritingState, String>((
   ref,
