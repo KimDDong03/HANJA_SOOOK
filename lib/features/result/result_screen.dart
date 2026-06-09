@@ -77,7 +77,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                 title: data.isChallengeResult
                     ? '${_challengeTitle(data.challengeResult!.mode)} 완료'
                     : data.isDailyComplete
-                    ? '오늘 학습 완료'
+                    ? '단원 학습 완료'
                     : '연습 완료',
                 subtitle: data.isChallengeResult
                     ? '점수와 랭킹 변화를 확인해요'
@@ -165,7 +165,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                             const SizedBox(height: 12),
                           ],
                           Text(
-                            '오늘의 한자 ${data.completedCount}/${data.totalCount}',
+                            '학습한 한자 ${data.completedCount}/${data.totalCount}',
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
                                   color: AppColors.textPrimary,

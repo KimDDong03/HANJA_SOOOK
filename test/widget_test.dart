@@ -526,11 +526,11 @@ void main() {
     await pumpUntilFound(tester, find.text('한자쏘옥 모험'));
 
     expect(find.text('한자쏘옥 모험'), findsOneWidget);
-    await pumpUntilFound(tester, find.text('오늘 학습 시작'));
-    expect(find.text('오늘 학습 시작'), findsOneWidget);
+    await pumpUntilFound(tester, find.text('단원 학습 시작'));
+    expect(find.text('단원 학습 시작'), findsOneWidget);
 
     appRouter.go(RoutePaths.dailySession);
-    await pumpUntilFound(tester, find.text('오늘 학습'));
+    await pumpUntilFound(tester, find.text('단원 학습'));
     expect(find.text('시작'), findsOneWidget);
 
     final routeChecks = <String, String>{
@@ -557,17 +557,20 @@ void main() {
     }
   });
 
-  testWidgets('login validates required school before start', (tester) async {
+  testWidgets('login disables start until required fields are ready', (
+    tester,
+  ) async {
     await tester.pumpWidget(_testApp());
     appRouter.go(RoutePaths.login);
     await tester.pumpAndSettle();
 
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -260));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, '시작하기'));
-    await tester.pumpAndSettle();
+    final startButton = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, '시작하기'),
+    );
 
-    expect(find.text('학교를 선택해주세요.'), findsOneWidget);
+    expect(startButton.onPressed, isNull);
   });
 
   testWidgets('main app pages render on common phone sizes', (tester) async {
@@ -641,12 +644,12 @@ void main() {
       await tester.pumpWidget(_testApp());
       await tester.pump(const Duration(seconds: 1));
       appRouter.go(RoutePaths.home);
-      await pumpUntilFound(tester, find.text('오늘 학습 시작'));
-      final dailyButton = find.text('오늘 학습 시작').last;
+      await pumpUntilFound(tester, find.text('단원 학습 시작'));
+      final dailyButton = find.text('단원 학습 시작').last;
       await tester.ensureVisible(dailyButton);
       await tester.pump();
       await tester.tap(dailyButton);
-      await pumpUntilFound(tester, find.text('오늘 학습'));
+      await pumpUntilFound(tester, find.text('단원 학습'));
       await pumpUntilFound(tester, find.text('시작'));
       expect(find.text('시작'), findsWidgets);
 
@@ -733,10 +736,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await pumpUntilFound(
       tester,
-      find.widgetWithText(FilledButton, '오늘 학습 먼저 시작'),
+      find.widgetWithText(FilledButton, '단원 학습 먼저 시작'),
     );
 
-    final promptButton = find.widgetWithText(FilledButton, '오늘 학습 먼저 시작').last;
+    final promptButton = find.widgetWithText(FilledButton, '단원 학습 먼저 시작').last;
     await tester.ensureVisible(promptButton);
     await tester.pump();
     await tester.tap(promptButton);

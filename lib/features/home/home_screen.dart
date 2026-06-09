@@ -24,7 +24,7 @@ class HomeScreen extends ConsumerWidget {
       body: PlayfulPage(
         title: profile == null ? '한자쏘옥 모험' : '안녕하세요, ${profile.displayName}!',
         subtitle: profile == null
-            ? '오늘의 한자를 모아 별을 채워요'
+            ? '단원 한자를 모아 별을 채워요'
             : '${profile.schoolName ?? '학교 미설정'} · ${profile.grade ?? '-'}학년',
         children: [
           const AppSloganBanner(),
@@ -366,7 +366,7 @@ class _UnitStartButton extends StatelessWidget {
         slide.isComplete
             ? '완료한 학습 다시 보기'
             : slide.isUnlocked
-            ? '오늘 학습 시작'
+            ? '단원 학습 시작'
             : '이전 학습 완료 후 열림',
       ),
     );

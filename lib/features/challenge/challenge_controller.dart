@@ -79,7 +79,8 @@ final challengeSummaryProvider = FutureProvider<ChallengeSummaryState>((
   );
 });
 
-const _choiceChallengeMinLearnedHanjaCount = 4;
+const _choiceChallengeMinLearnedHanjaCount =
+    AppConstants.challengeMinLearnedHanjaCount;
 
 Future<List<ClassRankingRow>> _todayRankingRowsFor({
   required Ref ref,

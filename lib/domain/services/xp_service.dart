@@ -4,6 +4,8 @@ class XpService {
   static const writingCompletionSource = 'writing_completion';
   static const dailyCompletionSource = 'daily_completion_bonus';
   static const challengeResultSource = 'challenge_result';
+  static const reviewSessionSource = 'review_session_completion';
+  static const weaknessSessionSource = 'weakness_session_completion';
 
   static const _levelRequiredXp = <int, int>{
     1: 0,
@@ -54,6 +56,42 @@ class XpService {
     return correctCount * gameCorrectXp() + gameCompletionXp();
   }
 
+  int reviewSessionCompletionXp({
+    required int reviewedCount,
+    required int firstTryCorrectCount,
+  }) {
+    if (reviewedCount <= 0) {
+      return 0;
+    }
+    final safeCorrectCount = firstTryCorrectCount
+        .clamp(0, reviewedCount)
+        .toInt();
+    return quizCompletionXp() + safeCorrectCount * quizCorrectXp();
+  }
+
+  int weaknessSessionCompletionXp({required int completedHanjaCount}) {
+    if (completedHanjaCount <= 0) {
+      return 0;
+    }
+    return gameCompletionXp() + completedHanjaCount * gameCorrectXp();
+  }
+
+  String reviewSessionXpEventId({
+    required String studentKey,
+    required String learningDate,
+    required String? focusHanjaId,
+  }) {
+    return '$studentKey-$learningDate-review-${_sessionScope(focusHanjaId)}';
+  }
+
+  String weaknessSessionXpEventId({
+    required String studentKey,
+    required String learningDate,
+    required String? focusHanjaId,
+  }) {
+    return '$studentKey-$learningDate-weakness-${_sessionScope(focusHanjaId)}';
+  }
+
   int levelForTotalXp(int totalXp) {
     var level = 1;
     for (final entry in _levelRequiredXp.entries) {
@@ -70,5 +108,13 @@ class XpService {
 
   int nextLevelRequiredXp(int level) {
     return _levelRequiredXp[level + 1] ?? _levelRequiredXp.values.last;
+  }
+
+  String _sessionScope(String? focusHanjaId) {
+    final focus = focusHanjaId?.trim();
+    if (focus == null || focus.isEmpty) {
+      return 'daily';
+    }
+    return 'focus-$focus';
   }
 }

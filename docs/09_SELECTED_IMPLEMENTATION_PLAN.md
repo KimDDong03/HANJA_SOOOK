@@ -170,7 +170,7 @@ Acceptance:
 
 목표:
 
-- 홈을 오늘 미션 중심으로 정리한다.
+- 홈을 단원 학습 중심으로 정리한다.
 
 기존 활용:
 
@@ -180,13 +180,13 @@ Acceptance:
 변경 방향:
 
 - Teacher Preview, Student Links 직접 카드 제거 또는 설정으로 이동
-- 오늘의 한자, 진행률, 시작 CTA 우선
+- 단원 카드, 진행률, 시작 CTA 우선
 - XP/성장 요약 추가
 - 도전/랭킹 요약은 보조로만 표시
 
 Acceptance:
 
-- 홈 첫 CTA는 `오늘의 한자 시작`.
+- 홈 첫 CTA는 `단원 학습 시작`.
 - 학부모/선생님 기능은 홈 주요 카드로 보이지 않는다.
 - Empty/loading/error 상태 유지.
 
@@ -203,16 +203,16 @@ Acceptance:
 
 구성:
 
-- 오늘의 5자
-- 단계형 학습 루트
-- 이어서 학습 CTA
+- 단원별 한자장
+- 복습/집중 대상
+- 단원 학습 CTA
 - 현재/완료/잠김/fallback 상태
 
 Acceptance:
 
 - `/app/learn`에서 학습 루트가 보인다.
 - 한자 카드와 쓰기 모드 선택으로 이동 가능.
-- 오늘의 한자 데이터가 없으면 fallback 표시.
+- 단원 한자 데이터가 없으면 fallback 표시.
 
 ### Ticket S06. Hanja Card Route 재배치
 

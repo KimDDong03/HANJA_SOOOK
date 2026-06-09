@@ -5,7 +5,7 @@ class AppConstants {
   static const appEnvDefault = 'demo';
 
   static const dailyHanjaCount = 5;
-  static const challengeMinLearnedHanjaCount = 6;
+  static const challengeMinLearnedHanjaCount = 4;
   static const challengeQuestionCount = 10;
   static const speedQuizTimeLimitSeconds = 60;
   static const speedChoiceScorePerQuestion = 10;

@@ -57,7 +57,7 @@ class FutureFeaturesPanel extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            '현재 버전에서는 오늘 학습, 따라쓰기, 퀴즈, 복습 기능을 사용할 수 있습니다.',
+            '현재 버전에서는 단원 학습, 따라쓰기, 퀴즈, 복습 기능을 사용할 수 있습니다.',
             style: textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w700,

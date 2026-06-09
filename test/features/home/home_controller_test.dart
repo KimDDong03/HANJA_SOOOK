@@ -30,7 +30,7 @@ void main() {
     expect(state.remainingXp, 140);
     expect(state.todayRemainingCount, 2);
     expect(state.rewardLabel, '도전중');
-    expect(state.message, '오늘 학습을 끝내면 XP가 바로 채워지고 다음 보상이 열려요.');
+    expect(state.message, '단원 학습을 끝내면 XP가 바로 채워지고 다음 보상이 열려요.');
   });
 
   test('HomeGrowthSummaryState reports completion message', () {
@@ -53,7 +53,7 @@ void main() {
     expect(state.levelTitle, '별 모으는 학습가');
     expect(state.todayRemainingCount, 0);
     expect(state.rewardLabel, '큰 배지');
-    expect(state.message, '오늘 미션 완료! 누적 XP가 성장 게이지에 반영됐어요.');
+    expect(state.message, '단원 학습 완료! 누적 XP가 성장 게이지에 반영됐어요.');
   });
 
   test('HomeUnitSlide maps chapter keys to thinking image assets', () {

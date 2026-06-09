@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../data/repositories/challenge_result_repository_provider.dart';
 import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../data/repositories/quiz_result_repository_provider.dart';
@@ -45,7 +46,7 @@ enum QuizPlayMode {
 class QuizController extends AsyncNotifier<QuizState> {
   QuizController(this.mode);
 
-  static const minChoiceHanjaCount = 4;
+  static const minChoiceHanjaCount = AppConstants.challengeMinLearnedHanjaCount;
 
   final QuizPlayMode mode;
   DateTime Function() now = DateTime.now;

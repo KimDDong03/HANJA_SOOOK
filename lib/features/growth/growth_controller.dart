@@ -112,8 +112,8 @@ class GrowthViewState {
 
   String get motivationMessage {
     return isTodayComplete
-        ? '오늘 목표 완료! 내일도 XP를 모아 새 칭호에 도전해요.'
-        : '오늘 한자를 마치면 XP와 레벨 게이지가 바로 채워져요.';
+        ? '단원 학습 완료! 다음에도 XP를 모아 새 칭호에 도전해요.'
+        : '단원 한자를 마치면 XP와 레벨 게이지가 바로 채워져요.';
   }
 
   String get rewardTrackMessage {

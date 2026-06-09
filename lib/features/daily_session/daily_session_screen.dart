@@ -12,6 +12,7 @@ import '../../core/widgets/playful_page.dart';
 import '../../core/widgets/success_feedback_popup.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/services/thinking_unit_image_service.dart';
+import '../learning/session_reward_panel.dart';
 import '../writing/free_writing_score_controller.dart';
 import '../writing/svg_path_parser.dart';
 import '../writing/widgets/hanja_free_writing_canvas.dart';
@@ -39,8 +40,8 @@ class DailySessionScreen extends ConsumerWidget {
 
           if (state.items.isEmpty) {
             return PlayfulPage(
-              title: '오늘 학습',
-              subtitle: '오늘 학습할 한자가 없습니다',
+              title: '단원 학습',
+              subtitle: '단원 학습할 한자가 없습니다',
               children: [
                 PlayfulPanel(
                   child: FilledButton.icon(
@@ -89,7 +90,7 @@ class DailySessionScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => PlayfulPage(
-          title: '오늘 학습',
+          title: '단원 학습',
           subtitle: '학습을 불러오지 못했습니다',
           children: [
             PlayfulPanel(
@@ -120,13 +121,13 @@ class DailySessionScreen extends ConsumerWidget {
 
   String _titleFor(DailySessionPhase phase) {
     return switch (phase) {
-      DailySessionPhase.intro => '오늘 학습',
+      DailySessionPhase.intro => '단원 학습',
       DailySessionPhase.guidedWriting => '따라쓰기',
       DailySessionPhase.hanjaToHunQuiz => '훈음 맞히기',
       DailySessionPhase.hunToHanjaQuiz => '한자 찾기',
       DailySessionPhase.randomWriting => '랜덤 쓰기',
       DailySessionPhase.mistakeReview => '한 번 더',
-      DailySessionPhase.complete => '오늘 학습 완료',
+      DailySessionPhase.complete => '단원 학습 완료',
     };
   }
 
@@ -134,7 +135,7 @@ class DailySessionScreen extends ConsumerWidget {
     return switch (state.phase) {
       DailySessionPhase.intro =>
         state.chapterName == null
-            ? '오늘의 한자 ${state.items.length}자'
+            ? '단원 한자 ${state.items.length}자'
             : '${_chapterDisplayName(state)} · ${state.items.length}자',
       DailySessionPhase.guidedWriting =>
         '${state.index + 1}/${state.items.length} · 획을 따라 써요',
@@ -145,7 +146,7 @@ class DailySessionScreen extends ConsumerWidget {
       DailySessionPhase.randomWriting =>
         '${state.index + 1}/${state.randomWritingItems.length} · 순서 없이 써요',
       DailySessionPhase.mistakeReview => '${state.missedItems.length}자 확인',
-      DailySessionPhase.complete => '오늘 한자를 모두 확인했어요',
+      DailySessionPhase.complete => '단원 한자를 모두 확인했어요',
     };
   }
 
@@ -472,7 +473,7 @@ class _IntroLessonSummary extends StatelessWidget {
 }
 
 String _chapterDisplayName(DailySessionState state) {
-  final chapterName = state.chapterName ?? '오늘의 한자';
+  final chapterName = state.chapterName ?? '단원 한자';
   final chapterKey = state.chapterKey;
   if (chapterKey == null) {
     return chapterName;
@@ -1152,56 +1153,75 @@ class _CompleteStep extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return PlayfulPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              PlayfulStat(
-                icon: Icons.auto_awesome,
-                label: '완료',
-                value: '${state.items.length}자',
-                color: AppColors.green,
-              ),
-              const SizedBox(width: 10),
-              PlayfulStat(
-                icon: Icons.quiz,
-                label: '정답',
-                value: '${state.correctCount}/${state.totalQuizCount}',
-                color: AppColors.blue,
-              ),
-              const SizedBox(width: 10),
-              PlayfulStat(
-                icon: Icons.bolt,
-                label: 'XP',
-                value: '+${state.earnedXp}',
-                color: AppColors.yellow,
-              ),
-            ],
+    final totalQuizCount = state.totalQuizCount;
+    return SessionRewardPanel(
+      icon: Icons.auto_awesome,
+      title: '단원 학습 완료',
+      message: '완료 보상이 성장에 반영됐어요.',
+      stats: [
+        SessionRewardStat(
+          icon: Icons.menu_book,
+          label: '완료',
+          value: '${state.items.length}자',
+          color: AppColors.green,
+        ),
+        SessionRewardStat(
+          icon: Icons.percent,
+          label: '정답률',
+          value: _percentText(state.correctCount, totalQuizCount),
+          color: AppColors.blue,
+        ),
+        SessionRewardStat(
+          icon: Icons.star,
+          label: '별점',
+          value: sessionStarsText(
+            successCount: state.correctCount,
+            totalCount: totalQuizCount,
           ),
-          const SizedBox(height: 18),
-          FilledButton.icon(
-            onPressed: () {
-              ref.invalidate(dailySessionProvider(state.chapterKey));
-              context.go(RoutePaths.appHome);
-            },
-            icon: const Icon(Icons.home),
-            label: const Text('홈으로'),
-          ),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(
-            onPressed: () {
-              ref.invalidate(dailySessionProvider(state.chapterKey));
-              context.go(RoutePaths.appLearn);
-            },
-            icon: const Icon(Icons.menu_book),
-            label: const Text('한자장 보기'),
-          ),
-        ],
-      ),
+          color: AppColors.peach,
+        ),
+        SessionRewardStat(
+          icon: Icons.bolt,
+          label: 'XP',
+          value: '+${state.earnedXp}',
+          color: AppColors.yellow,
+        ),
+      ],
+      actions: [
+        FilledButton.icon(
+          onPressed: () {
+            ref.invalidate(dailySessionProvider(state.chapterKey));
+            context.go(RoutePaths.appHome);
+          },
+          icon: const Icon(Icons.home),
+          label: const Text('홈으로'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () {
+            ref.invalidate(dailySessionProvider(state.chapterKey));
+            context.go(RoutePaths.growth);
+          },
+          icon: const Icon(Icons.auto_graph),
+          label: const Text('성장 보기'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () {
+            ref.invalidate(dailySessionProvider(state.chapterKey));
+            context.go(RoutePaths.appLearn);
+          },
+          icon: const Icon(Icons.menu_book),
+          label: const Text('한자장 보기'),
+        ),
+      ],
     );
   }
+}
+
+String _percentText(int successCount, int totalCount) {
+  if (totalCount <= 0) {
+    return '-';
+  }
+  return '${((successCount / totalCount) * 100).round()}%';
 }
 
 class _HanjaJumpPanel extends StatelessWidget {

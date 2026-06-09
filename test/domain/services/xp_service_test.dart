@@ -13,6 +13,14 @@ void main() {
       expect(service.quizCompletionXp(), 20);
       expect(service.gameCorrectXp(), 5);
       expect(service.gameCompletionXp(), 20);
+      expect(
+        service.reviewSessionCompletionXp(
+          reviewedCount: 4,
+          firstTryCorrectCount: 3,
+        ),
+        35,
+      );
+      expect(service.weaknessSessionCompletionXp(completedHanjaCount: 2), 30);
     });
 
     test('uses level thresholds from product spec and migration seed', () {
@@ -31,6 +39,7 @@ void main() {
 
     test('matches product data count settings', () {
       expect(AppConstants.dailyHanjaCount, 5);
+      expect(AppConstants.challengeMinLearnedHanjaCount, 4);
       expect(AppConstants.challengeQuestionCount, 10);
       expect(AppConstants.flipBoardTimeLimitSeconds, 30);
       expect(AppConstants.flipBoardTimeLimitOptionsSeconds, [30, 60]);

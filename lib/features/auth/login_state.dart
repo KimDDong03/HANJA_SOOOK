@@ -23,6 +23,8 @@ class LoginState {
 
   bool get isSearching => status == LoginSubmissionStatus.searching;
   bool get isSigningIn => status == LoginSubmissionStatus.signingIn;
+  bool get canStart =>
+      selectedSchool != null && displayName.trim().isNotEmpty && grade != null;
 
   LoginState copyWith({
     String? keyword,

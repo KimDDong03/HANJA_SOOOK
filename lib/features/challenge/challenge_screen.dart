@@ -76,7 +76,7 @@ class _ChallengeContent extends StatelessWidget {
           FilledButton.icon(
             onPressed: () => context.push(RoutePaths.dailySession),
             icon: const Icon(Icons.play_arrow),
-            label: const Text('오늘 학습 먼저 시작'),
+            label: const Text('단원 학습 먼저 시작'),
           ),
         ],
       ],

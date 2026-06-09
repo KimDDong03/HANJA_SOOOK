@@ -276,7 +276,7 @@ class _TabState {
       ),
       _LearnTab.library => _TabState(
         title: '단원별 한자장',
-        subtitle: '단원 카드에서 오늘 학습처럼 진행해요.',
+        subtitle: '단원 카드에서 단원 학습처럼 진행해요.',
         emptyText: '표시할 단원이 아직 없습니다.',
         items: state.items,
       ),

@@ -25,7 +25,7 @@ final typingGameProvider =
 
 class TypingGameController extends AsyncNotifier<TypingGameState> {
   static const _gameTimeLimitSeconds = AppConstants.speedQuizTimeLimitSeconds;
-  static const minChoiceHanjaCount = 4;
+  static const minChoiceHanjaCount = AppConstants.challengeMinLearnedHanjaCount;
 
   DateTime Function() now = DateTime.now;
   Timer? _timer;

@@ -9,6 +9,7 @@ import '../../domain/services/learning_plan_service.dart';
 import '../../domain/services/thinking_unit_image_service.dart';
 import '../auth/current_profile_controller.dart';
 import '../growth/growth_controller.dart';
+import '../learning/demo_review_focus_seed_controller.dart';
 import '../learning/learning_progress_controller.dart';
 
 final todayLearningProvider = FutureProvider<TodayLearningState>((ref) async {
@@ -20,6 +21,9 @@ final todayLearningProvider = FutureProvider<TodayLearningState>((ref) async {
   final studentKey = currentStudentKey(ref);
   final learningDate = currentLearningDate();
   final allItems = await contentRepository.getHanjaList(grade: grade);
+  await ref
+      .read(demoReviewFocusSeedControllerProvider)
+      .ensureSeeded(items: allItems);
   final progressRecords = await progressRepository
       .getCompletedHanjaRecordsForStudent(studentKey: studentKey);
   final plan = const LearningPlanService().buildDailyPlan(
@@ -59,6 +63,9 @@ final homeUnitCarouselProvider = FutureProvider<HomeUnitCarouselState>((
   final studentKey = currentStudentKey(ref);
   final learningDate = currentLearningDate();
   final allItems = await contentRepository.getHanjaList(grade: grade);
+  await ref
+      .read(demoReviewFocusSeedControllerProvider)
+      .ensureSeeded(items: allItems);
   final progressRecords = await progressRepository
       .getCompletedHanjaRecordsForStudent(studentKey: studentKey);
   final plan = const LearningPlanService().buildDailyPlan(
@@ -129,8 +136,8 @@ class HomeGrowthSummaryState {
       todayRemainingCount: state.remainingTodayCount,
       rewardLabel: _rewardLabelForProgress(state.rewardTrackProgress),
       message: state.isTodayComplete
-          ? '오늘 미션 완료! 누적 XP가 성장 게이지에 반영됐어요.'
-          : '오늘 학습을 끝내면 XP가 바로 채워지고 다음 보상이 열려요.',
+          ? '단원 학습 완료! 누적 XP가 성장 게이지에 반영됐어요.'
+          : '단원 학습을 끝내면 XP가 바로 채워지고 다음 보상이 열려요.',
     );
   }
 }

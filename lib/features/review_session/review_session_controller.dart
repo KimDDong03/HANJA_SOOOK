@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../data/repositories/content_repository_provider.dart';
+import '../../data/repositories/learning_diagnostics_repository_provider.dart';
 import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/models/learning_diagnostics.dart';
 import '../../domain/models/stroke_asset.dart';
 import '../../domain/services/learning_plan_service.dart';
+import '../../domain/services/xp_service.dart';
 import '../auth/current_profile_controller.dart';
 import '../learning/learning_diagnostics_controller.dart';
 import '../learning/learning_progress_controller.dart';
@@ -21,14 +23,11 @@ final reviewSessionProvider =
       String?
     >(ReviewSessionController.new);
 
-enum ReviewSessionPhase {
-  hanjaToHun,
-  hunToHanja,
-  writing,
-  correction,
-  retry,
-  complete,
-}
+enum ReviewSessionPhase { quiz, writing, correction, retry, complete }
+
+const int _inlineRetryDistance = 3;
+const int _maxInlineRetryCount = 2;
+const int _maxFinalRetryRound = 1;
 
 class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
   ReviewSessionController(this.focusHanjaId);
@@ -53,7 +52,19 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
       newItemLimit: AppConstants.dailyHanjaCount,
       reviewItemLimit: AppConstants.dailyReviewCount,
     );
-    final items = _prioritizeFocus(plan.reviewItems, focusHanjaId);
+    final activeWeaknesses = await ref
+        .watch(learningDiagnosticsRepositoryProvider)
+        .getActiveWeaknesses(studentKey: studentKey);
+    final weaknessesByHanja = _weaknessesByHanja(activeWeaknesses);
+    final learnedHanjaIds = records.map((record) => record.hanjaId).toSet();
+    final items = _sessionItems(
+      allItems: allItems,
+      dueItems: plan.reviewItems,
+      activeWeaknesses: activeWeaknesses,
+      learnedHanjaIds: learnedHanjaIds,
+      focusHanjaId: focusHanjaId,
+      limit: AppConstants.dailyReviewCount,
+    );
     final strokeRows = await Future.wait([
       for (final item in items) contentRepository.getStrokeAsset(item.id),
     ]);
@@ -65,18 +76,14 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
     return ReviewSessionState(
       items: items,
       strokeAssets: strokeAssets,
-      hanjaToHunQuestions: _buildQuestions(
-        activityType: HanjaPracticeActivityType.hanjaToHun,
+      weaknessesByHanja: weaknessesByHanja,
+      quizQuestions: _buildReviewQuestions(
         items: items,
+        weaknessesByHanja: weaknessesByHanja,
         random: random,
         focusHanjaId: focusHanjaId,
       ),
-      hunToHanjaQuestions: _buildQuestions(
-        activityType: HanjaPracticeActivityType.hunToHanja,
-        items: items,
-        random: random,
-        focusHanjaId: focusHanjaId,
-      ),
+      weakWritingHanjaIds: _weakWritingHanjaIds(weaknessesByHanja),
     );
   }
 
@@ -88,6 +95,14 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
     }
 
     final isCorrect = answer == question.correctAnswer;
+    final quizQuestions = isCorrect
+        ? current.quizQuestions
+        : _quizQuestionsWithRetry(
+            questions: current.quizQuestions,
+            currentIndex: current.index,
+            failedQuestion: question,
+            candidates: current.items,
+          );
     await _recordAttempt(
       hanjaId: question.item.id,
       activityType: question.activityType,
@@ -97,10 +112,17 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
     );
     state = AsyncData(
       current.copyWith(
+        quizQuestions: quizQuestions,
         selectedAnswer: answer,
-        correctCount: isCorrect
+        correctCount:
+            isCorrect &&
+                question.retryCount == 0 &&
+                !current.missedHanjaIds.contains(question.item.id)
             ? current.correctCount + 1
             : current.correctCount,
+        passedHanjaIds: isCorrect
+            ? {...current.passedHanjaIds, question.item.id}
+            : current.passedHanjaIds,
         missedHanjaIds: isCorrect
             ? current.missedHanjaIds
             : {...current.missedHanjaIds, question.item.id},
@@ -108,23 +130,46 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
     );
   }
 
-  void next() {
+  Future<void> next() async {
     final current = state.value;
     if (current == null || current.selectedAnswer == null) {
       return;
     }
-    final questions = current.currentQuestions;
+    final questions = current.quizQuestions;
     if (current.index < questions.length - 1) {
       state = AsyncData(
         current.copyWith(index: current.index + 1, selectedAnswer: null),
       );
       return;
     }
-    final nextPhase = current.phase == ReviewSessionPhase.hanjaToHun
-        ? ReviewSessionPhase.hunToHanja
-        : ReviewSessionPhase.writing;
+    if (current.writingItems.isNotEmpty) {
+      state = AsyncData(
+        current.copyWith(
+          phase: ReviewSessionPhase.writing,
+          index: 0,
+          selectedAnswer: null,
+        ),
+      );
+      return;
+    }
+    if (current.unresolvedMissedItems.isNotEmpty) {
+      state = AsyncData(
+        current.copyWith(
+          phase: ReviewSessionPhase.correction,
+          index: 0,
+          selectedAnswer: null,
+        ),
+      );
+      return;
+    }
+    final earnedXp = await _finishReview(current);
     state = AsyncData(
-      current.copyWith(phase: nextPhase, index: 0, selectedAnswer: null),
+      current.copyWith(
+        phase: ReviewSessionPhase.complete,
+        index: 0,
+        selectedAnswer: null,
+        earnedXp: earnedXp,
+      ),
     );
   }
 
@@ -145,6 +190,7 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
     );
     state = AsyncData(
       current.copyWith(
+        hintedHanjaIds: {...current.hintedHanjaIds, item.id},
         hintLevelByHanjaId: {
           ...current.hintLevelByHanjaId,
           item.id: nextHintLevel,
@@ -163,11 +209,43 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
     }
     state = AsyncData(
       current.copyWith(
+        writingPassedHanjaIds: {...current.writingPassedHanjaIds}
+          ..remove(hanjaId),
         writingStrokesByHanjaId: {
           ...current.writingStrokesByHanjaId,
           hanjaId: List<Path>.unmodifiable(strokes),
         },
       ),
+    );
+  }
+
+  void markWritingPassed(String hanjaId) {
+    final current = state.value;
+    final item = current?.currentWritingItem;
+    if (current == null || item == null || item.id != hanjaId) {
+      return;
+    }
+    state = AsyncData(
+      current.copyWith(
+        writingPassedHanjaIds: {...current.writingPassedHanjaIds, hanjaId},
+      ),
+    );
+  }
+
+  Future<void> recordWritingFailure() async {
+    final current = state.value;
+    final item = current?.currentWritingItem;
+    if (current == null || item == null) {
+      return;
+    }
+    await _recordAttempt(
+      hanjaId: item.id,
+      activityType: HanjaPracticeActivityType.writing,
+      result: HanjaPracticeResult.failed,
+      hintLevel: current.hintLevelFor(item.id),
+    );
+    state = AsyncData(
+      current.copyWith(missedHanjaIds: {...current.missedHanjaIds, item.id}),
     );
   }
 
@@ -177,40 +255,60 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
     if (current == null || item == null) {
       return;
     }
+    if (!current.writingPassedHanjaIds.contains(item.id)) {
+      return;
+    }
     await _recordAttempt(
       hanjaId: item.id,
       activityType: HanjaPracticeActivityType.writing,
       result: HanjaPracticeResult.correct,
       hintLevel: current.hintLevelFor(item.id),
     );
-    if (current.index < current.items.length - 1) {
-      state = AsyncData(current.copyWith(index: current.index + 1));
+    final updated = current.copyWith(
+      passedHanjaIds: {...current.passedHanjaIds, item.id},
+    );
+    if (updated.index < updated.writingItems.length - 1) {
+      state = AsyncData(updated.copyWith(index: updated.index + 1));
       return;
     }
+    if (updated.unresolvedMissedItems.isNotEmpty) {
+      state = AsyncData(
+        updated.copyWith(phase: ReviewSessionPhase.correction, index: 0),
+      );
+      return;
+    }
+    final earnedXp = await _finishReview(updated);
     state = AsyncData(
-      current.copyWith(
-        phase: current.missedHanjaIds.isEmpty
-            ? ReviewSessionPhase.complete
-            : ReviewSessionPhase.correction,
+      updated.copyWith(
+        phase: ReviewSessionPhase.complete,
         index: 0,
+        earnedXp: earnedXp,
       ),
     );
-    if (current.missedHanjaIds.isEmpty) {
-      await _finishReview(current);
-    }
   }
 
-  void startRetryOrComplete() {
+  Future<void> startRetryOrComplete() async {
     final current = state.value;
     if (current == null) {
       return;
     }
-    if (current.missedItems.isEmpty) {
-      state = AsyncData(current.copyWith(phase: ReviewSessionPhase.complete));
+    if (current.unresolvedMissedItems.isEmpty) {
+      final earnedXp = await _finishReview(current);
+      state = AsyncData(
+        current.copyWith(
+          phase: ReviewSessionPhase.complete,
+          earnedXp: earnedXp,
+        ),
+      );
       return;
     }
     state = AsyncData(
-      current.copyWith(phase: ReviewSessionPhase.retry, index: 0),
+      current.copyWith(
+        phase: ReviewSessionPhase.retry,
+        index: 0,
+        selectedAnswer: null,
+        retryRound: 0,
+      ),
     );
   }
 
@@ -231,6 +329,12 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
     state = AsyncData(
       current.copyWith(
         selectedAnswer: answer,
+        passedHanjaIds: isCorrect
+            ? {...current.passedHanjaIds, question.item.id}
+            : current.passedHanjaIds,
+        missedHanjaIds: isCorrect
+            ? current.missedHanjaIds
+            : {...current.missedHanjaIds, question.item.id},
         retryCorrectHanjaIds: isCorrect
             ? {...current.retryCorrectHanjaIds, question.item.id}
             : current.retryCorrectHanjaIds,
@@ -249,26 +353,62 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
       );
       return;
     }
-    await _finishReview(current);
+    final nextState = current.copyWith(selectedAnswer: null);
+    if (nextState.unresolvedMissedItems.isNotEmpty &&
+        current.retryRound < _maxFinalRetryRound) {
+      state = AsyncData(
+        nextState.copyWith(index: 0, retryRound: current.retryRound + 1),
+      );
+      return;
+    }
+    final earnedXp = await _finishReview(current);
     state = AsyncData(
       current.copyWith(
         phase: ReviewSessionPhase.complete,
         selectedAnswer: null,
+        earnedXp: earnedXp,
       ),
     );
   }
 
-  Future<void> _finishReview(ReviewSessionState current) async {
+  Future<int> _finishReview(ReviewSessionState current) async {
     final repository = ref.read(learningProgressRepositoryProvider);
     final studentKey = currentStudentKey(ref);
     final learningDate = currentLearningDate();
+    var didChangeProgress = false;
     for (final item in current.items) {
-      await repository.markHanjaCompleted(
+      final didMark = await repository.markHanjaCompleted(
         studentKey: studentKey,
         learningDate: learningDate,
         hanjaId: item.id,
       );
+      didChangeProgress = didChangeProgress || didMark;
     }
+    const xpService = XpService();
+    final earnedXp = xpService.reviewSessionCompletionXp(
+      reviewedCount: current.items.length,
+      firstTryCorrectCount: current.correctCount,
+    );
+    var didWriteXp = false;
+    if (earnedXp > 0) {
+      didWriteXp = await repository.addXpEvent(
+        id: xpService.reviewSessionXpEventId(
+          studentKey: studentKey,
+          learningDate: learningDate,
+          focusHanjaId: focusHanjaId,
+        ),
+        studentKey: studentKey,
+        source: XpService.reviewSessionSource,
+        amount: earnedXp,
+        refId: focusHanjaId?.trim().isEmpty ?? true
+            ? learningDate
+            : focusHanjaId!.trim(),
+      );
+    }
+    if (didChangeProgress || didWriteXp) {
+      ref.read(learningProgressTickProvider.notifier).increase();
+    }
+    return didWriteXp ? earnedXp : 0;
   }
 
   Future<void> _recordAttempt({
@@ -294,56 +434,72 @@ class ReviewSessionState {
   const ReviewSessionState({
     required this.items,
     required this.strokeAssets,
-    required this.hanjaToHunQuestions,
-    required this.hunToHanjaQuestions,
-    this.phase = ReviewSessionPhase.hanjaToHun,
+    required this.weaknessesByHanja,
+    required this.quizQuestions,
+    required this.weakWritingHanjaIds,
+    this.phase = ReviewSessionPhase.quiz,
     this.index = 0,
     this.selectedAnswer,
     this.correctCount = 0,
+    this.passedHanjaIds = const <String>{},
     this.missedHanjaIds = const <String>{},
+    this.hintedHanjaIds = const <String>{},
     this.retryCorrectHanjaIds = const <String>{},
+    this.writingPassedHanjaIds = const <String>{},
+    this.retryRound = 0,
     this.hintLevelByHanjaId = const <String, int>{},
     this.writingStrokesByHanjaId = const <String, List<Path>>{},
+    this.earnedXp = 0,
   });
 
   final List<HanjaCharacter> items;
   final Map<String, StrokeAsset?> strokeAssets;
-  final List<ReviewQuestion> hanjaToHunQuestions;
-  final List<ReviewQuestion> hunToHanjaQuestions;
+  final Map<String, List<HanjaWeaknessRecord>> weaknessesByHanja;
+  final List<ReviewQuestion> quizQuestions;
+  final Set<String> weakWritingHanjaIds;
   final ReviewSessionPhase phase;
   final int index;
   final String? selectedAnswer;
   final int correctCount;
+  final Set<String> passedHanjaIds;
   final Set<String> missedHanjaIds;
+  final Set<String> hintedHanjaIds;
   final Set<String> retryCorrectHanjaIds;
+  final Set<String> writingPassedHanjaIds;
+  final int retryRound;
   final Map<String, int> hintLevelByHanjaId;
   final Map<String, List<Path>> writingStrokesByHanjaId;
-
-  List<ReviewQuestion> get currentQuestions {
-    return switch (phase) {
-      ReviewSessionPhase.hanjaToHun => hanjaToHunQuestions,
-      ReviewSessionPhase.hunToHanja => hunToHanjaQuestions,
-      _ => const [],
-    };
-  }
+  final int earnedXp;
 
   ReviewQuestion? get currentQuestion {
-    final questions = currentQuestions;
-    if (index < 0 || index >= questions.length) {
+    if (phase != ReviewSessionPhase.quiz ||
+        index < 0 ||
+        index >= quizQuestions.length) {
       return null;
     }
-    return questions[index];
+    return quizQuestions[index];
   }
 
   List<HanjaCharacter> get missedItems {
     return items.where((item) => missedHanjaIds.contains(item.id)).toList();
   }
 
+  List<HanjaCharacter> get unresolvedMissedItems {
+    return items.where((item) {
+      return missedHanjaIds.contains(item.id) &&
+          !passedHanjaIds.contains(item.id);
+    }).toList();
+  }
+
+  List<HanjaCharacter> get writingItems {
+    return items;
+  }
+
   List<ReviewQuestion> get retryQuestions {
-    return _buildQuestions(
-      activityType: HanjaPracticeActivityType.hunToHanja,
-      items: missedItems,
-      random: Random(items.length + missedHanjaIds.length),
+    return _buildRetryQuestions(
+      items: unresolvedMissedItems,
+      candidates: items,
+      retryRound: retryRound,
     );
   }
 
@@ -356,10 +512,11 @@ class ReviewSessionState {
   }
 
   HanjaCharacter? get currentWritingItem {
-    if (index < 0 || index >= items.length) {
+    final targets = writingItems;
+    if (index < 0 || index >= targets.length) {
       return null;
     }
-    return items[index];
+    return targets[index];
   }
 
   int hintLevelFor(String hanjaId) => hintLevelByHanjaId[hanjaId] ?? 0;
@@ -374,31 +531,44 @@ class ReviewSessionState {
   }
 
   ReviewSessionState copyWith({
+    List<ReviewQuestion>? quizQuestions,
     ReviewSessionPhase? phase,
     int? index,
     Object? selectedAnswer = _sentinel,
     int? correctCount,
+    Set<String>? passedHanjaIds,
     Set<String>? missedHanjaIds,
+    Set<String>? hintedHanjaIds,
     Set<String>? retryCorrectHanjaIds,
+    Set<String>? writingPassedHanjaIds,
+    int? retryRound,
     Map<String, int>? hintLevelByHanjaId,
     Map<String, List<Path>>? writingStrokesByHanjaId,
+    int? earnedXp,
   }) {
     return ReviewSessionState(
       items: items,
       strokeAssets: strokeAssets,
-      hanjaToHunQuestions: hanjaToHunQuestions,
-      hunToHanjaQuestions: hunToHanjaQuestions,
+      weaknessesByHanja: weaknessesByHanja,
+      quizQuestions: quizQuestions ?? this.quizQuestions,
+      weakWritingHanjaIds: weakWritingHanjaIds,
       phase: phase ?? this.phase,
       index: index ?? this.index,
       selectedAnswer: identical(selectedAnswer, _sentinel)
           ? this.selectedAnswer
           : selectedAnswer as String?,
       correctCount: correctCount ?? this.correctCount,
+      passedHanjaIds: passedHanjaIds ?? this.passedHanjaIds,
       missedHanjaIds: missedHanjaIds ?? this.missedHanjaIds,
+      hintedHanjaIds: hintedHanjaIds ?? this.hintedHanjaIds,
       retryCorrectHanjaIds: retryCorrectHanjaIds ?? this.retryCorrectHanjaIds,
+      writingPassedHanjaIds:
+          writingPassedHanjaIds ?? this.writingPassedHanjaIds,
+      retryRound: retryRound ?? this.retryRound,
       hintLevelByHanjaId: hintLevelByHanjaId ?? this.hintLevelByHanjaId,
       writingStrokesByHanjaId:
           writingStrokesByHanjaId ?? this.writingStrokesByHanjaId,
+      earnedXp: earnedXp ?? this.earnedXp,
     );
   }
 }
@@ -410,6 +580,7 @@ class ReviewQuestion {
     required this.prompt,
     required this.correctAnswer,
     required this.options,
+    this.retryCount = 0,
   });
 
   final HanjaCharacter item;
@@ -417,28 +588,125 @@ class ReviewQuestion {
   final String prompt;
   final String correctAnswer;
   final List<String> options;
+  final int retryCount;
+
+  bool get isRetry => retryCount > 0;
+
+  String get key => '${item.id}:${activityType.name}:$retryCount';
 }
 
 const Object _sentinel = Object();
 
-List<HanjaCharacter> _prioritizeFocus(
-  List<HanjaCharacter> items,
-  String? focusHanjaId,
+Map<String, List<HanjaWeaknessRecord>> _weaknessesByHanja(
+  List<HanjaWeaknessRecord> rows,
 ) {
-  final focus = focusHanjaId?.trim();
-  if (focus == null || focus.isEmpty) {
-    return items;
+  final grouped = <String, List<HanjaWeaknessRecord>>{};
+  for (final row in rows) {
+    if (!row.isActive) {
+      continue;
+    }
+    grouped.putIfAbsent(row.hanjaId, () => []).add(row);
   }
-  final focused = items.where((item) => item.id == focus).toList();
-  if (focused.isEmpty) {
-    return items;
+  for (final weaknesses in grouped.values) {
+    weaknesses.sort((a, b) {
+      final byScore = b.score.compareTo(a.score);
+      if (byScore != 0) {
+        return byScore;
+      }
+      return b.lastEventAt.compareTo(a.lastEventAt);
+    });
   }
-  return [...focused, ...items.where((item) => item.id != focus)];
+  return grouped;
 }
 
-List<ReviewQuestion> _buildQuestions({
-  required HanjaPracticeActivityType activityType,
+Set<String> _weakWritingHanjaIds(
+  Map<String, List<HanjaWeaknessRecord>> weaknessesByHanja,
+) {
+  return {
+    for (final entry in weaknessesByHanja.entries)
+      if (entry.value.any((weakness) {
+        return weakness.weaknessType == HanjaWeaknessType.writing;
+      }))
+        entry.key,
+  };
+}
+
+List<HanjaCharacter> _sessionItems({
+  required List<HanjaCharacter> allItems,
+  required List<HanjaCharacter> dueItems,
+  required List<HanjaWeaknessRecord> activeWeaknesses,
+  required Set<String> learnedHanjaIds,
+  required String? focusHanjaId,
+  required int limit,
+}) {
+  final itemsById = {for (final item in allItems) item.id: item};
+  final dueIds = dueItems.map((item) => item.id).toSet();
+  final activeRows =
+      activeWeaknesses.where((weakness) {
+        return weakness.isActive &&
+            learnedHanjaIds.contains(weakness.hanjaId) &&
+            itemsById.containsKey(weakness.hanjaId);
+      }).toList()..sort((a, b) {
+        final byScore = b.score.compareTo(a.score);
+        if (byScore != 0) {
+          return byScore;
+        }
+        return b.lastEventAt.compareTo(a.lastEventAt);
+      });
+  final selected = <HanjaCharacter>[];
+  final selectedIds = <String>{};
+
+  void addById(String id) {
+    if (selectedIds.contains(id)) {
+      return;
+    }
+    final item = itemsById[id];
+    if (item == null) {
+      return;
+    }
+    selected.add(item);
+    selectedIds.add(id);
+  }
+
+  final focus = focusHanjaId?.trim();
+  if (focus != null &&
+      focus.isNotEmpty &&
+      (dueIds.contains(focus) || learnedHanjaIds.contains(focus))) {
+    addById(focus);
+  }
+
+  for (final weakness in activeRows.where(
+    (row) => dueIds.contains(row.hanjaId),
+  )) {
+    addById(weakness.hanjaId);
+  }
+  for (final item in dueItems) {
+    addById(item.id);
+  }
+  for (final weakness in activeRows.where(
+    (row) => !dueIds.contains(row.hanjaId),
+  )) {
+    addById(weakness.hanjaId);
+  }
+
+  if (limit <= 0 || selected.length <= limit) {
+    return selected;
+  }
+  final focusedIndex = focus == null
+      ? -1
+      : selected.indexWhere((item) => item.id == focus);
+  if (focusedIndex <= 0) {
+    return selected.take(limit).toList();
+  }
+  return [
+    selected[focusedIndex],
+    ...selected.where((item) => item.id != focus).take(limit - 1),
+  ];
+}
+
+List<ReviewQuestion> _buildReviewQuestions({
   required List<HanjaCharacter> items,
+  required Map<String, List<HanjaWeaknessRecord>> weaknessesByHanja,
   required Random random,
   String? focusHanjaId,
 }) {
@@ -447,30 +715,26 @@ List<ReviewQuestion> _buildQuestions({
     random: random,
     focusHanjaId: focusHanjaId,
   );
-  return [
-    for (var index = 0; index < shuffled.length; index += 1)
-      ReviewQuestion(
-        item: shuffled[index],
-        activityType: activityType,
-        prompt: activityType == HanjaPracticeActivityType.hanjaToHun
-            ? shuffled[index].character
-            : shuffled[index].meaning,
-        correctAnswer: activityType == HanjaPracticeActivityType.hanjaToHun
-            ? shuffled[index].meaning
-            : shuffled[index].character,
-        options: activityType == HanjaPracticeActivityType.hanjaToHun
-            ? _optionsFor(
-                correct: shuffled[index].meaning,
-                candidates: items.map((item) => item.meaning),
-                index: index,
-              )
-            : _optionsFor(
-                correct: shuffled[index].character,
-                candidates: items.map((item) => item.character),
-                index: index,
-              ),
-      ),
-  ];
+  final questions = <ReviewQuestion>[];
+  var previousCorrectIndex = -1;
+  for (var index = 0; index < shuffled.length; index += 1) {
+    final item = shuffled[index];
+    final activityType = _activityTypeFor(
+      item: item,
+      weaknesses: weaknessesByHanja[item.id] ?? const [],
+      random: random,
+    );
+    final question = _questionFor(
+      item: item,
+      activityType: activityType,
+      candidates: items,
+      seed: _seedFor([item.id, activityType.name, '$index']),
+      avoidCorrectIndex: previousCorrectIndex,
+    );
+    questions.add(question);
+    previousCorrectIndex = question.options.indexOf(question.correctAnswer);
+  }
+  return questions;
 }
 
 List<HanjaCharacter> _questionOrder({
@@ -493,17 +757,138 @@ List<HanjaCharacter> _questionOrder({
   return [items[focusedIndex], ...rest];
 }
 
+HanjaPracticeActivityType _activityTypeFor({
+  required HanjaCharacter item,
+  required List<HanjaWeaknessRecord> weaknesses,
+  required Random random,
+}) {
+  if (weaknesses.any((weakness) {
+    return weakness.weaknessType == HanjaWeaknessType.hanjaRecognition ||
+        weakness.weaknessType == HanjaWeaknessType.shapeConfusion;
+  })) {
+    return HanjaPracticeActivityType.hunToHanja;
+  }
+  if (weaknesses.any((weakness) {
+    return weakness.weaknessType == HanjaWeaknessType.hunMeaning;
+  })) {
+    return HanjaPracticeActivityType.hanjaToHun;
+  }
+  final seed = _seedFor([item.id, '${random.nextInt(1 << 20)}']);
+  return seed.isEven
+      ? HanjaPracticeActivityType.hanjaToHun
+      : HanjaPracticeActivityType.hunToHanja;
+}
+
+ReviewQuestion _questionFor({
+  required HanjaCharacter item,
+  required HanjaPracticeActivityType activityType,
+  required List<HanjaCharacter> candidates,
+  required int seed,
+  int retryCount = 0,
+  int avoidCorrectIndex = -1,
+}) {
+  final correct = activityType == HanjaPracticeActivityType.hanjaToHun
+      ? item.meaning
+      : item.character;
+  return ReviewQuestion(
+    item: item,
+    activityType: activityType,
+    prompt: activityType == HanjaPracticeActivityType.hanjaToHun
+        ? item.character
+        : item.meaning,
+    correctAnswer: correct,
+    options: _optionsFor(
+      correct: correct,
+      candidates: activityType == HanjaPracticeActivityType.hanjaToHun
+          ? candidates.map((candidate) => candidate.meaning)
+          : candidates.map((candidate) => candidate.character),
+      seed: _seedFor([item.id, activityType.name, '$retryCount', '$seed']),
+      avoidCorrectIndex: avoidCorrectIndex,
+    ),
+    retryCount: retryCount,
+  );
+}
+
+List<ReviewQuestion> _quizQuestionsWithRetry({
+  required List<ReviewQuestion> questions,
+  required int currentIndex,
+  required ReviewQuestion failedQuestion,
+  required List<HanjaCharacter> candidates,
+}) {
+  if (failedQuestion.retryCount >= _maxInlineRetryCount) {
+    return questions;
+  }
+  final retryCount = failedQuestion.retryCount + 1;
+  final retryQuestion = _questionFor(
+    item: failedQuestion.item,
+    activityType: failedQuestion.activityType,
+    candidates: candidates,
+    seed: _seedFor([failedQuestion.key, '$retryCount']),
+    retryCount: retryCount,
+  );
+  final insertIndex = (currentIndex + _inlineRetryDistance).clamp(
+    currentIndex + 1,
+    questions.length,
+  );
+  return [
+    ...questions.take(insertIndex),
+    retryQuestion,
+    ...questions.skip(insertIndex),
+  ];
+}
+
+List<ReviewQuestion> _buildRetryQuestions({
+  required List<HanjaCharacter> items,
+  required List<HanjaCharacter> candidates,
+  required int retryRound,
+}) {
+  return [
+    for (var index = 0; index < items.length; index += 1)
+      _questionFor(
+        item: items[index],
+        activityType: HanjaPracticeActivityType.hunToHanja,
+        candidates: candidates,
+        seed: _seedFor([
+          items[index].id,
+          'final-retry',
+          '$retryRound',
+          '$index',
+        ]),
+        retryCount: _maxInlineRetryCount + retryRound + 1,
+      ),
+  ];
+}
+
 List<String> _optionsFor({
   required String correct,
   required Iterable<String> candidates,
-  required int index,
+  required int seed,
+  int avoidCorrectIndex = -1,
 }) {
-  final options = candidates
+  final distractors = candidates
       .where((candidate) => candidate != correct)
       .toSet()
-      .take(3)
       .toList();
-  final insertIndex = options.isEmpty ? 0 : index % (options.length + 1);
-  options.insert(insertIndex, correct);
+  distractors.shuffle(Random(seed));
+  final options = <String>[correct, ...distractors.take(3)];
+  options.shuffle(Random(seed + 31));
+  final correctIndex = options.indexOf(correct);
+  if (options.length > 1 &&
+      avoidCorrectIndex >= 0 &&
+      correctIndex == avoidCorrectIndex) {
+    final swapIndex = (correctIndex + 1) % options.length;
+    final temp = options[swapIndex];
+    options[swapIndex] = correct;
+    options[correctIndex] = temp;
+  }
   return options;
+}
+
+int _seedFor(List<String> parts) {
+  var hash = 0x811c9dc5;
+  for (final codeUnit in parts.join('|').codeUnits) {
+    hash ^= codeUnit;
+    hash = (hash * 0x01000193) & 0x7fffffff;
+  }
+  return hash;
 }

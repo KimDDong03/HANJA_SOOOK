@@ -45,6 +45,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(loginControllerProvider);
     final controller = ref.read(loginControllerProvider.notifier);
+    final canStart = state.canStart && !state.isSigningIn;
 
     return Scaffold(
       body: GestureDetector(
@@ -53,6 +54,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: PlayfulPage(
           title: '학년 선택',
           subtitle: '학교와 이름, 학년을 선택하고 시작해요',
+          leading: IconButton.filledTonal(
+            onPressed: () => context.go(RoutePaths.roleSelect),
+            icon: const Icon(Icons.arrow_back),
+            tooltip: '뒤로가기',
+          ),
           children: [
             Center(
               child: ConstrainedBox(
@@ -123,13 +129,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 28),
                       AppButton(
                         label: '시작하기',
-                        onPressed: () async {
-                          final profile = await controller.start();
-                          if (!context.mounted || profile == null) {
-                            return;
-                          }
-                          context.go(RoutePaths.textbookGate);
-                        },
+                        onPressed: canStart
+                            ? () async {
+                                final profile = await controller.start();
+                                if (!context.mounted || profile == null) {
+                                  return;
+                                }
+                                context.go(RoutePaths.textbookGate);
+                              }
+                            : null,
                         isLoading: state.isSigningIn,
                         icon: Icons.rocket_launch,
                       ),
@@ -350,13 +358,6 @@ class _SchoolResultTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '표준학교코드: ${school.standardSchoolCode}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
                     ),
                   ],
                 ),

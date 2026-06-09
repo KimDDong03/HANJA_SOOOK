@@ -60,7 +60,7 @@ void main() {
     await _pumpUntilFound(tester, find.text('안녕하세요, 김하준!'));
     expect(find.text('서울새솔초등학교 · 3학년'), findsOneWidget);
 
-    await _tapVisibleText(tester, '오늘 학습 시작');
+    await _tapVisibleText(tester, '단원 학습 시작');
     await _pumpUntilFound(tester, find.text('시작'));
 
     expect(find.text('시작'), findsOneWidget);

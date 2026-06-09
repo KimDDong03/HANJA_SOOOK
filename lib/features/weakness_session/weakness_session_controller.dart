@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/content_repository_provider.dart';
 import '../../data/repositories/learning_diagnostics_repository_provider.dart';
+import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/models/learning_diagnostics.dart';
 import '../../domain/models/stroke_asset.dart';
+import '../../domain/services/xp_service.dart';
 import '../auth/current_profile_controller.dart';
 import '../learning/learning_diagnostics_controller.dart';
 import '../learning/learning_progress_controller.dart';
@@ -18,6 +20,9 @@ final weaknessSessionProvider = AsyncNotifierProvider.autoDispose
     );
 
 enum WeaknessTaskKind { hanjaToHun, hunToHanja, writing }
+
+const int _inlineRetryDistance = 2;
+const int _maxInlineRetryCount = 2;
 
 class WeaknessSessionController extends AsyncNotifier<WeaknessSessionState> {
   WeaknessSessionController(this.focusHanjaId);
@@ -69,6 +74,13 @@ class WeaknessSessionController extends AsyncNotifier<WeaknessSessionState> {
       return;
     }
     final isCorrect = answer == task.correctAnswer;
+    final tasks = isCorrect
+        ? current.tasks
+        : _tasksWithRetry(
+            tasks: current.tasks,
+            currentIndex: current.index,
+            failedTask: task,
+          );
     await _recordAttempt(
       task: task,
       result: isCorrect
@@ -77,6 +89,7 @@ class WeaknessSessionController extends AsyncNotifier<WeaknessSessionState> {
     );
     state = AsyncData(
       current.copyWith(
+        tasks: tasks,
         selectedAnswer: answer,
         passedTaskKeys: isCorrect
             ? {...current.passedTaskKeys, task.key}
@@ -124,10 +137,46 @@ class WeaknessSessionController extends AsyncNotifier<WeaknessSessionState> {
     }
     state = AsyncData(
       current.copyWith(
+        passedTaskKeys: {...current.passedTaskKeys}
+          ..removeWhere((key) => key == '${hanjaId.trim()}:writing'),
+        writingPassedTaskKeys: {...current.writingPassedTaskKeys}
+          ..removeWhere((key) => key == '${hanjaId.trim()}:writing'),
         writingStrokesByHanjaId: {
           ...current.writingStrokesByHanjaId,
           hanjaId: List<Path>.unmodifiable(strokes),
         },
+      ),
+    );
+  }
+
+  void markWritingPassed(String hanjaId) {
+    final current = state.value;
+    final task = current?.currentTask;
+    if (current == null ||
+        task == null ||
+        task.kind != WeaknessTaskKind.writing ||
+        task.item.id != hanjaId) {
+      return;
+    }
+    state = AsyncData(
+      current.copyWith(
+        writingPassedTaskKeys: {...current.writingPassedTaskKeys, task.key},
+      ),
+    );
+  }
+
+  Future<void> recordWritingFailure() async {
+    final current = state.value;
+    final task = current?.currentTask;
+    if (current == null ||
+        task == null ||
+        task.kind != WeaknessTaskKind.writing) {
+      return;
+    }
+    await _recordAttempt(task: task, result: HanjaPracticeResult.failed);
+    state = AsyncData(
+      current.copyWith(
+        failedHanjaIds: {...current.failedHanjaIds, task.item.id},
       ),
     );
   }
@@ -138,6 +187,9 @@ class WeaknessSessionController extends AsyncNotifier<WeaknessSessionState> {
     if (current == null ||
         task == null ||
         task.kind != WeaknessTaskKind.writing) {
+      return;
+    }
+    if (!current.writingPassedTaskKeys.contains(task.key)) {
       return;
     }
     await _recordAttempt(
@@ -169,13 +221,17 @@ class WeaknessSessionController extends AsyncNotifier<WeaknessSessionState> {
       );
       return;
     }
-    await _recordCompletion(current);
+    final earnedXp = await _recordCompletion(current);
     state = AsyncData(
-      current.copyWith(phaseComplete: true, selectedAnswer: null),
+      current.copyWith(
+        phaseComplete: true,
+        selectedAnswer: null,
+        earnedXp: earnedXp,
+      ),
     );
   }
 
-  Future<void> _recordCompletion(WeaknessSessionState current) async {
+  Future<int> _recordCompletion(WeaknessSessionState current) async {
     final tasksByHanja = <String, List<WeaknessTask>>{};
     for (final task in current.tasks) {
       tasksByHanja.putIfAbsent(task.item.id, () => []).add(task);
@@ -199,6 +255,34 @@ class WeaknessSessionController extends AsyncNotifier<WeaknessSessionState> {
             weaknessType: tasks.first.weakness.weaknessType,
           );
     }
+    const xpService = XpService();
+    final earnedXp = xpService.weaknessSessionCompletionXp(
+      completedHanjaCount: current.completedHanjaCount,
+    );
+    var didWriteXp = false;
+    if (earnedXp > 0) {
+      final studentKey = currentStudentKey(ref);
+      final learningDate = currentLearningDate();
+      didWriteXp = await ref
+          .read(learningProgressRepositoryProvider)
+          .addXpEvent(
+            id: xpService.weaknessSessionXpEventId(
+              studentKey: studentKey,
+              learningDate: learningDate,
+              focusHanjaId: focusHanjaId,
+            ),
+            studentKey: studentKey,
+            source: XpService.weaknessSessionSource,
+            amount: earnedXp,
+            refId: focusHanjaId?.trim().isEmpty ?? true
+                ? learningDate
+                : focusHanjaId!.trim(),
+          );
+    }
+    if (didWriteXp) {
+      ref.read(learningProgressTickProvider.notifier).increase();
+    }
+    return didWriteXp ? earnedXp : 0;
   }
 
   Future<void> _recordAttempt({
@@ -228,9 +312,11 @@ class WeaknessSessionState {
     this.selectedAnswer,
     this.passedTaskKeys = const <String>{},
     this.failedHanjaIds = const <String>{},
+    this.writingPassedTaskKeys = const <String>{},
     this.hintLevelByHanjaId = const <String, int>{},
     this.writingStrokesByHanjaId = const <String, List<Path>>{},
     this.phaseComplete = false,
+    this.earnedXp = 0,
   });
 
   final List<WeaknessTask> tasks;
@@ -239,9 +325,11 @@ class WeaknessSessionState {
   final String? selectedAnswer;
   final Set<String> passedTaskKeys;
   final Set<String> failedHanjaIds;
+  final Set<String> writingPassedTaskKeys;
   final Map<String, int> hintLevelByHanjaId;
   final Map<String, List<Path>> writingStrokesByHanjaId;
   final bool phaseComplete;
+  final int earnedXp;
 
   WeaknessTask? get currentTask {
     if (index < 0 || index >= tasks.length) {
@@ -272,16 +360,19 @@ class WeaknessSessionState {
   }
 
   WeaknessSessionState copyWith({
+    List<WeaknessTask>? tasks,
     int? index,
     Object? selectedAnswer = _sentinel,
     Set<String>? passedTaskKeys,
     Set<String>? failedHanjaIds,
+    Set<String>? writingPassedTaskKeys,
     Map<String, int>? hintLevelByHanjaId,
     Map<String, List<Path>>? writingStrokesByHanjaId,
     bool? phaseComplete,
+    int? earnedXp,
   }) {
     return WeaknessSessionState(
-      tasks: tasks,
+      tasks: tasks ?? this.tasks,
       strokeAssets: strokeAssets,
       index: index ?? this.index,
       selectedAnswer: identical(selectedAnswer, _sentinel)
@@ -289,10 +380,13 @@ class WeaknessSessionState {
           : selectedAnswer as String?,
       passedTaskKeys: passedTaskKeys ?? this.passedTaskKeys,
       failedHanjaIds: failedHanjaIds ?? this.failedHanjaIds,
+      writingPassedTaskKeys:
+          writingPassedTaskKeys ?? this.writingPassedTaskKeys,
       hintLevelByHanjaId: hintLevelByHanjaId ?? this.hintLevelByHanjaId,
       writingStrokesByHanjaId:
           writingStrokesByHanjaId ?? this.writingStrokesByHanjaId,
       phaseComplete: phaseComplete ?? this.phaseComplete,
+      earnedXp: earnedXp ?? this.earnedXp,
     );
   }
 }
@@ -305,6 +399,7 @@ class WeaknessTask {
     required this.prompt,
     required this.correctAnswer,
     required this.options,
+    this.retryCount = 0,
   });
 
   final HanjaCharacter item;
@@ -313,8 +408,11 @@ class WeaknessTask {
   final String prompt;
   final String correctAnswer;
   final List<String> options;
+  final int retryCount;
 
   String get key => '${item.id}:${kind.name}';
+
+  bool get isRetry => retryCount > 0;
 
   HanjaPracticeActivityType get activityType {
     return switch (kind) {
@@ -322,6 +420,18 @@ class WeaknessTask {
       WeaknessTaskKind.hunToHanja => HanjaPracticeActivityType.hunToHanja,
       WeaknessTaskKind.writing => HanjaPracticeActivityType.writing,
     };
+  }
+
+  WeaknessTask copyWith({int? retryCount}) {
+    return WeaknessTask(
+      item: item,
+      weakness: weakness,
+      kind: kind,
+      prompt: prompt,
+      correctAnswer: correctAnswer,
+      options: options,
+      retryCount: retryCount ?? this.retryCount,
+    );
   }
 }
 
@@ -343,10 +453,7 @@ List<HanjaWeaknessRecord> _prioritizeFocus(
   if (focus == null || focus.isEmpty) {
     return sorted;
   }
-  return [
-    ...sorted.where((weakness) => weakness.hanjaId == focus),
-    ...sorted.where((weakness) => weakness.hanjaId != focus),
-  ];
+  return sorted.where((weakness) => weakness.hanjaId == focus).toList();
 }
 
 List<WeaknessTask> _tasksFor({
@@ -399,6 +506,25 @@ List<WeaknessTask> _tasksFor({
           WeaknessTaskKind.writing => const [],
         },
       ),
+  ];
+}
+
+List<WeaknessTask> _tasksWithRetry({
+  required List<WeaknessTask> tasks,
+  required int currentIndex,
+  required WeaknessTask failedTask,
+}) {
+  if (failedTask.retryCount >= _maxInlineRetryCount) {
+    return tasks;
+  }
+  final insertIndex = (currentIndex + _inlineRetryDistance).clamp(
+    currentIndex + 1,
+    tasks.length,
+  );
+  return [
+    ...tasks.take(insertIndex),
+    failedTask.copyWith(retryCount: failedTask.retryCount + 1),
+    ...tasks.skip(insertIndex),
   ];
 }
 

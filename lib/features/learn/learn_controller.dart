@@ -8,6 +8,7 @@ import '../../domain/models/hanja_character.dart';
 import '../../domain/models/learning_diagnostics.dart';
 import '../../domain/services/learning_plan_service.dart';
 import '../auth/current_profile_controller.dart';
+import '../learning/demo_review_focus_seed_controller.dart';
 import '../learning/learning_diagnostics_controller.dart';
 import '../learning/learning_progress_controller.dart';
 
@@ -17,9 +18,11 @@ final learnLibraryProvider = FutureProvider<LearnLibraryState>((ref) async {
   ref.watch(learningDiagnosticsTickProvider);
 
   final learningDate = currentLearningDate();
-  final items = await ref
-      .watch(contentRepositoryProvider)
-      .getHanjaList(grade: grade);
+  final contentRepository = ref.watch(contentRepositoryProvider);
+  final items = await contentRepository.getHanjaList(grade: grade);
+  await ref
+      .read(demoReviewFocusSeedControllerProvider)
+      .ensureSeeded(items: items);
   final progressRecords = await ref
       .watch(learningProgressRepositoryProvider)
       .getCompletedHanjaRecordsForStudent(studentKey: currentStudentKey(ref));
