@@ -59,6 +59,8 @@ final learnLibraryProvider = FutureProvider<LearnLibraryState>((ref) async {
 
 enum LearnItemStatus { weak, reviewDue, learned, notLearned }
 
+enum LearnItemListKind { review, library, weak }
+
 class LearnLibraryState {
   const LearnLibraryState({
     required this.grade,
@@ -203,5 +205,13 @@ class LearnLibraryState {
       return LearnItemStatus.learned;
     }
     return LearnItemStatus.notLearned;
+  }
+
+  LearnItemStatus statusForList(String hanjaId, LearnItemListKind listKind) {
+    return switch (listKind) {
+      LearnItemListKind.review => LearnItemStatus.reviewDue,
+      LearnItemListKind.weak => LearnItemStatus.weak,
+      LearnItemListKind.library => statusOf(hanjaId),
+    };
   }
 }

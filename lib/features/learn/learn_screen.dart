@@ -128,7 +128,7 @@ class _ProgressSummaryPanel extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            '복습은 배운 당일과 1/3/7/14일 간격으로 열리고, 집중은 같은 한자를 반복해서 틀리거나 쓰기 힌트/실패가 누적되면 생겨요.',
+            '복습은 배운 다음 날부터 1/3/7/14일 간격으로 열리고, 집중은 같은 한자를 반복해서 틀리거나 쓰기 힌트/실패가 누적되면 생겨요.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w800,
@@ -236,8 +236,13 @@ class _LearnTabPanel extends StatelessWidget {
                 for (var index = 0; index < pageItems.length; index += 1)
                   _HanjaListRow(
                     item: pageItems[index],
-                    status: state.statusOf(pageItems[index].id),
-                    weakness: state.primaryWeaknessFor(pageItems[index].id),
+                    status: state.statusForList(
+                      pageItems[index].id,
+                      _listKindForTab(selectedTab),
+                    ),
+                    weakness: selectedTab == _LearnTab.weak
+                        ? state.primaryWeaknessFor(pageItems[index].id)
+                        : null,
                     onTap: () => context.push(
                       _routeForTab(selectedTab, pageItems[index].id),
                     ),
@@ -995,6 +1000,14 @@ String _routeForTab(_LearnTab tab, String hanjaId) {
     _LearnTab.review => RoutePaths.reviewSessionFor(hanjaId),
     _LearnTab.weak => RoutePaths.weaknessSessionFor(hanjaId),
     _LearnTab.library => RoutePaths.guidedWriting(hanjaId),
+  };
+}
+
+LearnItemListKind _listKindForTab(_LearnTab tab) {
+  return switch (tab) {
+    _LearnTab.review => LearnItemListKind.review,
+    _LearnTab.library => LearnItemListKind.library,
+    _LearnTab.weak => LearnItemListKind.weak,
   };
 }
 

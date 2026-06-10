@@ -15,6 +15,7 @@ import 'package:hanja_soook/domain/repositories/learning_diagnostics_repository.
 import 'package:hanja_soook/domain/repositories/learning_progress_repository.dart';
 import 'package:hanja_soook/features/review_session/review_session_controller.dart';
 import 'package:hanja_soook/features/review_session/review_session_screen.dart';
+import 'package:hanja_soook/features/learning/learning_progress_controller.dart';
 
 void main() {
   test(
@@ -103,6 +104,39 @@ void main() {
         }),
         isTrue,
       );
+    },
+  );
+
+  test(
+    'review session excludes active weakness items that are not due',
+    () async {
+      final today = currentLearningDate();
+      final progressRepository = _FakeLearningProgressRepository(
+        records: [
+          _progressRecord('HJ-1', '20260601'),
+          _progressRecord('HJ-2', '20260601'),
+          _progressRecord('HJ-5', today),
+        ],
+      );
+      final container = ProviderContainer(
+        overrides: [
+          contentRepositoryProvider.overrideWithValue(_FakeContentRepository()),
+          learningProgressRepositoryProvider.overrideWithValue(
+            progressRepository,
+          ),
+          learningDiagnosticsRepositoryProvider.overrideWithValue(
+            _FakeLearningDiagnosticsRepository(
+              activeWeaknesses: [_writingWeakness('HJ-5')],
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final state = await container.read(reviewSessionProvider(null).future);
+
+      expect(state.items.map((item) => item.id), ['HJ-1', 'HJ-2']);
+      expect(state.items.map((item) => item.id), isNot(contains('HJ-5')));
     },
   );
 
@@ -319,33 +353,32 @@ class _FakeContentRepository implements ContentRepository {
 }
 
 class _FakeLearningProgressRepository implements LearningProgressRepository {
+  _FakeLearningProgressRepository({List<LearningProgressRecord>? records})
+    : _records = records ?? _defaultProgressRecords();
+
+  final List<LearningProgressRecord> _records;
   final markedHanjaIds = <String>[];
 
   @override
   Future<Set<String>> getCompletedHanjaIds({
     required String studentKey,
     required String learningDate,
-  }) async => const {};
+  }) async {
+    return _records
+        .where((record) => record.learningDate == learningDate)
+        .map((record) => record.hanjaId)
+        .toSet();
+  }
 
   @override
   Future<Set<String>> getCompletedHanjaIdsForStudent({
     required String studentKey,
-  }) async => _items.map((item) => item.id).toSet();
+  }) async => _records.map((record) => record.hanjaId).toSet();
 
   @override
   Future<List<LearningProgressRecord>> getCompletedHanjaRecordsForStudent({
     required String studentKey,
-  }) async {
-    return [
-      for (final item in _items)
-        LearningProgressRecord(
-          studentKey: studentKey,
-          learningDate: '20260601',
-          hanjaId: item.id,
-          completedAt: DateTime(2026, 6, 1),
-        ),
-    ];
-  }
+  }) async => _records;
 
   @override
   Future<bool> markHanjaCompleted({
@@ -353,7 +386,23 @@ class _FakeLearningProgressRepository implements LearningProgressRepository {
     required String learningDate,
     required String hanjaId,
   }) async {
+    final existing = _records.any((record) {
+      return record.studentKey == studentKey &&
+          record.learningDate == learningDate &&
+          record.hanjaId == hanjaId;
+    });
+    if (existing) {
+      return false;
+    }
     markedHanjaIds.add(hanjaId);
+    _records.add(
+      LearningProgressRecord(
+        studentKey: studentKey,
+        learningDate: learningDate,
+        hanjaId: hanjaId,
+        completedAt: DateTime.now(),
+      ),
+    );
     return true;
   }
 
@@ -375,6 +424,23 @@ class _FakeLearningProgressRepository implements LearningProgressRepository {
     required String source,
     required String refId,
   }) async => 0;
+}
+
+List<LearningProgressRecord> _defaultProgressRecords() {
+  return [for (final item in _items) _progressRecord(item.id, '20260601')];
+}
+
+LearningProgressRecord _progressRecord(String hanjaId, String learningDate) {
+  return LearningProgressRecord(
+    studentKey: 'local-student',
+    learningDate: learningDate,
+    hanjaId: hanjaId,
+    completedAt: DateTime(
+      int.parse(learningDate.substring(0, 4)),
+      int.parse(learningDate.substring(4, 6)),
+      int.parse(learningDate.substring(6, 8)),
+    ),
+  );
 }
 
 class _FakeLearningDiagnosticsRepository

@@ -56,12 +56,9 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
         .watch(learningDiagnosticsRepositoryProvider)
         .getActiveWeaknesses(studentKey: studentKey);
     final weaknessesByHanja = _weaknessesByHanja(activeWeaknesses);
-    final learnedHanjaIds = records.map((record) => record.hanjaId).toSet();
     final items = _sessionItems(
       allItems: allItems,
       dueItems: plan.reviewItems,
-      activeWeaknesses: activeWeaknesses,
-      learnedHanjaIds: learnedHanjaIds,
       focusHanjaId: focusHanjaId,
       limit: AppConstants.dailyReviewCount,
     );
@@ -634,25 +631,11 @@ Set<String> _weakWritingHanjaIds(
 List<HanjaCharacter> _sessionItems({
   required List<HanjaCharacter> allItems,
   required List<HanjaCharacter> dueItems,
-  required List<HanjaWeaknessRecord> activeWeaknesses,
-  required Set<String> learnedHanjaIds,
   required String? focusHanjaId,
   required int limit,
 }) {
   final itemsById = {for (final item in allItems) item.id: item};
   final dueIds = dueItems.map((item) => item.id).toSet();
-  final activeRows =
-      activeWeaknesses.where((weakness) {
-        return weakness.isActive &&
-            learnedHanjaIds.contains(weakness.hanjaId) &&
-            itemsById.containsKey(weakness.hanjaId);
-      }).toList()..sort((a, b) {
-        final byScore = b.score.compareTo(a.score);
-        if (byScore != 0) {
-          return byScore;
-        }
-        return b.lastEventAt.compareTo(a.lastEventAt);
-      });
   final selected = <HanjaCharacter>[];
   final selectedIds = <String>{};
 
@@ -669,24 +652,12 @@ List<HanjaCharacter> _sessionItems({
   }
 
   final focus = focusHanjaId?.trim();
-  if (focus != null &&
-      focus.isNotEmpty &&
-      (dueIds.contains(focus) || learnedHanjaIds.contains(focus))) {
+  if (focus != null && focus.isNotEmpty && dueIds.contains(focus)) {
     addById(focus);
   }
 
-  for (final weakness in activeRows.where(
-    (row) => dueIds.contains(row.hanjaId),
-  )) {
-    addById(weakness.hanjaId);
-  }
   for (final item in dueItems) {
     addById(item.id);
-  }
-  for (final weakness in activeRows.where(
-    (row) => !dueIds.contains(row.hanjaId),
-  )) {
-    addById(weakness.hanjaId);
   }
 
   if (limit <= 0 || selected.length <= limit) {

@@ -170,6 +170,9 @@ class LearningPlanService {
     if (latestDate.compareTo(learningDate) > 0) {
       return false;
     }
+    if (latestDate == learningDate) {
+      return false;
+    }
 
     final daysSinceLatest = _daysBetween(latestDate, learningDate);
     return daysSinceLatest >= _reviewIntervalDays(records.length);
@@ -177,7 +180,7 @@ class LearningPlanService {
 
   int _reviewIntervalDays(int completionCount) {
     if (completionCount <= 1) {
-      return 0;
+      return 1;
     }
     if (completionCount == 2) {
       return 1;

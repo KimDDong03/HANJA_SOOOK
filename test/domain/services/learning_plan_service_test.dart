@@ -54,7 +54,7 @@ void main() {
     expect(plan.newItems.map((item) => item.id), ['HJ-2', 'HJ-3']);
   });
 
-  test('buildDailyPlan allows first same-day completion as a review item', () {
+  test('buildDailyPlan skips first same-day completion as a review item', () {
     final plan = service.buildDailyPlan(
       allItems: _items,
       progressRecords: [
@@ -70,8 +70,8 @@ void main() {
       reviewItemLimit: 2,
     );
 
-    expect(plan.reviewItems.map((item) => item.id), ['HJ-1']);
-    expect(plan.newItems.map((item) => item.id), ['HJ-2']);
+    expect(plan.reviewItems, isEmpty);
+    expect(plan.newItems.map((item) => item.id), ['HJ-1', 'HJ-2']);
     expect(plan.items.map((item) => item.id), ['HJ-1', 'HJ-2']);
     expect(plan.completedCount, 1);
   });

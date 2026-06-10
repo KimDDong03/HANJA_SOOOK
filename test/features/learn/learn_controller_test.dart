@@ -58,6 +58,47 @@ void main() {
       expect(state.primaryWeaknessFor('HJ-2')?.score, 4);
     });
 
+    test('uses tab-specific status when an item is both review and weak', () {
+      final state = LearnLibraryState(
+        grade: 3,
+        items: _hanjaList,
+        todayCompletedIds: const {},
+        completedHanjaIds: const {'HJ-1'},
+        reviewItems: const [_one],
+        weaknessesByHanja: {
+          'HJ-1': [
+            HanjaWeaknessRecord(
+              studentKey: 'student-1',
+              hanjaId: 'HJ-1',
+              weaknessType: HanjaWeaknessType.hanjaRecognition,
+              score: 4,
+              status: HanjaWeaknessStatus.active,
+              mistakeCount: 2,
+              successStreak: 0,
+              lastEventAt: _date,
+              createdAt: _date,
+              updatedAt: _date,
+            ),
+          ],
+        },
+        chapters: const [],
+        activeChapterKey: null,
+      );
+
+      expect(
+        state.statusForList('HJ-1', LearnItemListKind.review),
+        LearnItemStatus.reviewDue,
+      );
+      expect(
+        state.statusForList('HJ-1', LearnItemListKind.weak),
+        LearnItemStatus.weak,
+      );
+      expect(
+        state.statusForList('HJ-1', LearnItemListKind.library),
+        LearnItemStatus.weak,
+      );
+    });
+
     test('uses the next unlearned item when there are no reviews', () {
       final state = LearnLibraryState(
         grade: 3,
