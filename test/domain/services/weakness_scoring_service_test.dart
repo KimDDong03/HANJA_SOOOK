@@ -5,19 +5,35 @@ import 'package:hanja_soook/domain/services/weakness_scoring_service.dart';
 void main() {
   const service = WeaknessScoringService();
 
-  test('does not activate weakness for mistakes while first learning', () {
+  test('scores daily session mistakes toward focus practice', () {
     final result = service.score(
       const WeaknessScoringInput(
         source: HanjaPracticeSource.dailySession,
         activityType: HanjaPracticeActivityType.hanjaToHun,
         result: HanjaPracticeResult.incorrect,
-        isLearned: false,
+        isLearned: true,
       ),
     );
 
-    expect(result.scoreDelta, 0);
-    expect(result.shouldUpdateWeakness, isFalse);
+    expect(result.scoreDelta, 2);
+    expect(result.shouldUpdateWeakness, isTrue);
     expect(result.nextStatus, HanjaWeaknessStatus.watching);
+  });
+
+  test('does not create weakness rows for neutral correct answers', () {
+    final result = service.score(
+      const WeaknessScoringInput(
+        source: HanjaPracticeSource.dailySession,
+        activityType: HanjaPracticeActivityType.hanjaToHun,
+        result: HanjaPracticeResult.correct,
+        isLearned: true,
+      ),
+    );
+
+    expect(result.scoreDelta, -2);
+    expect(result.nextScore, 0);
+    expect(result.shouldUpdateWeakness, isFalse);
+    expect(result.nextStatus, HanjaWeaknessStatus.resolved);
   });
 
   test('activates a learned hanja weakness after repeated quiz mistakes', () {

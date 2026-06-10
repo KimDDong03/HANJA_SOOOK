@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/route_paths.dart';
 import '../../core/widgets/playful_page.dart';
 import 'growth_controller.dart';
 
@@ -17,7 +19,15 @@ class GrowthScreen extends ConsumerWidget {
         data: (data) => PlayfulPage(
           title: '성장 앨범',
           subtitle: '모은 XP와 오늘의 성장을 확인해요',
-          showMascot: true,
+          leading: _GrowthBackButton(
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+                return;
+              }
+              context.go(RoutePaths.appHome);
+            },
+          ),
           children: [
             _LevelHero(data: data),
             const SizedBox(height: 14),
@@ -36,6 +46,24 @@ class GrowthScreen extends ConsumerWidget {
             label: const Text('성장 정보 다시 불러오기'),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GrowthBackButton extends StatelessWidget {
+  const _GrowthBackButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 48,
+      child: IconButton.filledTonal(
+        onPressed: onPressed,
+        icon: const Icon(Icons.arrow_back),
+        tooltip: '뒤로가기',
       ),
     );
   }

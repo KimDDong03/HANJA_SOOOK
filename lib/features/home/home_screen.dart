@@ -789,6 +789,15 @@ class _GrowthSummaryPanel extends StatelessWidget {
               ],
             ),
           ),
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(22),
+                onTap: () => context.push(RoutePaths.growth),
+              ),
+            ),
+          ),
         ],
       ),
     );

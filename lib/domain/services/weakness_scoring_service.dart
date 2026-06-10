@@ -48,7 +48,7 @@ class WeaknessScoringService {
       nextStatus: nextStatus,
       nextSuccessStreak: nextSuccessStreak,
       shouldUpdateWeakness:
-          current != null || scoreDelta != 0 || nextScore >= activationScore,
+          current != null || scoreDelta > 0 || nextScore >= activationScore,
     );
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -978,7 +979,9 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
                     )
                   else
                     FilledButton.icon(
-                      onPressed: _hasStrokes ? _checkWriting : null,
+                      onPressed: _hasStrokes
+                          ? () => unawaited(_checkWriting())
+                          : null,
                       icon: const Icon(Icons.check),
                       label: const Text('확인하기'),
                     ),
@@ -993,7 +996,7 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
     );
   }
 
-  void _checkWriting() {
+  Future<void> _checkWriting() async {
     final item = widget.state.currentHanja!;
     final result = ref
         .read(freeWritingScoreServiceProvider)
@@ -1012,6 +1015,9 @@ class _RandomWritingStepState extends ConsumerState<_RandomWritingStep> {
           .markRandomWritingCompleted(item.id);
     }
     if (!result.passed) {
+      await ref
+          .read(dailySessionProvider(widget.state.chapterKey).notifier)
+          .recordRandomWritingFailure(item.id);
       return;
     }
     ref.read(appAudioControllerProvider).playSuccess();
@@ -1197,10 +1203,7 @@ class _CompleteStep extends ConsumerWidget {
           label: const Text('홈으로'),
         ),
         OutlinedButton.icon(
-          onPressed: () {
-            ref.invalidate(dailySessionProvider(state.chapterKey));
-            context.go(RoutePaths.growth);
-          },
+          onPressed: () => context.push(RoutePaths.growth),
           icon: const Icon(Icons.auto_graph),
           label: const Text('성장 보기'),
         ),

@@ -638,10 +638,7 @@ class _CompleteStep extends ConsumerWidget {
       ],
       actions: [
         FilledButton.icon(
-          onPressed: () {
-            ref.invalidate(reviewSessionProvider(focusHanjaId));
-            context.go(RoutePaths.growth);
-          },
+          onPressed: () => context.push(RoutePaths.growth),
           icon: const Icon(Icons.auto_graph),
           label: const Text('성장 보기'),
         ),

@@ -44,18 +44,20 @@ class LearningPlanService {
 
     final reviewItems = allItems
         .where((item) {
-          if (todayCompletedIds.contains(item.id)) {
-            return false;
-          }
           final records = recordsByHanja[item.id];
           return records != null &&
               _isReviewDue(records: records, learningDate: learningDate);
         })
         .take(reviewItemLimit)
         .toList();
+    final reviewItemIds = reviewItems.map((item) => item.id).toSet();
 
     final newItemCandidates = (activeChapter?.items ?? allItems)
-        .where((item) => !learnedBeforeTodayIds.contains(item.id))
+        .where(
+          (item) =>
+              !learnedBeforeTodayIds.contains(item.id) &&
+              !reviewItemIds.contains(item.id),
+        )
         .toList();
     final newItemSlots = activeChapter == null
         ? (newItemLimit - reviewItems.length).clamp(0, newItemLimit)
@@ -165,7 +167,7 @@ class LearningPlanService {
     required String learningDate,
   }) {
     final latestDate = records.last.learningDate;
-    if (latestDate.compareTo(learningDate) >= 0) {
+    if (latestDate.compareTo(learningDate) > 0) {
       return false;
     }
 
@@ -175,12 +177,15 @@ class LearningPlanService {
 
   int _reviewIntervalDays(int completionCount) {
     if (completionCount <= 1) {
-      return 1;
+      return 0;
     }
     if (completionCount == 2) {
-      return 3;
+      return 1;
     }
     if (completionCount == 3) {
+      return 3;
+    }
+    if (completionCount == 4) {
       return 7;
     }
     return 14;

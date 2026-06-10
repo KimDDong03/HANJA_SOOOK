@@ -7,7 +7,7 @@ import '../../domain/models/learning_diagnostics.dart';
 import 'learning_progress_controller.dart';
 
 final demoReviewFocusSeedEnabledProvider = Provider<bool>((ref) {
-  return AppEnv.isDemo && AppEnv.hasSupabaseConfig;
+  return AppEnv.hasSupabaseConfig;
 });
 
 final demoReviewFocusSeedControllerProvider =

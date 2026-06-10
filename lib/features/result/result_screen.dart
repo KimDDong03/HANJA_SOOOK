@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/env.dart';
 import '../../core/audio/app_audio_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_fonts.dart';
@@ -140,9 +141,11 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                             color: AppColors.yellow,
                           ),
                           const SizedBox(width: 10),
-                          const PlayfulStat(
-                            icon: Icons.leaderboard,
-                            label: '랭킹 반영',
+                          PlayfulStat(
+                            icon: AppEnv.isProduction
+                                ? Icons.check_circle
+                                : Icons.leaderboard,
+                            label: AppEnv.isProduction ? '기록 저장' : '랭킹 반영',
                             value: '완료',
                             color: AppColors.green,
                           ),
@@ -198,12 +201,14 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                       label: const Text('다시 도전'),
                     ),
                     const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: () => context.go(RoutePaths.classRanking),
-                      icon: const Icon(Icons.leaderboard),
-                      label: const Text('랭킹 보기'),
-                    ),
-                    const SizedBox(height: 12),
+                    if (AppEnv.showsPreviewFeatures) ...[
+                      OutlinedButton.icon(
+                        onPressed: () => context.push(RoutePaths.classRanking),
+                        icon: const Icon(Icons.leaderboard),
+                        label: const Text('랭킹 보기'),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     OutlinedButton.icon(
                       onPressed: () => context.go(RoutePaths.appChallenge),
                       icon: const Icon(Icons.emoji_events),

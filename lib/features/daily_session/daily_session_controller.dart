@@ -386,23 +386,28 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
       return;
     }
     final isCorrect = question.correctAnswer == answer;
-    unawaited(
-      ref
-          .read(learningDiagnosticsControllerProvider)
-          .recordAttempt(
-            hanjaId: question.item.id,
-            source: HanjaPracticeSource.dailySession,
-            activityType: question.kind == DailyQuizKind.hanjaToHun
-                ? HanjaPracticeActivityType.hanjaToHun
-                : HanjaPracticeActivityType.hunToHanja,
-            result: isCorrect
-                ? HanjaPracticeResult.correct
-                : HanjaPracticeResult.incorrect,
-            isLearned: !current.rewardEligibleHanjaIds.contains(
-              question.item.id,
+    final questionKey = _quizQuestionKey(question);
+    final questionHadMistake =
+        current.currentQuestionHadMistake ||
+        current.quizMistakeQuestionKeys.contains(questionKey);
+    final shouldRecordAttempt = !isCorrect || !questionHadMistake;
+    if (shouldRecordAttempt) {
+      unawaited(
+        ref
+            .read(learningDiagnosticsControllerProvider)
+            .recordAttempt(
+              hanjaId: question.item.id,
+              source: HanjaPracticeSource.dailySession,
+              activityType: question.kind == DailyQuizKind.hanjaToHun
+                  ? HanjaPracticeActivityType.hanjaToHun
+                  : HanjaPracticeActivityType.hunToHanja,
+              result: isCorrect
+                  ? HanjaPracticeResult.correct
+                  : HanjaPracticeResult.incorrect,
+              isLearned: true,
             ),
-          ),
-    );
+      );
+    }
     state = AsyncData(current.answerQuiz(answer));
   }
 
@@ -541,6 +546,29 @@ class DailySessionController extends AsyncNotifier<DailySessionState> {
             isLearned: true,
           ),
     );
+  }
+
+  Future<void> recordRandomWritingFailure(String hanjaId) async {
+    final current = state.value;
+    final normalizedHanjaId = hanjaId.trim();
+    if (current == null || normalizedHanjaId.isEmpty) {
+      return;
+    }
+    state = AsyncData(
+      current.copyWith(
+        missedHanjaIds: {...current.missedHanjaIds, normalizedHanjaId},
+      ),
+    );
+    await ref
+        .read(learningDiagnosticsControllerProvider)
+        .recordAttempt(
+          hanjaId: normalizedHanjaId,
+          source: HanjaPracticeSource.dailySession,
+          activityType: HanjaPracticeActivityType.writing,
+          result: HanjaPracticeResult.failed,
+          weaknessType: HanjaWeaknessType.writing,
+          isLearned: true,
+        );
   }
 
   Future<void> finish() async {

@@ -11,7 +11,6 @@ class PlayfulPage extends StatelessWidget {
     required this.children,
     this.leading,
     this.trailing,
-    this.showMascot = false,
     this.showHeader = true,
     this.compactHeader = false,
     this.scrollable = true,
@@ -24,7 +23,6 @@ class PlayfulPage extends StatelessWidget {
   final List<Widget> children;
   final Widget? leading;
   final Widget? trailing;
-  final bool showMascot;
   final bool showHeader;
   final bool compactHeader;
   final bool scrollable;
@@ -40,7 +38,6 @@ class PlayfulPage extends StatelessWidget {
           subtitle: subtitle,
           leading: leading,
           trailing: trailing,
-          showMascot: showMascot,
           compact: compactHeader,
         ),
         SizedBox(height: compactHeader ? 10 : 18),
@@ -244,7 +241,6 @@ class _PlayfulHeader extends StatelessWidget {
   const _PlayfulHeader({
     required this.title,
     required this.subtitle,
-    required this.showMascot,
     required this.compact,
     this.leading,
     this.trailing,
@@ -254,7 +250,6 @@ class _PlayfulHeader extends StatelessWidget {
   final String subtitle;
   final Widget? leading;
   final Widget? trailing;
-  final bool showMascot;
   final bool compact;
 
   @override
@@ -305,18 +300,7 @@ class _PlayfulHeader extends StatelessWidget {
               ],
             ),
           ),
-          if (showMascot)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: Image.asset(
-                'assets/images/hanja_mascot.png',
-                width: compact ? 68 : 86,
-                height: compact ? 68 : 86,
-                fit: BoxFit.cover,
-              ),
-            )
-          else
-            ?trailing,
+          ?trailing,
         ],
       ),
     );

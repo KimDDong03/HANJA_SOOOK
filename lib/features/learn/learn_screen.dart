@@ -126,6 +126,14 @@ class _ProgressSummaryPanel extends StatelessWidget {
             backgroundColor: AppColors.border.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(99),
           ),
+          const SizedBox(height: 10),
+          Text(
+            '복습은 배운 당일과 1/3/7/14일 간격으로 열리고, 집중은 같은 한자를 반복해서 틀리거나 쓰기 힌트/실패가 누적되면 생겨요.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 14),
           Row(
             children: [
