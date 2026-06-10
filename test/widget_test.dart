@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hanja_soook/app/app.dart';
@@ -786,10 +787,72 @@ void main() {
       expect(find.text(entry.value), findsOneWidget);
     }
   });
+
+  testWidgets('top-level app tabs confirm after Android predictive back', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_testApp());
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    final tabChecks = <String, String>{
+      RoutePaths.appHome: '한자쏘옥 모험',
+      RoutePaths.appLearn: '복습하고, 한자장을 정리해요',
+      RoutePaths.appChallenge: AppEnv.isProduction
+          ? '게임으로 배운 한자를 복습해요'
+          : '오늘 점수와 반 순위를 올려요',
+      RoutePaths.appSettings: '학습 연결',
+    };
+
+    for (final entry in tabChecks.entries) {
+      appRouter.go(entry.key);
+      await pumpUntilFound(tester, find.text(entry.value));
+
+      final startResult = await _sendBackGestureMethod(
+        tester,
+        const MethodCall('startBackGesture', {
+          'touchOffset': [0.0, 0.0],
+          'progress': 0.0,
+          'swipeEdge': 0,
+        }),
+      );
+      expect(startResult, isTrue);
+
+      await _sendBackGestureMethod(
+        tester,
+        const MethodCall('commitBackGesture'),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('종료하시겠습니까?'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, '취소'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('종료하시겠습니까?'), findsNothing);
+      expect(find.text(entry.value), findsOneWidget);
+    }
+  });
 }
 
 void _expectInViewport(WidgetTester tester, Finder finder) {
   expect(finder, findsWidgets);
   final bottom = tester.getBottomLeft(finder).dy;
   expect(bottom, lessThanOrEqualTo(tester.view.physicalSize.height));
+}
+
+Future<Object?> _sendBackGestureMethod(
+  WidgetTester tester,
+  MethodCall methodCall,
+) async {
+  final response = await tester.binding.defaultBinaryMessenger
+      .handlePlatformMessage(
+        SystemChannels.backGesture.name,
+        SystemChannels.backGesture.codec.encodeMethodCall(methodCall),
+        null,
+      );
+
+  return response == null
+      ? null
+      : SystemChannels.backGesture.codec.decodeEnvelope(response);
 }
