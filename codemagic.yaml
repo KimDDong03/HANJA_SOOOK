@@ -1,0 +1,72 @@
+workflows:
+  ios-testflight:
+    name: iOS TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+    integrations:
+      app_store_connect: codemagic
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - hanja_soook_env
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.hanjasoook.app
+      vars:
+        BUNDLE_ID: com.hanjasoook.app
+    cache:
+      cache_paths:
+        - ~/.pub-cache
+        - ios/Pods
+    scripts:
+      - name: Validate required environment
+        script: |
+          set -euo pipefail
+          test -n "${SUPABASE_URL:-}" || { echo "Missing SUPABASE_URL"; exit 1; }
+          test -n "${SUPABASE_ANON_KEY:-}" || { echo "Missing SUPABASE_ANON_KEY"; exit 1; }
+          test -n "${APP_ENV:-}" || { echo "Missing APP_ENV"; exit 1; }
+          test -n "${APP_STORE_APPLE_ID:-}" || { echo "Missing APP_STORE_APPLE_ID"; exit 1; }
+      - name: Create Dart define file
+        script: |
+          set -euo pipefail
+          {
+            echo "SUPABASE_URL=$SUPABASE_URL"
+            echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
+            echo "APP_ENV=$APP_ENV"
+          } > .env
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      - name: Install CocoaPods dependencies
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+      - name: Flutter analyze
+        script: |
+          flutter analyze
+      - name: Flutter tests
+        script: |
+          flutter test
+      - name: Build signed IPA
+        script: |
+          set -euo pipefail
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          BUILD_NUMBER=$((LATEST_BUILD_NUMBER + 1))
+          flutter build ipa --release \
+            --dart-define-from-file=.env \
+            --build-name=1.0.0 \
+            --build-number="$BUILD_NUMBER" \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: false
