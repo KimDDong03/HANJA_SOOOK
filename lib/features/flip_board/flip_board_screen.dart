@@ -82,167 +82,186 @@ class _FlipBoardScreenState extends ConsumerState<FlipBoardScreen> {
                 learnedCount: state.learnedHanjaCount,
                 minCount: state.minLearnedHanjaCount,
               )
-            : PlayfulPage(
-                title: state.mode.label,
-                subtitle: _subtitleFor(state.mode),
-                leading: _BackToChallengeButton(
-                  onTap: () => context.go(RoutePaths.appChallenge),
-                ),
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _FlipBoardStatusBar(
-                    remainingSeconds: state.remainingSeconds,
-                    flippedTileCount: state.flippedTileCount,
-                    score: state.score,
-                  ),
-                  const SizedBox(height: 10),
-                  PlayfulPanel(
-                    padding: const EdgeInsets.all(10),
-                    child: GridView.builder(
-                      itemCount: state.tiles.length,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                            childAspectRatio: 1.22,
-                          ),
-                      itemBuilder: (context, index) {
-                        final tile = state.tiles[index];
-                        return _FlipTile(
-                          frontLabel: _frontLabelForTile(state, index),
-                          backLabel: tile.answer,
-                          owner: tile.owner,
-                          isCompetitive: state.mode.isCompetitive,
-                          isBackHanja: state.mode.usesDrawing,
-                          isSelected:
-                              !state.mode.usesDrawing &&
-                              state.selectedTileIndex == index,
-                          isOwned: state.isTileOwned(index),
-                          isCorrect: state.isTileCorrect(index),
-                          onTap: state.isTileOwned(index)
-                              ? () => _showSnack(context, '이미 뒤집은 판이에요.')
-                              : state.mode.usesDrawing
-                              ? null
-                              : () {
-                                  controller.selectTile(index);
-                                  _showSnack(context, '아래 입력칸에 훈음을 적어봐요.');
-                                },
-                        );
-                      },
+            : Builder(
+                builder: (context) {
+                  final screenHeight = MediaQuery.sizeOf(context).height;
+                  final isCompact = screenHeight < 720;
+                  final isTiny = screenHeight < 620;
+                  final gap = isTiny ? 6.0 : 10.0;
+                  final canvasExtent = isTiny
+                      ? 176.0
+                      : isCompact
+                      ? 214.0
+                      : 260.0;
+                  final boardAspectRatio = isTiny
+                      ? 1.34
+                      : isCompact
+                      ? 1.28
+                      : 1.22;
+
+                  return PlayfulPage(
+                    title: state.mode.label,
+                    subtitle: '',
+                    leading: _BackToChallengeButton(
+                      onTap: () => context.go(RoutePaths.appChallenge),
+                      compact: true,
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  PlayfulPanel(
-                    padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (state.mode == FlipBoardPlayMode.typeMeaning) ...[
-                          Text(
-                            state.selectedTile == null
-                                ? '뒤집을 판을 먼저 골라요'
-                                : '선택한 한자의 훈음을 적어요',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            key: const ValueKey('flip-type-answer'),
-                            controller: _answerController,
-                            textAlign: TextAlign.center,
-                            decoration: const InputDecoration(
-                              hintText: '예: 한 일',
-                              border: OutlineInputBorder(),
-                            ),
-                            onChanged: controller.updateAnswer,
-                            onFieldSubmitted: (_) => controller.submitAnswer(),
-                          ),
-                          const SizedBox(height: 8),
-                        ] else ...[
-                          HanjaFreeWritingCanvas(
-                            key: ValueKey(
-                              'flip-drawing-${state.flippedTileCount}',
-                            ),
-                            expectedStrokeCount: null,
-                            canvasExtent: 260,
-                            showTitle: false,
-                            onStrokeTexture: () => ref
-                                .read(appAudioControllerProvider)
-                                .playStrokeTexture(),
-                            onStrokeTextureStop: () => ref
-                                .read(appAudioControllerProvider)
-                                .stopStrokeTexture(),
-                            onStrokesChanged: (strokes) {
-                              setState(() => _strokes = strokes);
-                            },
-                          ),
-                          const SizedBox(height: 6),
-                        ],
-                        OutlinedButton.icon(
-                          onPressed: state.isActive
-                              ? _submitAction(context, controller, state)
-                              : null,
-                          icon: const Icon(Icons.check),
-                          label: const Text('답 확인'),
+                    compactHeader: true,
+                    padding: EdgeInsets.fromLTRB(16, 0, 16, isTiny ? 10 : 16),
+                    children: [
+                      _FlipBoardStatusBar(
+                        remainingSeconds: state.remainingSeconds,
+                        flippedTileCount: state.flippedTileCount,
+                        score: state.score,
+                        compact: isTiny,
+                      ),
+                      SizedBox(height: gap),
+                      PlayfulPanel(
+                        padding: EdgeInsets.all(isTiny ? 8 : 10),
+                        child: GridView.builder(
+                          itemCount: state.tiles.length,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                mainAxisSpacing: isTiny ? 6 : 8,
+                                crossAxisSpacing: isTiny ? 6 : 8,
+                                childAspectRatio: boardAspectRatio,
+                              ),
+                          itemBuilder: (context, index) {
+                            final tile = state.tiles[index];
+                            return _FlipTile(
+                              frontLabel: _frontLabelForTile(state, index),
+                              backLabel: tile.answer,
+                              owner: tile.owner,
+                              isCompetitive: state.mode.isCompetitive,
+                              isBackHanja: state.mode.usesDrawing,
+                              isSelected:
+                                  !state.mode.usesDrawing &&
+                                  state.selectedTileIndex == index,
+                              isOwned: state.isTileOwned(index),
+                              isCorrect: state.isTileCorrect(index),
+                              onTap: state.isTileOwned(index)
+                                  ? () => _showSnack(context, '이미 뒤집은 판이에요.')
+                                  : state.mode.usesDrawing
+                                  ? null
+                                  : () {
+                                      controller.selectTile(index);
+                                      _showSnack(context, '아래 입력칸에 훈음을 적어봐요.');
+                                    },
+                            );
+                          },
                         ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          height: 24,
-                          child: Center(
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 160),
-                              child: state.feedbackMessage == null
-                                  ? const SizedBox.shrink(
-                                      key: ValueKey('flip-feedback-empty'),
-                                    )
-                                  : Text(
-                                      state.feedbackMessage!,
-                                      key: const ValueKey(
-                                        'flip-feedback-message',
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                      ),
+                      ),
+                      SizedBox(height: gap),
+                      PlayfulPanel(
+                        padding: EdgeInsets.fromLTRB(
+                          10,
+                          isTiny ? 6 : 8,
+                          10,
+                          isTiny ? 8 : 10,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (state.mode ==
+                                FlipBoardPlayMode.typeMeaning) ...[
+                              Text(
+                                state.selectedTile == null
+                                    ? '뒤집을 판을 먼저 골라요'
+                                    : '선택한 한자의 훈음을 적어요',
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w900,
                                     ),
+                              ),
+                              SizedBox(height: isTiny ? 6 : 8),
+                              TextFormField(
+                                key: const ValueKey('flip-type-answer'),
+                                controller: _answerController,
+                                textAlign: TextAlign.center,
+                                decoration: const InputDecoration(
+                                  hintText: '예: 한 일',
+                                  border: OutlineInputBorder(),
+                                ),
+                                onChanged: controller.updateAnswer,
+                                onFieldSubmitted: (_) =>
+                                    controller.submitAnswer(),
+                              ),
+                              SizedBox(height: isTiny ? 6 : 8),
+                            ] else ...[
+                              HanjaFreeWritingCanvas(
+                                key: ValueKey(
+                                  'flip-drawing-${state.flippedTileCount}',
+                                ),
+                                expectedStrokeCount: null,
+                                canvasExtent: canvasExtent,
+                                showTitle: false,
+                                onStrokeTexture: () => ref
+                                    .read(appAudioControllerProvider)
+                                    .playStrokeTexture(),
+                                onStrokeTextureStop: () => ref
+                                    .read(appAudioControllerProvider)
+                                    .stopStrokeTexture(),
+                                onStrokesChanged: (strokes) {
+                                  setState(() => _strokes = strokes);
+                                },
+                              ),
+                              SizedBox(height: isTiny ? 4 : 6),
+                            ],
+                            OutlinedButton.icon(
+                              onPressed: state.isActive
+                                  ? _submitAction(context, controller, state)
+                                  : null,
+                              icon: const Icon(Icons.check),
+                              label: const Text('답 확인'),
                             ),
-                          ),
+                            SizedBox(height: isTiny ? 6 : 8),
+                            SizedBox(
+                              height: isTiny ? 20 : 24,
+                              child: Center(
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 160),
+                                  child: state.feedbackMessage == null
+                                      ? const SizedBox.shrink(
+                                          key: ValueKey('flip-feedback-empty'),
+                                        )
+                                      : Text(
+                                          state.feedbackMessage!,
+                                          key: const ValueKey(
+                                            'flip-feedback-message',
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (state.completedResult != null) ...[
+                        SizedBox(height: gap),
+                        Text(
+                          '획득 XP ${state.completedResult!.earnedXp}',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w900),
                         ),
                       ],
-                    ),
-                  ),
-                  if (state.completedResult != null) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      '획득 XP ${state.completedResult!.earnedXp}',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ],
+                    ],
+                  );
+                },
               ),
       ),
     );
-  }
-
-  String _subtitleFor(FlipBoardPlayMode mode) {
-    return switch (mode) {
-      FlipBoardPlayMode.drawHanja => '보이는 훈음 중 아는 한자를 빠르게 그려요',
-      FlipBoardPlayMode.competitiveDrawHanja => '내 색깔 판의 훈음만 뒤집어요',
-      FlipBoardPlayMode.typeMeaning => '한자만 보고 훈음을 적어서 판을 뒤집어요',
-    };
   }
 
   String _frontLabelForTile(FlipBoardState state, int index) {
@@ -329,12 +348,14 @@ class _ChallengeLockedView extends StatelessWidget {
 }
 
 class _BackToChallengeButton extends StatelessWidget {
-  const _BackToChallengeButton({required this.onTap});
+  const _BackToChallengeButton({required this.onTap, this.compact = false});
 
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    final dimension = compact ? 42.0 : 48.0;
     return Material(
       color: AppColors.surface,
       shape: RoundedRectangleBorder(
@@ -344,9 +365,13 @@ class _BackToChallengeButton extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        child: const SizedBox.square(
-          dimension: 48,
-          child: Icon(Icons.arrow_back, size: 28, color: AppColors.textPrimary),
+        child: SizedBox.square(
+          dimension: dimension,
+          child: Icon(
+            Icons.arrow_back,
+            size: compact ? 26 : 28,
+            color: AppColors.textPrimary,
+          ),
         ),
       ),
     );
@@ -358,11 +383,13 @@ class _FlipBoardStatusBar extends StatelessWidget {
     required this.remainingSeconds,
     required this.flippedTileCount,
     required this.score,
+    this.compact = false,
   });
 
   final int remainingSeconds;
   final int flippedTileCount;
   final int score;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -373,25 +400,31 @@ class _FlipBoardStatusBar extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 8 : 10,
+          vertical: compact ? 7 : 9,
+        ),
         child: Row(
           children: [
             _FlipBoardStatusItem(
               icon: Icons.timer,
               label: '시간',
               value: '$remainingSeconds초',
+              compact: compact,
             ),
             _FlipBoardStatusDivider(),
             _FlipBoardStatusItem(
               icon: Icons.grid_view,
               label: '판',
               value: '$flippedTileCount',
+              compact: compact,
             ),
             _FlipBoardStatusDivider(),
             _FlipBoardStatusItem(
               icon: Icons.bolt,
               label: '점수',
               value: '$score',
+              compact: compact,
             ),
           ],
         ),
@@ -405,11 +438,13 @@ class _FlipBoardStatusItem extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.compact = false,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -417,8 +452,8 @@ class _FlipBoardStatusItem extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 18, color: AppColors.primary),
-          const SizedBox(width: 5),
+          Icon(icon, size: compact ? 16 : 18, color: AppColors.primary),
+          SizedBox(width: compact ? 3 : 5),
           Flexible(
             child: Text.rich(
               TextSpan(

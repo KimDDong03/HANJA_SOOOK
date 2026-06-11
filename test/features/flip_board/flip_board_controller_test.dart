@@ -121,6 +121,39 @@ void main() {
     },
   );
 
+  test(
+    'draw mode repeats learned tiles randomly after new tiles run out',
+    () async {
+      final container = _container();
+      addTearDown(container.dispose);
+
+      final provider = flipBoardProvider(
+        const FlipBoardGameConfig(mode: FlipBoardPlayMode.drawHanja),
+      );
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+      final controller = container.read(provider.notifier);
+      await container.read(provider.future);
+
+      for (var count = 0; count < 13; count += 1) {
+        final before = container.read(provider).value!;
+        controller.submitDrawing(strokes: [_lineStroke()]);
+        final marked = container.read(provider).value!;
+        final replacedIndex = marked.correctTileIndex!;
+        final targetLabel = before.tiles[replacedIndex].label;
+        expect(marked.flippedTileCount, count + 1);
+        await Future<void>.delayed(const Duration(milliseconds: 560));
+
+        final after = container.read(provider).value!;
+        expect(after.completedResult, isNull);
+        expect(after.tiles[replacedIndex].label, isNot(targetLabel));
+        expect(after.remainingTiles.length, (5 - count).clamp(0, 5));
+      }
+      expect(container.read(provider).value!.flippedTileCount, 13);
+      subscription.close();
+    },
+  );
+
   test('type mode flips the matching tile from typed meaning text', () async {
     final container = _container();
     addTearDown(container.dispose);

@@ -103,12 +103,14 @@ Supabase URL and anon key must come from Dart defines.
 Do not hard-code secrets.
 When running or building the Flutter app, include the root `.env` file with
 `--dart-define-from-file=.env`. Do not run app builds with missing env defines.
+Android emulator runs requested by the user must default to production mode by
+also passing `--dart-define=APP_ENV=production`, even if `.env` is changed later.
 
 Examples:
 
 ```txt
-flutter run -d emulator-5554 --dart-define-from-file=.env
-flutter build apk --debug --dart-define-from-file=.env
+flutter run -d emulator-5554 --dart-define-from-file=.env --dart-define=APP_ENV=production
+flutter build apk --debug --dart-define-from-file=.env --dart-define=APP_ENV=production
 ```
 
 Expected keys:

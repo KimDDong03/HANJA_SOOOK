@@ -15,7 +15,7 @@ class AppBackButtonDispatcher extends RootBackButtonDispatcher {
   bool _isShowingExitDialog = false;
 
   bool shouldFrameworkHandleBack(bool canHandlePop) {
-    return canHandlePop || _isTopLevelAppTab(_currentPath);
+    return canHandlePop || _isHandledByDispatcher(_currentUri);
   }
 
   @override
@@ -23,7 +23,7 @@ class AppBackButtonDispatcher extends RootBackButtonDispatcher {
 
   @override
   bool handleStartBackGesture(PredictiveBackEvent backEvent) {
-    return _isTopLevelAppTab(_currentPath);
+    return _isHandledByDispatcher(_currentUri);
   }
 
   @override
@@ -35,8 +35,14 @@ class AppBackButtonDispatcher extends RootBackButtonDispatcher {
   void handleCancelBackGesture() {}
 
   Future<bool> _handleBackPressed() async {
-    final location = _currentPath;
+    final uri = _currentUri;
+    final location = uri.path;
     if (!_isAppShellRoute(location)) {
+      final fallbackRoute = _fallbackRouteFor(uri);
+      if (fallbackRoute != null) {
+        router.go(fallbackRoute);
+        return true;
+      }
       return super.didPopRoute();
     }
 
@@ -45,7 +51,7 @@ class AppBackButtonDispatcher extends RootBackButtonDispatcher {
       if (didPop) {
         return true;
       }
-      router.go(RoutePaths.appHome);
+      router.go(_fallbackRouteFor(uri) ?? RoutePaths.appHome);
       return true;
     }
 
@@ -90,7 +96,7 @@ class AppBackButtonDispatcher extends RootBackButtonDispatcher {
     }
   }
 
-  String get _currentPath => router.routeInformationProvider.value.uri.path;
+  Uri get _currentUri => router.routeInformationProvider.value.uri;
 
   bool _isAppShellRoute(String location) {
     return location == RoutePaths.appHome || location.startsWith('/app/');
@@ -101,5 +107,45 @@ class AppBackButtonDispatcher extends RootBackButtonDispatcher {
         location == RoutePaths.appLearn ||
         location == RoutePaths.appChallenge ||
         location == RoutePaths.appSettings;
+  }
+
+  bool _isHandledByDispatcher(Uri uri) {
+    return _isTopLevelAppTab(uri.path) || _fallbackRouteFor(uri) != null;
+  }
+
+  String? _fallbackRouteFor(Uri uri) {
+    final location = uri.path;
+    if (location == RoutePaths.quizModes ||
+        location == RoutePaths.challengeSpeedGame ||
+        location == RoutePaths.competitiveFlipBoardLobby ||
+        location == RoutePaths.flipBoard ||
+        location == RoutePaths.classRanking) {
+      return RoutePaths.appChallenge;
+    }
+    if (location == RoutePaths.quizPlay) {
+      return RoutePaths.quizModes;
+    }
+    if (location == RoutePaths.dailySession ||
+        location == RoutePaths.reviewSession ||
+        location == RoutePaths.weaknessSession ||
+        location.startsWith('/app/learn/hanja') ||
+        location.startsWith('/app/learn/writing-modes') ||
+        location.startsWith('/app/learn/guided-writing') ||
+        location.startsWith('/app/learn/free-writing')) {
+      return RoutePaths.appLearn;
+    }
+    if (location == RoutePaths.growth) {
+      return RoutePaths.appHome;
+    }
+    if (location == RoutePaths.studentLinks ||
+        location == RoutePaths.teacherPreview) {
+      return RoutePaths.appSettings;
+    }
+    if (location == RoutePaths.result) {
+      final isChallengeResult =
+          uri.queryParameters['challengeResultId']?.trim().isNotEmpty ?? false;
+      return isChallengeResult ? RoutePaths.appChallenge : RoutePaths.appHome;
+    }
+    return null;
   }
 }

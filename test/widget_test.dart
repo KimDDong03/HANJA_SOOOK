@@ -596,6 +596,7 @@ void main() {
       RoutePaths.freeWriting('HJ-0001'): '채점받기',
       RoutePaths.quizModes: '퀴즈 선택',
       RoutePaths.challengeSpeedGame: '스피드 퀴즈',
+      RoutePaths.flipBoardFor('draw-hanja'): '솔로 판뒤집기',
       RoutePaths.result: '연습 완료',
       RoutePaths.growth: '성장 앨범',
       RoutePaths.studentLinks: AppEnv.isProduction ? '앞으로 추가될 기능' : '학습 연결',
@@ -723,6 +724,38 @@ void main() {
     }
   });
 
+  testWidgets('challenge game screens stay reachable on compact phones', (
+    tester,
+  ) async {
+    const sizes = [Size(320, 568), Size(360, 640), Size(430, 932)];
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    for (final size in sizes) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+
+      await tester.pumpWidget(_testApp());
+      await tester.pump(const Duration(seconds: 1));
+      appRouter.go(RoutePaths.flipBoardFor('draw-hanja'));
+      await pumpUntilFound(tester, find.text('솔로 판뒤집기'));
+
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'flip board should render at ${size.width}x${size.height}',
+      );
+      final visibleAction = find.text('답 확인').evaluate().isNotEmpty
+          ? find.text('답 확인').last
+          : find.text('학습하러 가기').last;
+      await tester.ensureVisible(visibleAction);
+      await tester.pump();
+      _expectInViewport(tester, visibleAction);
+    }
+  });
+
   testWidgets('challenge daily learning prompt can start the session', (
     tester,
   ) async {
@@ -785,6 +818,40 @@ void main() {
 
       expect(find.text('종료하시겠습니까?'), findsNothing);
       expect(find.text(entry.value), findsOneWidget);
+    }
+  });
+
+  testWidgets('Android back on deep routes follows the visible back action', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_testApp());
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    final routeChecks = <String, String>{
+      RoutePaths.quizModes: RoutePaths.appChallenge,
+      RoutePaths.quizPlayFor('mixed'): RoutePaths.quizModes,
+      RoutePaths.challengeSpeedGame: RoutePaths.appChallenge,
+      RoutePaths.flipBoardFor('solo-draw-hanja'): RoutePaths.appChallenge,
+      RoutePaths.competitiveFlipBoardLobby: RoutePaths.appChallenge,
+      RoutePaths.resultForChallenge('missing-result'): RoutePaths.appChallenge,
+      RoutePaths.resultFor(
+        hanjaId: 'HJ-0001',
+        earnedXp: 10,
+        completedCount: 1,
+        totalCount: 10,
+      ): RoutePaths.appHome,
+    };
+
+    for (final entry in routeChecks.entries) {
+      appRouter.go(entry.key);
+      await tester.pumpAndSettle();
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.text('종료하시겠습니까?'), findsNothing);
+      expect(appRouter.routeInformationProvider.value.uri.path, entry.value);
     }
   });
 

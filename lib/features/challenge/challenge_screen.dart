@@ -356,67 +356,72 @@ class _ChallengeModeGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.55,
-      children: [
-        _ChallengeModeCard(
-          icon: Icons.quiz,
-          title: '퀴즈 선택',
-          subtitle: data.canPlayChallengeGames
-              ? '유형별로 맞혀요'
-              : '${data.minLearnedHanjaCount}개부터',
-          color: AppColors.peach,
-          isEnabled: data.canPlayChallengeGames,
-          onTap: () => context.push(RoutePaths.quizModes),
-        ),
-        _ChallengeModeCard(
-          icon: Icons.speed,
-          title: '스피드 퀴즈',
-          subtitle: data.canPlayChallengeGames
-              ? '혼합 문제를 빠르게 풀어요'
-              : '${data.minLearnedHanjaCount}개부터',
-          color: AppColors.blue,
-          isEnabled: data.canPlayChallengeGames,
-          onTap: () => context.push(RoutePaths.challengeSpeedGame),
-        ),
-        _ChallengeModeCard(
-          icon: Icons.grid_view,
-          title: '솔로 판뒤집기',
-          subtitle: data.canPlayFlipBoard ? '30초 / 1분 선택' : '12개부터',
-          color: AppColors.green,
-          isEnabled: data.canPlayFlipBoard,
-          onTap: () async {
-            final seconds = await showFlipBoardTimeLimitPicker(
-              context,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 360;
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: isNarrow ? 8 : 12,
+          crossAxisSpacing: isNarrow ? 8 : 12,
+          childAspectRatio: isNarrow ? 1.72 : 1.55,
+          children: [
+            _ChallengeModeCard(
+              icon: Icons.quiz,
+              title: '퀴즈 선택',
+              subtitle: data.canPlayChallengeGames
+                  ? '유형별로 맞혀요'
+                  : '${data.minLearnedHanjaCount}개부터',
+              color: AppColors.peach,
+              isEnabled: data.canPlayChallengeGames,
+              onTap: () => context.push(RoutePaths.quizModes),
+            ),
+            _ChallengeModeCard(
+              icon: Icons.speed,
+              title: '스피드 퀴즈',
+              subtitle: data.canPlayChallengeGames
+                  ? '혼합 문제를 빠르게 풀어요'
+                  : '${data.minLearnedHanjaCount}개부터',
+              color: AppColors.blue,
+              isEnabled: data.canPlayChallengeGames,
+              onTap: () => context.push(RoutePaths.challengeSpeedGame),
+            ),
+            _ChallengeModeCard(
+              icon: Icons.grid_view,
               title: '솔로 판뒤집기',
-              subtitle: '제한시간을 골라서 시작해요',
-            );
-            if (seconds == null || !context.mounted) {
-              return;
-            }
-            context.push(
-              RoutePaths.flipBoardFor(
-                FlipBoardPlayMode.drawHanja.routeValue,
-                timeLimitSeconds: seconds,
+              subtitle: data.canPlayFlipBoard ? '30초 / 1분 선택' : '12개부터',
+              color: AppColors.green,
+              isEnabled: data.canPlayFlipBoard,
+              onTap: () async {
+                final seconds = await showFlipBoardTimeLimitPicker(
+                  context,
+                  title: '솔로 판뒤집기',
+                  subtitle: '제한시간을 골라서 시작해요',
+                );
+                if (seconds == null || !context.mounted) {
+                  return;
+                }
+                context.push(
+                  RoutePaths.flipBoardFor(
+                    FlipBoardPlayMode.drawHanja.routeValue,
+                    timeLimitSeconds: seconds,
+                  ),
+                );
+              },
+            ),
+            if (AppEnv.showsPreviewFeatures)
+              _ChallengeModeCard(
+                icon: Icons.leaderboard,
+                title: '반 랭킹',
+                subtitle: '순위 확인',
+                color: AppColors.yellow,
+                isEnabled: true,
+                onTap: () => context.push(RoutePaths.classRanking),
               ),
-            );
-          },
-        ),
-        if (AppEnv.showsPreviewFeatures)
-          _ChallengeModeCard(
-            icon: Icons.leaderboard,
-            title: '반 랭킹',
-            subtitle: '순위 확인',
-            color: AppColors.yellow,
-            isEnabled: true,
-            onTap: () => context.push(RoutePaths.classRanking),
-          ),
-      ],
+          ],
+        );
+      },
     );
   }
 }

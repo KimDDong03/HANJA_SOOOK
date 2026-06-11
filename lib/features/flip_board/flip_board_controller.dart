@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -108,6 +109,7 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
         remainingSeconds: config.timeLimitSeconds,
         tiles: const [],
         remainingTiles: const [],
+        tilePool: const [],
         learnedHanjaCount: learnedItems.length,
       );
     }
@@ -138,6 +140,7 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
       remainingSeconds: config.timeLimitSeconds,
       tiles: visibleTiles,
       remainingTiles: allTiles.skip(visibleCount).toList(),
+      tilePool: allTiles,
       learnedHanjaCount: learnedItems.length,
     );
   }
@@ -349,7 +352,11 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
     _replacementTimer?.cancel();
     final replacement = _takeReplacementTile(
       remainingTiles: current.remainingTiles,
+      tilePool: current.tilePool,
+      visibleTiles: current.tiles,
+      replaceIndex: index,
       owner: current.mode.isCompetitive ? tile.owner : null,
+      randomSeed: now().microsecondsSinceEpoch + current.flippedTileCount,
     );
     if (replacement.tile == null) {
       final ownedHanjaIds = {...current.ownedHanjaIds, tile.hanjaId};
@@ -404,12 +411,13 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
 
   _TileReplacement _takeReplacementTile({
     required List<FlipBoardTile> remainingTiles,
+    required List<FlipBoardTile> tilePool,
+    required List<FlipBoardTile> visibleTiles,
+    required int replaceIndex,
     required FlipBoardTileOwner? owner,
+    required int randomSeed,
   }) {
-    if (remainingTiles.isEmpty) {
-      return const _TileReplacement(tile: null, remainingTiles: []);
-    }
-    if (owner == null) {
+    if (remainingTiles.isNotEmpty && owner == null) {
       return _TileReplacement(
         tile: remainingTiles.first,
         remainingTiles: remainingTiles.skip(1).toList(),
@@ -428,7 +436,57 @@ class FlipBoardController extends AsyncNotifier<FlipBoardState> {
         ],
       );
     }
-    return _TileReplacement(tile: null, remainingTiles: remainingTiles);
+    final replacement = _randomReplacementTile(
+      tilePool: tilePool,
+      visibleTiles: visibleTiles,
+      replaceIndex: replaceIndex,
+      owner: owner,
+      randomSeed: randomSeed,
+    );
+    return _TileReplacement(tile: replacement, remainingTiles: remainingTiles);
+  }
+
+  FlipBoardTile? _randomReplacementTile({
+    required List<FlipBoardTile> tilePool,
+    required List<FlipBoardTile> visibleTiles,
+    required int replaceIndex,
+    required FlipBoardTileOwner? owner,
+    required int randomSeed,
+  }) {
+    if (tilePool.isEmpty) {
+      return null;
+    }
+    final visibleOtherIds = <String>{
+      for (var index = 0; index < visibleTiles.length; index += 1)
+        if (index != replaceIndex) visibleTiles[index].hanjaId,
+    };
+    final currentHanjaId =
+        replaceIndex >= 0 && replaceIndex < visibleTiles.length
+        ? visibleTiles[replaceIndex].hanjaId
+        : null;
+    var candidates = [
+      for (final tile in tilePool)
+        if ((owner == null || tile.owner == owner) &&
+            !visibleOtherIds.contains(tile.hanjaId))
+          tile,
+    ];
+    if (candidates.length > 1 && currentHanjaId != null) {
+      candidates = [
+        for (final tile in candidates)
+          if (tile.hanjaId != currentHanjaId) tile,
+      ];
+    }
+    if (candidates.isEmpty) {
+      candidates = [
+        for (final tile in tilePool)
+          if (owner == null || tile.owner == owner) tile,
+      ];
+    }
+    if (candidates.isEmpty) {
+      return null;
+    }
+    candidates.shuffle(math.Random(randomSeed));
+    return candidates.first;
   }
 
   bool _allPlayableDrawingTilesOwned(FlipBoardState current) {
@@ -526,6 +584,7 @@ class FlipBoardState {
     required this.timeLimitSeconds,
     required this.tiles,
     required this.remainingTiles,
+    required this.tilePool,
     required this.learnedHanjaCount,
     this.remainingSeconds = AppConstants.flipBoardTimeLimitSeconds,
     this.answerText = '',
@@ -545,6 +604,7 @@ class FlipBoardState {
   final int timeLimitSeconds;
   final List<FlipBoardTile> tiles;
   final List<FlipBoardTile> remainingTiles;
+  final List<FlipBoardTile> tilePool;
   final int learnedHanjaCount;
   final int remainingSeconds;
   final String answerText;
@@ -590,6 +650,7 @@ class FlipBoardState {
     int? timeLimitSeconds,
     List<FlipBoardTile>? tiles,
     List<FlipBoardTile>? remainingTiles,
+    List<FlipBoardTile>? tilePool,
     int? learnedHanjaCount,
     int? remainingSeconds,
     String? answerText,
@@ -609,6 +670,7 @@ class FlipBoardState {
       timeLimitSeconds: timeLimitSeconds ?? this.timeLimitSeconds,
       tiles: tiles ?? this.tiles,
       remainingTiles: remainingTiles ?? this.remainingTiles,
+      tilePool: tilePool ?? this.tilePool,
       learnedHanjaCount: learnedHanjaCount ?? this.learnedHanjaCount,
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
       answerText: answerText ?? this.answerText,
