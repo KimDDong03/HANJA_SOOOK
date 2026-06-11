@@ -169,6 +169,18 @@ class LearningDiagnosticsRepositoryImpl
     return rows.map(_toEvent).toList();
   }
 
+  @override
+  Future<Set<String>> getReviewCompletedHanjaIds({
+    required String studentKey,
+    required String learningDate,
+  }) async {
+    final rows = await _database.getReviewCompletionEvents(
+      studentKey: studentKey,
+      learningDate: learningDate,
+    );
+    return rows.map((row) => row.hanjaId).toSet();
+  }
+
   HanjaWeaknessStatus _statusFor({
     required int nextScore,
     required int successStreak,

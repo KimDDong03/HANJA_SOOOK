@@ -37,8 +37,8 @@ class AppBackButtonDispatcher extends RootBackButtonDispatcher {
   Future<bool> _handleBackPressed() async {
     final uri = _currentUri;
     final location = uri.path;
+    final fallbackRoute = _fallbackRouteFor(uri);
     if (!_isAppShellRoute(location)) {
-      final fallbackRoute = _fallbackRouteFor(uri);
       if (fallbackRoute != null) {
         router.go(fallbackRoute);
         return true;
@@ -51,16 +51,13 @@ class AppBackButtonDispatcher extends RootBackButtonDispatcher {
       if (didPop) {
         return true;
       }
-      router.go(_fallbackRouteFor(uri) ?? RoutePaths.appHome);
+      router.go(fallbackRoute ?? RoutePaths.appHome);
       return true;
     }
 
-    final rootNavigator = router.routerDelegate.navigatorKey.currentState;
-    if (rootNavigator?.canPop() ?? false) {
-      final didPop = await router.routerDelegate.popRoute();
-      if (didPop) {
-        return true;
-      }
+    final didPop = await router.routerDelegate.popRoute();
+    if (didPop) {
+      return true;
     }
 
     unawaited(_confirmExit());
@@ -115,6 +112,12 @@ class AppBackButtonDispatcher extends RootBackButtonDispatcher {
 
   String? _fallbackRouteFor(Uri uri) {
     final location = uri.path;
+    if (location == RoutePaths.quiz) {
+      return RoutePaths.appChallenge;
+    }
+    if (location == RoutePaths.game) {
+      return RoutePaths.appChallenge;
+    }
     if (location == RoutePaths.quizModes ||
         location == RoutePaths.challengeSpeedGame ||
         location == RoutePaths.competitiveFlipBoardLobby ||
@@ -128,6 +131,8 @@ class AppBackButtonDispatcher extends RootBackButtonDispatcher {
     if (location == RoutePaths.dailySession ||
         location == RoutePaths.reviewSession ||
         location == RoutePaths.weaknessSession ||
+        location.startsWith('/hanja/') ||
+        location.startsWith('/writing/') ||
         location.startsWith('/app/learn/hanja') ||
         location.startsWith('/app/learn/writing-modes') ||
         location.startsWith('/app/learn/guided-writing') ||

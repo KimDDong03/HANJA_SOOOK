@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/repositories/challenge_result_repository_provider.dart';
 import '../../data/repositories/content_repository_provider.dart';
+import '../../data/repositories/learning_diagnostics_repository_provider.dart';
 import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../domain/models/challenge_result.dart';
 import '../../domain/models/hanja_character.dart';
@@ -17,18 +18,27 @@ final resultProvider = FutureProvider.family<ResultState, ResultArgs>((
   final grade = ref.watch(currentProfileProvider)?.grade;
   final contentRepository = ref.watch(contentRepositoryProvider);
   final progressRepository = ref.watch(learningProgressRepositoryProvider);
+  final diagnosticsRepository = ref.watch(
+    learningDiagnosticsRepositoryProvider,
+  );
   final studentKey = currentStudentKey(ref);
   final learningDate = currentLearningDate();
 
   final allItems = await contentRepository.getHanjaList(grade: grade);
   final progressRecords = await progressRepository
       .getCompletedHanjaRecordsForStudent(studentKey: studentKey);
+  final reviewCompletedHanjaIds = await diagnosticsRepository
+      .getReviewCompletedHanjaIds(
+        studentKey: studentKey,
+        learningDate: learningDate,
+      );
   final plan = const LearningPlanService().buildDailyPlan(
     allItems: allItems,
     progressRecords: progressRecords,
     learningDate: learningDate,
     newItemLimit: AppConstants.dailyHanjaCount,
     reviewItemLimit: AppConstants.dailyReviewCount,
+    reviewCompletedHanjaIds: reviewCompletedHanjaIds,
   );
   final completedIds = await progressRepository.getCompletedHanjaIds(
     studentKey: studentKey,

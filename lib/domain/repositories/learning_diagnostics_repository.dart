@@ -22,4 +22,9 @@ abstract class LearningDiagnosticsRepository {
     required String studentKey,
     required String hanjaId,
   });
+
+  Future<Set<String>> getReviewCompletedHanjaIds({
+    required String studentKey,
+    required String learningDate,
+  });
 }

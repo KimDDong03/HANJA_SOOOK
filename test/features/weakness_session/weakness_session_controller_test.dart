@@ -283,6 +283,12 @@ class _FakeLearningDiagnosticsRepository
     required String studentKey,
     required String hanjaId,
   }) async => const [];
+
+  @override
+  Future<Set<String>> getReviewCompletedHanjaIds({
+    required String studentKey,
+    required String learningDate,
+  }) async => const {};
 }
 
 class _FakeLearningProgressRepository implements LearningProgressRepository {

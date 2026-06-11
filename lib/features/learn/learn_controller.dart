@@ -23,23 +23,32 @@ final learnLibraryProvider = FutureProvider<LearnLibraryState>((ref) async {
   await ref
       .read(demoReviewFocusSeedControllerProvider)
       .ensureSeeded(items: items);
+  final diagnosticsRepository = ref.watch(
+    learningDiagnosticsRepositoryProvider,
+  );
   final progressRecords = await ref
       .watch(learningProgressRepositoryProvider)
       .getCompletedHanjaRecordsForStudent(studentKey: currentStudentKey(ref));
+  final reviewCompletedHanjaIds = await diagnosticsRepository
+      .getReviewCompletedHanjaIds(
+        studentKey: currentStudentKey(ref),
+        learningDate: learningDate,
+      );
   final plan = const LearningPlanService().buildDailyPlan(
     allItems: items,
     progressRecords: progressRecords,
     learningDate: learningDate,
     newItemLimit: AppConstants.dailyHanjaCount,
     reviewItemLimit: AppConstants.dailyReviewCount,
+    reviewCompletedHanjaIds: reviewCompletedHanjaIds,
   );
   final chapters = const LearningPlanService().buildChapters(items);
   final completedHanjaIds = progressRecords
       .map((record) => record.hanjaId)
       .toSet();
-  final activeWeaknesses = await ref
-      .watch(learningDiagnosticsRepositoryProvider)
-      .getActiveWeaknesses(studentKey: currentStudentKey(ref));
+  final activeWeaknesses = await diagnosticsRepository.getActiveWeaknesses(
+    studentKey: currentStudentKey(ref),
+  );
   final weaknessesByHanja = <String, List<HanjaWeaknessRecord>>{};
   for (final weakness in activeWeaknesses) {
     weaknessesByHanja.putIfAbsent(weakness.hanjaId, () => []).add(weakness);

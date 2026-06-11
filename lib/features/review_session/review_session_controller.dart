@@ -45,16 +45,25 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
     final records = await progressRepository.getCompletedHanjaRecordsForStudent(
       studentKey: studentKey,
     );
+    final diagnosticsRepository = ref.watch(
+      learningDiagnosticsRepositoryProvider,
+    );
+    final reviewCompletedHanjaIds = await diagnosticsRepository
+        .getReviewCompletedHanjaIds(
+          studentKey: studentKey,
+          learningDate: learningDate,
+        );
     final plan = const LearningPlanService().buildDailyPlan(
       allItems: allItems,
       progressRecords: records,
       learningDate: learningDate,
       newItemLimit: AppConstants.dailyHanjaCount,
       reviewItemLimit: AppConstants.dailyReviewCount,
+      reviewCompletedHanjaIds: reviewCompletedHanjaIds,
     );
-    final activeWeaknesses = await ref
-        .watch(learningDiagnosticsRepositoryProvider)
-        .getActiveWeaknesses(studentKey: studentKey);
+    final activeWeaknesses = await diagnosticsRepository.getActiveWeaknesses(
+      studentKey: studentKey,
+    );
     final weaknessesByHanja = _weaknessesByHanja(activeWeaknesses);
     final items = _sessionItems(
       allItems: allItems,
@@ -370,9 +379,13 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
 
   Future<int> _finishReview(ReviewSessionState current) async {
     final repository = ref.read(learningProgressRepositoryProvider);
+    final diagnosticsRepository = ref.read(
+      learningDiagnosticsRepositoryProvider,
+    );
     final studentKey = currentStudentKey(ref);
     final learningDate = currentLearningDate();
     var didChangeProgress = false;
+    var didRecordReviewCompletion = false;
     for (final item in current.items) {
       final didMark = await repository.markHanjaCompleted(
         studentKey: studentKey,
@@ -380,6 +393,19 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
         hanjaId: item.id,
       );
       didChangeProgress = didChangeProgress || didMark;
+      await diagnosticsRepository.recordPracticeEvent(
+        HanjaPracticeEventInput(
+          studentKey: studentKey,
+          hanjaId: item.id,
+          learningDate: learningDate,
+          source: HanjaPracticeSource.reviewSession,
+          activityType: HanjaPracticeActivityType.reviewComplete,
+          result: HanjaPracticeResult.passed,
+          scoreDelta: 0,
+          createdAt: DateTime.now(),
+        ),
+      );
+      didRecordReviewCompletion = true;
     }
     const xpService = XpService();
     final earnedXp = xpService.reviewSessionCompletionXp(
@@ -402,7 +428,7 @@ class ReviewSessionController extends AsyncNotifier<ReviewSessionState> {
             : focusHanjaId!.trim(),
       );
     }
-    if (didChangeProgress || didWriteXp) {
+    if (didChangeProgress || didWriteXp || didRecordReviewCompletion) {
       ref.read(learningProgressTickProvider.notifier).increase();
     }
     return didWriteXp ? earnedXp : 0;

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../data/repositories/content_repository_provider.dart';
+import '../../data/repositories/learning_diagnostics_repository_provider.dart';
 import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../domain/models/hanja_character.dart';
 import '../../domain/models/hanja_example.dart';
@@ -44,12 +45,19 @@ class WritingCompletionController {
     final progressRecords = await _ref
         .read(learningProgressRepositoryProvider)
         .getCompletedHanjaRecordsForStudent(studentKey: studentKey);
+    final reviewCompletedHanjaIds = await _ref
+        .read(learningDiagnosticsRepositoryProvider)
+        .getReviewCompletedHanjaIds(
+          studentKey: studentKey,
+          learningDate: learningDate,
+        );
     final plan = const LearningPlanService().buildDailyPlan(
       allItems: allItems,
       progressRecords: progressRecords,
       learningDate: learningDate,
       newItemLimit: AppConstants.dailyHanjaCount,
       reviewItemLimit: AppConstants.dailyReviewCount,
+      reviewCompletedHanjaIds: reviewCompletedHanjaIds,
     );
     return _ref
         .read(learningProgressControllerProvider)

@@ -27,7 +27,7 @@ void main() {
     expect(plan.items.map((item) => item.id), ['HJ-1', 'HJ-2']);
   });
 
-  test('buildDailyPlan skips reviews already completed today', () {
+  test('buildDailyPlan skips reviews completed in review today', () {
     final plan = service.buildDailyPlan(
       allItems: _items,
       progressRecords: [
@@ -47,6 +47,7 @@ void main() {
       learningDate: '20260530',
       newItemLimit: 2,
       reviewItemLimit: 2,
+      reviewCompletedHanjaIds: const {'HJ-1'},
     );
 
     expect(plan.reviewItems, isEmpty);
@@ -54,7 +55,32 @@ void main() {
     expect(plan.newItems.map((item) => item.id), ['HJ-2', 'HJ-3']);
   });
 
-  test('buildDailyPlan skips first same-day completion as a review item', () {
+  test(
+    'buildDailyPlan includes first same-day completion as a review item',
+    () {
+      final plan = service.buildDailyPlan(
+        allItems: _items,
+        progressRecords: [
+          LearningProgressRecord(
+            studentKey: 'student-1',
+            learningDate: '20260530',
+            hanjaId: 'HJ-1',
+            completedAt: DateTime(2026, 5, 30),
+          ),
+        ],
+        learningDate: '20260530',
+        newItemLimit: 2,
+        reviewItemLimit: 2,
+      );
+
+      expect(plan.reviewItems.map((item) => item.id), ['HJ-1']);
+      expect(plan.newItems.map((item) => item.id), ['HJ-2']);
+      expect(plan.items.map((item) => item.id), ['HJ-1', 'HJ-2']);
+      expect(plan.completedCount, 1);
+    },
+  );
+
+  test('buildDailyPlan removes same-day items reviewed today', () {
     final plan = service.buildDailyPlan(
       allItems: _items,
       progressRecords: [
@@ -68,11 +94,11 @@ void main() {
       learningDate: '20260530',
       newItemLimit: 2,
       reviewItemLimit: 2,
+      reviewCompletedHanjaIds: const {'HJ-1'},
     );
 
     expect(plan.reviewItems, isEmpty);
     expect(plan.newItems.map((item) => item.id), ['HJ-1', 'HJ-2']);
-    expect(plan.items.map((item) => item.id), ['HJ-1', 'HJ-2']);
     expect(plan.completedCount, 1);
   });
 

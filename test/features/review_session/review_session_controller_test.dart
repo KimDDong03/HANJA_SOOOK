@@ -110,12 +110,10 @@ void main() {
   test(
     'review session excludes active weakness items that are not due',
     () async {
-      final today = currentLearningDate();
       final progressRepository = _FakeLearningProgressRepository(
         records: [
           _progressRecord('HJ-1', '20260601'),
           _progressRecord('HJ-2', '20260601'),
-          _progressRecord('HJ-5', today),
         ],
       );
       final container = ProviderContainer(
@@ -137,6 +135,59 @@ void main() {
 
       expect(state.items.map((item) => item.id), ['HJ-1', 'HJ-2']);
       expect(state.items.map((item) => item.id), isNot(contains('HJ-5')));
+    },
+  );
+
+  test(
+    'review session includes same-day completions until review is finished',
+    () async {
+      final today = currentLearningDate();
+      final progressRepository = _FakeLearningProgressRepository(
+        records: [
+          _progressRecord('HJ-1', today),
+          _progressRecord('HJ-2', today),
+        ],
+      );
+      final diagnosticsRepository = _FakeLearningDiagnosticsRepository();
+      final container = ProviderContainer(
+        overrides: [
+          contentRepositoryProvider.overrideWithValue(_FakeContentRepository()),
+          learningProgressRepositoryProvider.overrideWithValue(
+            progressRepository,
+          ),
+          learningDiagnosticsRepositoryProvider.overrideWithValue(
+            diagnosticsRepository,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final provider = reviewSessionProvider(null);
+      var state = await container.read(provider.future);
+
+      expect(state.items.map((item) => item.id), ['HJ-1', 'HJ-2']);
+
+      while (state.phase == ReviewSessionPhase.quiz) {
+        await container
+            .read(provider.notifier)
+            .selectAnswer(state.currentQuestion!.correctAnswer);
+        await container.read(provider.notifier).next();
+        state = container.read(provider).value!;
+      }
+      while (state.phase == ReviewSessionPhase.writing) {
+        final item = state.currentWritingItem!;
+        container.read(provider.notifier).markWritingPassed(item.id);
+        await container.read(provider.notifier).completeWriting();
+        state = container.read(provider).value!;
+      }
+
+      expect(state.phase, ReviewSessionPhase.complete);
+      expect(diagnosticsRepository.reviewCompletedHanjaIds, {'HJ-1', 'HJ-2'});
+
+      container.invalidate(provider);
+      final refreshed = await container.read(provider.future);
+
+      expect(refreshed.items, isEmpty);
     },
   );
 
@@ -445,14 +496,23 @@ LearningProgressRecord _progressRecord(String hanjaId, String learningDate) {
 
 class _FakeLearningDiagnosticsRepository
     implements LearningDiagnosticsRepository {
-  _FakeLearningDiagnosticsRepository({this.activeWeaknesses = const []});
+  _FakeLearningDiagnosticsRepository({
+    this.activeWeaknesses = const [],
+    Set<String>? reviewCompletedHanjaIds,
+  }) : reviewCompletedHanjaIds = reviewCompletedHanjaIds ?? <String>{};
 
   final List<HanjaWeaknessRecord> activeWeaknesses;
+  final Set<String> reviewCompletedHanjaIds;
   final events = <HanjaPracticeEventInput>[];
 
   @override
   Future<void> recordPracticeEvent(HanjaPracticeEventInput input) async {
     events.add(input);
+    if (input.source == HanjaPracticeSource.reviewSession &&
+        input.activityType == HanjaPracticeActivityType.reviewComplete &&
+        input.result == HanjaPracticeResult.passed) {
+      reviewCompletedHanjaIds.add(input.hanjaId);
+    }
   }
 
   @override
@@ -478,6 +538,12 @@ class _FakeLearningDiagnosticsRepository
     required String studentKey,
     required String hanjaId,
   }) async => const [];
+
+  @override
+  Future<Set<String>> getReviewCompletedHanjaIds({
+    required String studentKey,
+    required String learningDate,
+  }) async => reviewCompletedHanjaIds;
 }
 
 HanjaWeaknessRecord _writingWeakness(String hanjaId) {

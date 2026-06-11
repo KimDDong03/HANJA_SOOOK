@@ -71,6 +71,7 @@ class WeaknessScoringService {
         HanjaWeaknessType.hanjaRecognition,
       HanjaPracticeActivityType.writing => HanjaWeaknessType.writing,
       HanjaPracticeActivityType.hint => HanjaWeaknessType.writing,
+      HanjaPracticeActivityType.reviewComplete => HanjaWeaknessType.retention,
       HanjaPracticeActivityType.weaknessPass => HanjaWeaknessType.retention,
       HanjaPracticeActivityType.mixed => HanjaWeaknessType.retention,
     };

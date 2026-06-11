@@ -289,6 +289,14 @@ class _FakeLearningDiagnosticsRepository
   }
 
   @override
+  Future<Set<String>> getReviewCompletedHanjaIds({
+    required String studentKey,
+    required String learningDate,
+  }) async {
+    return const {};
+  }
+
+  @override
   Future<List<HanjaWeaknessRecord>> getActiveWeaknesses({
     required String studentKey,
   }) async {

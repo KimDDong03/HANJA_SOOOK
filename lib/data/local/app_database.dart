@@ -367,6 +367,19 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
+  Future<List<LocalHanjaPracticeEvent>> getReviewCompletionEvents({
+    required String studentKey,
+    required String learningDate,
+  }) {
+    return (select(localHanjaPracticeEvents)
+          ..where((row) => row.studentKey.equals(studentKey))
+          ..where((row) => row.learningDate.equals(learningDate))
+          ..where((row) => row.source.equals('review_session'))
+          ..where((row) => row.activityType.equals('review_complete'))
+          ..where((row) => row.result.equals('passed')))
+        .get();
+  }
+
   Future<LocalHanjaWeaknessesData?> getHanjaWeakness({
     required String studentKey,
     required String hanjaId,

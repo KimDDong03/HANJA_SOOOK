@@ -23,6 +23,7 @@ enum HanjaPracticeActivityType {
   writing('writing'),
   mixed('mixed'),
   hint('hint'),
+  reviewComplete('review_complete'),
   weaknessPass('weakness_pass');
 
   const HanjaPracticeActivityType(this.storageValue);

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -435,6 +437,14 @@ class _FakeLearningDiagnosticsRepository
   }
 
   @override
+  Future<Set<String>> getReviewCompletedHanjaIds({
+    required String studentKey,
+    required String learningDate,
+  }) async {
+    return const {};
+  }
+
+  @override
   Future<List<HanjaWeaknessRecord>> getActiveWeaknesses({
     required String studentKey,
   }) async {
@@ -683,6 +693,20 @@ void main() {
       await tester.ensureVisible(find.text('다음').last);
       await tester.pump();
       _expectInViewport(tester, find.text('다음').last);
+      final quizOptionButtons = <Finder>[
+        for (final label in ['이름', '임금', '대', '위', '뫼', '수풀'])
+          if (find.widgetWithText(OutlinedButton, label).evaluate().isNotEmpty)
+            find.widgetWithText(OutlinedButton, label).last,
+      ];
+      expect(quizOptionButtons, hasLength(4));
+      final optionXs = [
+        for (final button in quizOptionButtons) tester.getCenter(button).dx,
+      ];
+      expect(
+        optionXs.reduce(math.max) - optionXs.reduce(math.min),
+        lessThan(8),
+        reason: 'quiz answers should be stacked in one column',
+      );
 
       await tester.ensureVisible(find.text('랜덤쓰기').last);
       await tester.pump();
@@ -829,11 +853,20 @@ void main() {
     await tester.pumpAndSettle();
 
     final routeChecks = <String, String>{
+      RoutePaths.quiz: RoutePaths.appChallenge,
+      RoutePaths.game: RoutePaths.appChallenge,
       RoutePaths.quizModes: RoutePaths.appChallenge,
       RoutePaths.quizPlayFor('mixed'): RoutePaths.quizModes,
+      RoutePaths.dailySessionForChapter('G3-U1'): RoutePaths.appLearn,
+      RoutePaths.reviewSessionFor('HJ-0001'): RoutePaths.appLearn,
+      RoutePaths.weaknessSessionFor('HJ-0001'): RoutePaths.appLearn,
       RoutePaths.challengeSpeedGame: RoutePaths.appChallenge,
       RoutePaths.flipBoardFor('solo-draw-hanja'): RoutePaths.appChallenge,
       RoutePaths.competitiveFlipBoardLobby: RoutePaths.appChallenge,
+      RoutePaths.classRanking: RoutePaths.appChallenge,
+      RoutePaths.growth: RoutePaths.appHome,
+      RoutePaths.studentLinksFor('student'): RoutePaths.appSettings,
+      RoutePaths.teacherPreview: RoutePaths.appSettings,
       RoutePaths.resultForChallenge('missing-result'): RoutePaths.appChallenge,
       RoutePaths.resultFor(
         hanjaId: 'HJ-0001',
@@ -848,6 +881,53 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.text('종료하시겠습니까?'), findsNothing);
+      expect(appRouter.routeInformationProvider.value.uri.path, entry.value);
+    }
+  });
+
+  testWidgets('Android predictive back on deep routes avoids exit prompt', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_testApp());
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    final routeChecks = <String, String>{
+      RoutePaths.dailySessionForChapter('G3-U1'): RoutePaths.appLearn,
+      RoutePaths.reviewSessionFor('HJ-0001'): RoutePaths.appLearn,
+      RoutePaths.weaknessSessionFor('HJ-0001'): RoutePaths.appLearn,
+      RoutePaths.challengeSpeedGame: RoutePaths.appChallenge,
+      RoutePaths.flipBoardFor('solo-draw-hanja'): RoutePaths.appChallenge,
+      RoutePaths.resultForChallenge('missing-result'): RoutePaths.appChallenge,
+      RoutePaths.resultFor(
+        hanjaId: 'HJ-0001',
+        earnedXp: 10,
+        completedCount: 1,
+        totalCount: 10,
+      ): RoutePaths.appHome,
+    };
+
+    for (final entry in routeChecks.entries) {
+      appRouter.go(entry.key);
+      await tester.pumpAndSettle();
+
+      final startResult = await _sendBackGestureMethod(
+        tester,
+        const MethodCall('startBackGesture', {
+          'touchOffset': [0.0, 0.0],
+          'progress': 0.0,
+          'swipeEdge': 0,
+        }),
+      );
+      expect(startResult, isTrue);
+
+      await _sendBackGestureMethod(
+        tester,
+        const MethodCall('commitBackGesture'),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('종료하시겠습니까?'), findsNothing);

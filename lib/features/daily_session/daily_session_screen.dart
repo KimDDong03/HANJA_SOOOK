@@ -692,31 +692,20 @@ class _QuizStepState extends ConsumerState<_QuizStep> {
             children: [
               _QuizPrompt(question: question),
               const SizedBox(height: 10),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: question.options.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 3.1,
+              for (final option in question.options) ...[
+                _AnswerButton(
+                  label: option,
+                  compact: true,
+                  isSelected: selectedAnswer == option,
+                  isIncorrect: incorrectAnswer == option,
+                  isCorrect: option == question.correctAnswer,
+                  showResult: selectedAnswer != null,
+                  onPressed: selectedAnswer == null
+                      ? () => _selectAnswer(controller, question, option)
+                      : null,
                 ),
-                itemBuilder: (context, index) {
-                  final option = question.options[index];
-                  return _AnswerButton(
-                    label: option,
-                    compact: true,
-                    isSelected: selectedAnswer == option,
-                    isIncorrect: incorrectAnswer == option,
-                    isCorrect: option == question.correctAnswer,
-                    showResult: selectedAnswer != null,
-                    onPressed: selectedAnswer == null
-                        ? () => _selectAnswer(controller, question, option)
-                        : null,
-                  );
-                },
-              ),
+                const SizedBox(height: 8),
+              ],
               const SizedBox(height: 10),
               _WritingBottomControls(
                 onPrevious: state.canMovePreviousInPhase

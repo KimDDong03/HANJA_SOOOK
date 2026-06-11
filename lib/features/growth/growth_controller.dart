@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../data/repositories/content_repository_provider.dart';
+import '../../data/repositories/learning_diagnostics_repository_provider.dart';
 import '../../data/repositories/learning_progress_repository_provider.dart';
 import '../../domain/services/learning_plan_service.dart';
 import '../../domain/services/xp_service.dart';
@@ -15,18 +16,27 @@ final growthProvider = FutureProvider<GrowthViewState>((ref) async {
   final studentKey = currentStudentKey(ref);
   final learningDate = currentLearningDate();
   final progressRepository = ref.watch(learningProgressRepositoryProvider);
+  final diagnosticsRepository = ref.watch(
+    learningDiagnosticsRepositoryProvider,
+  );
   const xpService = XpService();
 
   final contentRepository = ref.watch(contentRepositoryProvider);
   final allItems = await contentRepository.getHanjaList(grade: grade);
   final progressRecords = await progressRepository
       .getCompletedHanjaRecordsForStudent(studentKey: studentKey);
+  final reviewCompletedHanjaIds = await diagnosticsRepository
+      .getReviewCompletedHanjaIds(
+        studentKey: studentKey,
+        learningDate: learningDate,
+      );
   final plan = const LearningPlanService().buildDailyPlan(
     allItems: allItems,
     progressRecords: progressRecords,
     learningDate: learningDate,
     newItemLimit: AppConstants.dailyHanjaCount,
     reviewItemLimit: AppConstants.dailyReviewCount,
+    reviewCompletedHanjaIds: reviewCompletedHanjaIds,
   );
   final completedIds = await progressRepository.getCompletedHanjaIds(
     studentKey: studentKey,

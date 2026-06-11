@@ -72,6 +72,37 @@ void main() {
       expect(byHanja['HJ-1']!.single.status, HanjaWeaknessStatus.resolved);
       expect(byHanja['HJ-1']!.single.score, 0);
     });
+
+    test(
+      'returns only review completion markers for the selected day',
+      () async {
+        await repository.recordPracticeEvent(
+          _event(
+            createdAt: DateTime(2026, 6, 3, 9),
+            scoreDelta: 0,
+            source: HanjaPracticeSource.reviewSession,
+            activityType: HanjaPracticeActivityType.hunToHanja,
+            result: HanjaPracticeResult.correct,
+          ),
+        );
+        await repository.recordPracticeEvent(
+          _event(
+            createdAt: DateTime(2026, 6, 3, 10),
+            scoreDelta: 0,
+            source: HanjaPracticeSource.reviewSession,
+            activityType: HanjaPracticeActivityType.reviewComplete,
+            result: HanjaPracticeResult.passed,
+          ),
+        );
+
+        final reviewedIds = await repository.getReviewCompletedHanjaIds(
+          studentKey: 'student-1',
+          learningDate: '20260603',
+        );
+
+        expect(reviewedIds, {'HJ-1'});
+      },
+    );
   });
 }
 
@@ -79,15 +110,17 @@ HanjaPracticeEventInput _event({
   required DateTime createdAt,
   required int scoreDelta,
   HanjaPracticeResult result = HanjaPracticeResult.incorrect,
+  HanjaPracticeSource source = HanjaPracticeSource.quiz,
+  HanjaPracticeActivityType activityType = HanjaPracticeActivityType.hunToHanja,
 }) {
   return HanjaPracticeEventInput(
     studentKey: 'student-1',
     hanjaId: 'HJ-1',
     learningDate: '20260603',
-    source: HanjaPracticeSource.quiz,
-    activityType: HanjaPracticeActivityType.hunToHanja,
+    source: source,
+    activityType: activityType,
     result: result,
-    weaknessType: HanjaWeaknessType.hanjaRecognition,
+    weaknessType: scoreDelta == 0 ? null : HanjaWeaknessType.hanjaRecognition,
     scoreDelta: scoreDelta,
     createdAt: createdAt,
   );

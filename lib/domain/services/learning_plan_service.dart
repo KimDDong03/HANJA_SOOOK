@@ -10,6 +10,7 @@ class LearningPlanService {
     required String learningDate,
     required int newItemLimit,
     required int reviewItemLimit,
+    Set<String> reviewCompletedHanjaIds = const <String>{},
     String? chapterKey,
   }) {
     final recordsByHanja = _recordsByHanja(progressRecords);
@@ -45,6 +46,9 @@ class LearningPlanService {
     final reviewItems = allItems
         .where((item) {
           final records = recordsByHanja[item.id];
+          if (reviewCompletedHanjaIds.contains(item.id)) {
+            return false;
+          }
           return records != null &&
               _isReviewDue(records: records, learningDate: learningDate);
         })
@@ -171,7 +175,7 @@ class LearningPlanService {
       return false;
     }
     if (latestDate == learningDate) {
-      return false;
+      return true;
     }
 
     final daysSinceLatest = _daysBetween(latestDate, learningDate);

@@ -1,13 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hanja_soook/data/repositories/content_repository_provider.dart';
+import 'package:hanja_soook/data/repositories/learning_diagnostics_repository_provider.dart';
 import 'package:hanja_soook/data/repositories/learning_progress_repository_provider.dart';
 import 'package:hanja_soook/domain/models/hanja_character.dart';
 import 'package:hanja_soook/domain/models/hanja_example.dart';
+import 'package:hanja_soook/domain/models/learning_diagnostics.dart';
 import 'package:hanja_soook/domain/models/learning_progress_record.dart';
 import 'package:hanja_soook/domain/models/quiz_question.dart';
 import 'package:hanja_soook/domain/models/stroke_asset.dart';
 import 'package:hanja_soook/domain/repositories/content_repository.dart';
+import 'package:hanja_soook/domain/repositories/learning_diagnostics_repository.dart';
 import 'package:hanja_soook/domain/repositories/learning_progress_repository.dart';
 import 'package:hanja_soook/features/growth/growth_controller.dart';
 import 'package:hanja_soook/features/learning/learning_progress_controller.dart';
@@ -20,6 +23,9 @@ void main() {
         contentRepositoryProvider.overrideWithValue(_FakeContentRepository()),
         learningProgressRepositoryProvider.overrideWithValue(
           progressRepository,
+        ),
+        learningDiagnosticsRepositoryProvider.overrideWithValue(
+          _FakeLearningDiagnosticsRepository(),
         ),
       ],
     );
@@ -35,6 +41,42 @@ void main() {
     expect(state.totalXp, 130);
     expect(state.level, 2);
   });
+}
+
+class _FakeLearningDiagnosticsRepository
+    implements LearningDiagnosticsRepository {
+  @override
+  Future<List<HanjaWeaknessRecord>> getActiveWeaknesses({
+    required String studentKey,
+  }) async => const [];
+
+  @override
+  Future<List<HanjaPracticeEvent>> getPracticeEventsForHanja({
+    required String studentKey,
+    required String hanjaId,
+  }) async => const [];
+
+  @override
+  Future<Set<String>> getReviewCompletedHanjaIds({
+    required String studentKey,
+    required String learningDate,
+  }) async => const {};
+
+  @override
+  Future<Map<String, List<HanjaWeaknessRecord>>> getWeaknessesByHanja({
+    required String studentKey,
+    required Set<String> hanjaIds,
+  }) async => const {};
+
+  @override
+  Future<void> markWeaknessResolved({
+    required String studentKey,
+    required String hanjaId,
+    required HanjaWeaknessType weaknessType,
+  }) async {}
+
+  @override
+  Future<void> recordPracticeEvent(HanjaPracticeEventInput input) async {}
 }
 
 class _FakeContentRepository implements ContentRepository {
