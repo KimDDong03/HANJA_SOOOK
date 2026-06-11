@@ -102,7 +102,7 @@ class _UnitSlideCarouselState extends State<_UnitSlideCarousel> {
     _pageIndex = widget.state.activeSlideIndex;
     _pageController = PageController(
       initialPage: _pageIndex,
-      viewportFraction: 0.92,
+      viewportFraction: 1,
     );
   }
 
@@ -161,17 +161,21 @@ class _UnitSlideCarouselState extends State<_UnitSlideCarousel> {
           const SizedBox(height: 12),
           SizedBox(
             height: 190,
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: slides.length,
-              onPageChanged: (index) => setState(() => _pageIndex = index),
-              itemBuilder: (context, index) {
-                return _UnitImagePage(
-                  controller: _pageController,
-                  index: index,
-                  slide: slides[index],
-                );
-              },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: PageView.builder(
+                controller: _pageController,
+                clipBehavior: Clip.hardEdge,
+                itemCount: slides.length,
+                onPageChanged: (index) => setState(() => _pageIndex = index),
+                itemBuilder: (context, index) {
+                  return _UnitImagePage(
+                    controller: _pageController,
+                    index: index,
+                    slide: slides[index],
+                  );
+                },
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -319,7 +323,7 @@ class _UnitImagePage extends StatelessWidget {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(18),
           child: Stack(
